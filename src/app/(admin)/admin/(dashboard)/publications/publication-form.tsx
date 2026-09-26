@@ -20,6 +20,7 @@ import {
   FieldLabel,
   FieldSet,
 } from "@/components/ui/field";
+import { ImageUpload } from "@/components/admin/image-upload";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -243,11 +244,20 @@ export function PublicationForm({
                   </div>
 
                   <Field data-invalid={!!errors.coverImage}>
-                    <FieldLabel htmlFor="pub-cover">Cover image URL</FieldLabel>
-                    <Input id="pub-cover" placeholder="https://…" {...register("coverImage")} />
+                    <FieldLabel>Cover image</FieldLabel>
+                    <Controller
+                      control={control}
+                      name="coverImage"
+                      render={({ field }) => (
+                        <ImageUpload
+                          label="cover image"
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
                     <FieldDescription>
-                      Optional. Uploads replace this in a later phase; the card falls back to a
-                      typographic cover meanwhile.
+                      Optional. Without one, the card falls back to a typographic cover.
                     </FieldDescription>
                     <FieldError errors={[errors.coverImage]} />
                   </Field>

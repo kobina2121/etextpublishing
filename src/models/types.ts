@@ -117,6 +117,18 @@ export type ContactMessageDoc = WithTimestamps & {
   archived: boolean;
 };
 
+export type ImageDoc = WithTimestamps & {
+  _id: Types.ObjectId;
+  /** Binary payload. Kept in Mongo so uploads work before object storage exists. */
+  data: Buffer;
+  contentType: string;
+  size: number;
+  /** Original filename, retained for display only — never used as a path. */
+  filename: string;
+  width?: number;
+  height?: number;
+};
+
 export type SiteSettingsDoc = WithTimestamps & {
   _id: Types.ObjectId;
   /** Fixed discriminator that keeps this collection to a single document. */
