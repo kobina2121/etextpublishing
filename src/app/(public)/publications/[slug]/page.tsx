@@ -118,7 +118,7 @@ export default async function PublicationDetailPage({ params }: PageProps<"/publ
           </div>
 
           <div>
-            <p className="font-heading text-xs tracking-[0.14em] text-primary uppercase">
+            <p className="text-xs font-semibold tracking-[0.14em] text-primary uppercase">
               {publication.category.name}
             </p>
             <h1 className="mt-3 text-4xl leading-tight sm:text-5xl">{publication.title}</h1>
@@ -143,7 +143,7 @@ export default async function PublicationDetailPage({ params }: PageProps<"/publ
             <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
               {details.map((detail) => (
                 <div key={detail.label}>
-                  <dt className="font-heading text-xs tracking-[0.14em] text-muted-foreground uppercase">
+                  <dt className="text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
                     {detail.label}
                   </dt>
                   <dd className="mt-1">{detail.value}</dd>
@@ -152,14 +152,14 @@ export default async function PublicationDetailPage({ params }: PageProps<"/publ
             </dl>
 
             <div className="mt-10 flex flex-wrap gap-4">
-              <Button asChild size="xl" className="font-heading tracking-[0.1em] uppercase">
+              <Button asChild size="xl" className="font-semibold tracking-[0.1em] uppercase">
                 <Link href="/contact">Enquire about this title</Link>
               </Button>
               <Button
                 asChild
                 size="xl"
                 variant="outline"
-                className="font-heading tracking-[0.1em] uppercase"
+                className="font-semibold tracking-[0.1em] uppercase"
               >
                 <Link href={`/authors/${publication.author.slug}`}>About the author</Link>
               </Button>

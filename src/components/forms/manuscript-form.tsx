@@ -217,7 +217,7 @@ export function ManuscriptForm() {
               type="submit"
               size="xl"
               disabled={isSubmitting}
-              className="font-heading tracking-[0.1em] uppercase"
+              className="font-semibold tracking-[0.1em] uppercase"
             >
               {isSubmitting ? <Spinner /> : <UploadIcon aria-hidden />}
               Submit manuscript

@@ -34,14 +34,14 @@ export default function PublicError({
             <p className="font-mono text-xs text-muted-foreground">Reference: {error.digest}</p>
           ) : null}
           <div className="flex flex-wrap gap-3">
-            <Button onClick={reset} size="xl" className="font-heading tracking-[0.1em] uppercase">
+            <Button onClick={reset} size="xl" className="font-semibold tracking-[0.1em] uppercase">
               Try again
             </Button>
             <Button
               asChild
               size="xl"
               variant="outline"
-              className="font-heading tracking-[0.1em] uppercase"
+              className="font-semibold tracking-[0.1em] uppercase"
             >
               <Link href="/">Back to home</Link>
             </Button>

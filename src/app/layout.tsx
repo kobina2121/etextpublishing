@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Oswald } from "next/font/google";
+import { Cormorant_Garamond, Montserrat } from "next/font/google";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -10,11 +10,18 @@ import { siteConfig } from "@/lib/site-config";
 
 import "./globals.css";
 
-const sans = Geist({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+const sans = Montserrat({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 
-/** Condensed display face for headings, nav and buttons. */
-const display = Oswald({
+/**
+ * Display face, used for headings only.
+ *
+ * Cormorant Garamond is a high-contrast old-style serif with a small x-height:
+ * elegant at heading sizes, but too fine for 12px uppercase nav links and
+ * buttons, which use the sans instead.
+ */
+const display = Cormorant_Garamond({
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-display",
   display: "swap",
 });

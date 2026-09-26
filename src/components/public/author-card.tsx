@@ -36,7 +36,7 @@ export function AuthorCard({ author }: { author: Author }) {
         </div>
         <h3 className="group-hover:text-primary mt-5 text-xl transition-colors">{author.name}</h3>
         {author.role ? (
-          <p className="text-primary font-heading mt-1 text-xs tracking-[0.14em] uppercase">
+          <p className="text-primary font-semibold mt-1 text-xs tracking-[0.14em] uppercase">
             {author.role}
           </p>
         ) : null}

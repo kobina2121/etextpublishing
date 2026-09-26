@@ -43,7 +43,7 @@ Build order and exit criteria. Tick items as they land.
 ## Phase 2 — Design system ✅
 
 - [x] Theme tokens in OKLCH for light and dark, plus motion tokens
-- [x] Condensed display face (Oswald) for headings, Geist for body
+- [x] Cormorant Garamond for display headings, Montserrat for body and UI
 - [x] Brand red primary, square corners, full-bleed hero treatment
 - [x] `@tailwindcss/typography` wired to theme tokens for article bodies
 - [x] 26 shadcn primitives

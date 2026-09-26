@@ -41,7 +41,7 @@ export default async function ServicesPage() {
                 Send it to us and a publishing consultant will read it.
               </p>
             </div>
-            <Button asChild size="xl" className="font-heading tracking-[0.1em] uppercase">
+            <Button asChild size="xl" className="font-semibold tracking-[0.1em] uppercase">
               <Link href="/submit">Submit a manuscript</Link>
             </Button>
           </div>

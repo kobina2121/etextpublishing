@@ -193,9 +193,11 @@
   h2,
   h3,
   h4 {
-    @apply font-heading font-medium;
+    /* Cormorant Garamond runs light and small; 600 gives headings presence,
+     * and the slight negative tracking closes the wide default fit. */
+    @apply font-heading font-semibold;
     text-wrap: balance;
-    letter-spacing: 0.005em;
+    letter-spacing: -0.01em;
   }
 
   p {
