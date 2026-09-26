@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MailIcon, MapPinIcon, PhoneIcon } from "lucide-react";
+import { LockIcon, MailIcon, MapPinIcon, PhoneIcon } from "lucide-react";
 
 import { Logo } from "@/components/layout/logo";
 import { siteConfig } from "@/lib/site-config";
@@ -69,8 +69,24 @@ export function Footer() {
       </div>
 
       <div className="border-t border-background/15">
-        <div className="mx-auto w-full max-w-7xl px-4 py-6 text-xs sm:px-6">
-          &copy; {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-6 text-xs sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <p>
+            &copy; {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
+          </p>
+          {/* Deliberately understated, and excluded from crawlers: staff who
+              need it know to look, and the admin area gains nothing from being
+              advertised on every page. The lock reads as "restricted" rather
+              than "your account", which matters when there are no public
+              accounts; the word stays because a bare icon here would be
+              ambiguous. */}
+          <Link
+            href="/admin"
+            rel="nofollow"
+            className="group/staff inline-flex w-fit items-center gap-1.5 text-background/55 transition-colors hover:text-primary-on-dark"
+          >
+            <LockIcon className="size-3" aria-hidden />
+            Staff login
+          </Link>
         </div>
       </div>
     </footer>
