@@ -3,6 +3,7 @@ import { Schema, model, models, type Model } from "mongoose";
 import type {
   ArticleDoc,
   ImageDoc,
+  MagicLinkTokenDoc,
   AuthorDoc,
   CategoryDoc,
   ContactMessageDoc,
@@ -182,6 +183,23 @@ const contactMessageSchema = new Schema<ContactMessageDoc>(
 
 contactMessageSchema.index({ archived: 1, read: 1, createdAt: -1 });
 
+// --- MagicLinkToken ---------------------------------------------------------
+
+const magicLinkTokenSchema = new Schema<MagicLinkTokenDoc>(
+  {
+    email: { type: String, required: true, lowercase: true, trim: true, index: true },
+    tokenHash: { type: String, required: true, unique: true },
+    expiresAt: { type: Date, required: true },
+    usedAt: { type: Date },
+    requestedIp: { type: String, trim: true },
+  },
+  { timestamps: true },
+);
+
+// Mongo removes the document once it expires, so spent and stale links do not
+// accumulate. This is cleanup, not security — expiry is still checked on use.
+magicLinkTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
 // --- Image ------------------------------------------------------------------
 
 const imageSchema = new Schema<ImageDoc>(
@@ -242,6 +260,10 @@ export const ManuscriptSubmission = defineModel<ManuscriptSubmissionDoc>(
 export const ContactMessage = defineModel<ContactMessageDoc>(
   "ContactMessage",
   contactMessageSchema,
+);
+export const MagicLinkToken = defineModel<MagicLinkTokenDoc>(
+  "MagicLinkToken",
+  magicLinkTokenSchema,
 );
 export const Image = defineModel<ImageDoc>("Image", imageSchema);
 export const SiteSettings = defineModel<SiteSettingsDoc>("SiteSettings", siteSettingsSchema);
