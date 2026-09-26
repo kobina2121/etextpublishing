@@ -32,19 +32,19 @@ const FORMAT_LABELS: Record<string, string> = {
 };
 
 /**
- * Prerendered from a build-time slug list, with unknown slugs rejected by the
- * router rather than by notFound().
+ * Known slugs are prerendered at build time; anything else renders on demand.
  *
- * Next cannot send a 404 once a streamed response has flushed its headers, so
- * notFound() inside an async page degrades to a soft 404 with a 200 status
- * (vercel/next.js#76474, #93239). Letting dynamicParams reject the slug keeps
- * the status honest, and drops drafts and unpublished titles to a real 404.
+ * Phase 6 changed this from `dynamicParams = false`. That setting gave unknown
+ * slugs a true 404, but it also meant a title published from the admin stayed a
+ * 404 until the next deploy — a CMS where publishing does not publish. Admin
+ * writes now call revalidatePath, so new and edited content appears at once.
  *
- * Trade-off: newly published content needs the slug list rebuilding. Phase 4
- * wires a publish-time revalidation hook. If instant publishing ever matters
- * more than the status code, set dynamicParams back to true.
+ * The cost is that an unknown slug answers 200 with not-found content: Next
+ * cannot set a 404 once a streamed response has flushed its headers
+ * (vercel/next.js#76474). That affects only URLs that never existed, which is
+ * the lesser problem of the two.
  */
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
   const slugs = await getPublicationSlugs();
