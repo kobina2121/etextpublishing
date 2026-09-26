@@ -13,9 +13,9 @@
  * keeps the light and dark ramps in step. Components must never hardcode a
  * colour: restyling the whole site should mean editing :root and .dark only.
  *
- * PLACEHOLDER BRAND: the ink-blue primary and warm paper neutrals are a
- * neutral editorial default, not supplied brand colours. Swap the values below
- * once real brand guidelines exist.
+ * PLACEHOLDER BRAND: the green primary and warm paper neutrals are a working
+ * default, not supplied brand colours. Swap the values below once real brand
+ * guidelines exist — nothing else in the codebase hardcodes a colour.
  * ------------------------------------------------------------------------ */
 
 @theme inline {
@@ -46,6 +46,7 @@
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
+  --color-primary-on-dark: var(--primary-on-dark);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
   --color-popover-foreground: var(--popover-foreground);
@@ -72,10 +73,18 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.33 0.005 60);
 
-  /* Brand red-orange. Held at L 0.57 rather than the brighter reference
-     * tone so white button text clears 4.5:1 (WCAG AA) instead of 4.0:1. */
-  --primary: oklch(0.57 0.2 32);
+  /* Brand green. L 0.52 is the darkest step that still reads as a vivid
+   * green while keeping white button text, and green text on white, at
+   * 5.17:1 (WCAG AA). */
+  --primary: oklch(0.52 0.14 150);
   --primary-foreground: oklch(1 0 0);
+
+  /* Brand green for use ON dark surfaces: the hero, the footer and the CTA
+   * bands, which stay dark even while the document is in the light theme.
+   * No single brand tone clears 4.5:1 against both white and near-black, so
+   * brand-coloured TEXT on a dark surface uses this instead of --primary.
+   * 6.0:1 on the footer, 7.4:1 over the hero. */
+  --primary-on-dark: oklch(0.76 0.14 150);
 
   --secondary: oklch(0.96 0.003 60);
   --secondary-foreground: oklch(0.33 0.005 60);
@@ -85,13 +94,13 @@
   --accent: oklch(0.96 0.003 60);
   --accent-foreground: oklch(0.33 0.005 60);
 
-  /* Shifted off the brand hue so destructive actions stay distinguishable
-     * from primary ones now that the brand itself is red. */
+  /* Red, and now unambiguous: with a green brand there is no longer any risk
+   * of a delete button reading as a primary action. */
   --destructive: oklch(0.505 0.22 22);
 
   --border: oklch(0.9 0.003 60);
   --input: oklch(0.9 0.003 60);
-  --ring: oklch(0.57 0.2 32);
+  --ring: oklch(0.52 0.14 150);
 
   /* PLACEHOLDER: a real categorical ramp is chosen in Phase 6, alongside the
      * first dashboard charts. These greys are deliberately not a data palette. */
@@ -106,12 +115,12 @@
 
   --sidebar: oklch(0.975 0.003 60);
   --sidebar-foreground: oklch(0.33 0.005 60);
-  --sidebar-primary: oklch(0.57 0.2 32);
+  --sidebar-primary: oklch(0.52 0.14 150);
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.94 0.004 60);
   --sidebar-accent-foreground: oklch(0.33 0.005 60);
   --sidebar-border: oklch(0.9 0.003 60);
-  --sidebar-ring: oklch(0.57 0.2 32);
+  --sidebar-ring: oklch(0.52 0.14 150);
 
   /* Motion tokens: CSS transitions and Framer Motion read the same values,
      * so a hover and an entrance animation cannot drift apart. */
@@ -129,10 +138,11 @@
   --popover: oklch(0.24 0.004 60);
   --popover-foreground: oklch(0.96 0.002 60);
 
-  /* Same brand red in both themes: it already carries enough contrast on the
-     * dark surface, and lifting it would drop white text below AA. */
-  --primary: oklch(0.57 0.2 32);
-  --primary-foreground: oklch(1 0 0);
+  /* Lifted in dark mode so brand-coloured text clears AA on the dark surface
+   * (8.9:1). Buttons invert to dark-on-green, which reads at the same ratio. */
+  --primary: oklch(0.76 0.14 150);
+  --primary-foreground: oklch(0.2 0.03 150);
+  --primary-on-dark: oklch(0.76 0.14 150);
 
   --secondary: oklch(0.28 0.004 60);
   --secondary-foreground: oklch(0.96 0.002 60);
@@ -143,7 +153,7 @@
   --destructive: oklch(0.62 0.21 22);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.57 0.2 32);
+  --ring: oklch(0.76 0.14 150);
 
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -153,12 +163,12 @@
 
   --sidebar: oklch(0.24 0.004 60);
   --sidebar-foreground: oklch(0.96 0.002 60);
-  --sidebar-primary: oklch(0.57 0.2 32);
-  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-primary: oklch(0.76 0.14 150);
+  --sidebar-primary-foreground: oklch(0.2 0.03 150);
   --sidebar-accent: oklch(0.28 0.004 60);
   --sidebar-accent-foreground: oklch(0.96 0.002 60);
   --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.57 0.2 32);
+  --sidebar-ring: oklch(0.76 0.14 150);
 }
 
 @layer base {

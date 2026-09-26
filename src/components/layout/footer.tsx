@@ -29,7 +29,7 @@ export function Footer() {
           <ul className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
             {siteConfig.nav.map((item) => (
               <li key={item.href}>
-                <Link href={item.href} className="transition-colors hover:text-primary">
+                <Link href={item.href} className="transition-colors hover:text-primary-on-dark">
                   {item.label}
                 </Link>
               </li>
@@ -48,13 +48,19 @@ export function Footer() {
             </li>
             <li className="flex items-center gap-3">
               <PhoneIcon className="size-4 shrink-0" aria-hidden />
-              <a href={`tel:${contact.phone}`} className="transition-colors hover:text-primary">
+              <a
+                href={`tel:${contact.phone}`}
+                className="transition-colors hover:text-primary-on-dark"
+              >
                 {contact.phone}
               </a>
             </li>
             <li className="flex items-center gap-3">
               <MailIcon className="size-4 shrink-0" aria-hidden />
-              <a href={`mailto:${contact.email}`} className="transition-colors hover:text-primary">
+              <a
+                href={`mailto:${contact.email}`}
+                className="transition-colors hover:text-primary-on-dark"
+              >
                 {contact.email}
               </a>
             </li>
