@@ -98,13 +98,29 @@ Build order and exit criteria. Tick items as they land.
 - Still outstanding from Phase 3: publishing new content needs a rebuild or
   revalidation, because detail routes set `dynamicParams = false`.
 
-## Phase 5 — Authentication
+## Phase 5 — Authentication ✅
 
-- [ ] Split Auth.js config: edge-safe `auth.config.ts` vs full `auth.ts`
-- [ ] `middleware.ts` gating `/admin/*` by JWT role
-- [ ] `requireAdmin()` re-checked inside every Server Action
+Admin login only: no public accounts, no signup, no user-facing auth.
 
-**Exit:** logged-out `/admin/*` redirects; non-admin refused at both layers.
+- [x] Split Auth.js config: edge-safe `auth.config.ts` vs full `@/lib/auth`
+- [x] `src/proxy.ts` gating `/admin/*` by JWT role
+- [x] `requireAdmin()` guard, re-checked on the page and in every Server Action
+- [x] `/admin/login` with shared Zod schema, generic errors, safe callbackUrl
+- [x] Placeholder dashboard proving the gate; real screens are Phase 6
+
+**Exit:** logged-out `/admin/*` redirects; tampered tokens refused; non-admin
+roles rejected in `authorize()` as well as the proxy. ✅
+
+### Next 16 gotchas worth remembering
+
+- `middleware.ts` is deprecated and renamed to `proxy.ts`, exporting `proxy` or
+  a default. Every Auth.js v5 guide still says `middleware`.
+- With a `src/` directory the file must be `src/proxy.ts`. At the repo root it
+  is silently ignored, and the admin area is left completely unprotected — the
+  build output line `ƒ Proxy (Middleware)` is the check that it is registered.
+- Session/User/JWT augmentation must target `@auth/core/types` and
+  `@auth/core/jwt`; `next-auth` only re-exports them, so augmenting that module
+  creates new, unrelated interfaces.
 
 ## Phase 6 — Admin dashboard
 
