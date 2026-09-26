@@ -1,0 +1,231 @@
+import { Schema, model, models, type Model } from "mongoose";
+
+import type {
+  ArticleDoc,
+  AuthorDoc,
+  CategoryDoc,
+  ContactMessageDoc,
+  ManuscriptSubmissionDoc,
+  PublicationDoc,
+  ServiceDoc,
+  SiteSettingsDoc,
+  UserDoc,
+} from "@/models/types";
+
+/**
+ * Mongoose models.
+ *
+ * Each is registered through `defineModel`, which reuses an existing
+ * compilation if one is present. Without that, a hot reload re-evaluates this
+ * module and Mongoose throws OverwriteModelError on the second pass.
+ */
+function defineModel<T>(name: string, schema: Schema<T>): Model<T> {
+  return (models[name] as Model<T> | undefined) ?? model<T>(name, schema);
+}
+
+const STATUSES = ["draft", "published", "archived"] as const;
+const FORMATS = ["paperback", "hardcover", "ebook", "audiobook"] as const;
+
+const linkSchema = new Schema(
+  {
+    label: { type: String, required: true, trim: true },
+    href: { type: String, required: true, trim: true },
+  },
+  { _id: false },
+);
+
+// --- User -------------------------------------------------------------------
+
+const userSchema = new Schema<UserDoc>(
+  {
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    passwordHash: { type: String, required: true },
+    name: { type: String, required: true, trim: true },
+    role: { type: String, enum: ["admin", "editor"], default: "editor", required: true },
+  },
+  { timestamps: true },
+);
+
+// --- Category ---------------------------------------------------------------
+
+const categorySchema = new Schema<CategoryDoc>(
+  {
+    name: { type: String, required: true, trim: true },
+    slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    description: { type: String, trim: true },
+  },
+  { timestamps: true },
+);
+
+// --- Author -----------------------------------------------------------------
+
+const authorSchema = new Schema<AuthorDoc>(
+  {
+    name: { type: String, required: true, trim: true },
+    slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    role: { type: String, trim: true },
+    bio: { type: String, required: true },
+    photo: { type: String, trim: true },
+    featured: { type: Boolean, default: false, index: true },
+    socials: { type: [linkSchema], default: [] },
+  },
+  { timestamps: true },
+);
+
+// --- Publication ------------------------------------------------------------
+
+const publicationSchema = new Schema<PublicationDoc>(
+  {
+    title: { type: String, required: true, trim: true },
+    slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    author: { type: Schema.Types.ObjectId, ref: "Author", required: true, index: true },
+    category: { type: Schema.Types.ObjectId, ref: "Category", required: true, index: true },
+    isbn: { type: String, required: true, trim: true },
+    coverImage: { type: String, trim: true },
+    description: { type: String, required: true },
+    excerpt: { type: String, required: true },
+    publicationDate: { type: Date, required: true },
+    format: { type: String, enum: FORMATS, required: true },
+    pages: { type: Number, required: true, min: 1 },
+    featured: { type: Boolean, default: false },
+    status: { type: String, enum: STATUSES, default: "draft", required: true },
+  },
+  { timestamps: true },
+);
+
+// Drives the default listing: published titles, newest first.
+publicationSchema.index({ status: 1, publicationDate: -1 });
+publicationSchema.index({ status: 1, featured: 1, publicationDate: -1 });
+
+// --- Article ----------------------------------------------------------------
+
+const articleSchema = new Schema<ArticleDoc>(
+  {
+    title: { type: String, required: true, trim: true },
+    slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    excerpt: { type: String, required: true },
+    body: { type: String, required: true },
+    coverImage: { type: String, trim: true },
+    authorName: { type: String, required: true, trim: true },
+    category: { type: Schema.Types.ObjectId, ref: "Category", required: true, index: true },
+    tags: { type: [String], default: [] },
+    publishedAt: { type: Date, required: true },
+    status: { type: String, enum: STATUSES, default: "draft", required: true },
+    featured: { type: Boolean, default: false },
+  },
+  { timestamps: true },
+);
+
+articleSchema.index({ status: 1, publishedAt: -1 });
+
+// --- Service ----------------------------------------------------------------
+
+const serviceSchema = new Schema<ServiceDoc>(
+  {
+    title: { type: String, required: true, trim: true },
+    slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    summary: { type: String, required: true },
+    body: { type: String, required: true },
+    icon: { type: String, required: true, trim: true },
+    order: { type: Number, default: 0 },
+    status: { type: String, enum: STATUSES, default: "draft", required: true },
+  },
+  { timestamps: true },
+);
+
+serviceSchema.index({ status: 1, order: 1 });
+
+// --- ManuscriptSubmission ---------------------------------------------------
+
+const manuscriptSubmissionSchema = new Schema<ManuscriptSubmissionDoc>(
+  {
+    authorName: { type: String, required: true, trim: true },
+    email: { type: String, required: true, lowercase: true, trim: true },
+    phone: { type: String, trim: true },
+    title: { type: String, required: true, trim: true },
+    genre: { type: String, required: true, trim: true },
+    preferredFormat: { type: String, enum: FORMATS },
+    wordCount: { type: Number, required: true, min: 0 },
+    synopsis: { type: String, required: true },
+    fileKey: { type: String, trim: true },
+    fileName: { type: String, trim: true },
+    fileSize: { type: Number, min: 0 },
+    status: {
+      type: String,
+      enum: ["new", "under_review", "accepted", "rejected", "archived"],
+      default: "new",
+      required: true,
+    },
+    adminNotes: { type: String },
+    submittedAt: { type: Date, default: Date.now, required: true },
+  },
+  { timestamps: true },
+);
+
+manuscriptSubmissionSchema.index({ status: 1, submittedAt: -1 });
+
+// --- ContactMessage ---------------------------------------------------------
+
+const contactMessageSchema = new Schema<ContactMessageDoc>(
+  {
+    name: { type: String, required: true, trim: true },
+    email: { type: String, required: true, lowercase: true, trim: true },
+    phone: { type: String, trim: true },
+    subject: { type: String, required: true, trim: true },
+    message: { type: String, required: true },
+    read: { type: Boolean, default: false },
+    archived: { type: Boolean, default: false },
+  },
+  { timestamps: true },
+);
+
+contactMessageSchema.index({ archived: 1, read: 1, createdAt: -1 });
+
+// --- SiteSettings -----------------------------------------------------------
+
+const siteSettingsSchema = new Schema<SiteSettingsDoc>(
+  {
+    // Unique constant: the collection is a singleton, enforced by the index
+    // rather than by convention, so a second document cannot be created.
+    key: { type: String, enum: ["site"], default: "site", unique: true, required: true },
+    name: { type: String, required: true, trim: true },
+    tagline: { type: String, required: true, trim: true },
+    description: { type: String, required: true },
+    logo: { type: String, trim: true },
+    contact: {
+      email: { type: String, required: true, trim: true },
+      phone: { type: String, required: true, trim: true },
+      address: {
+        line1: { type: String, required: true, trim: true },
+        line2: { type: String, trim: true },
+        city: { type: String, required: true, trim: true },
+        region: { type: String, required: true, trim: true },
+        postalCode: { type: String, required: true, trim: true },
+        country: { type: String, required: true, trim: true },
+      },
+    },
+    socials: { type: [linkSchema], default: [] },
+    seo: {
+      defaultTitle: { type: String, trim: true },
+      defaultDescription: { type: String, trim: true },
+    },
+    footerText: { type: String, trim: true },
+  },
+  { timestamps: true },
+);
+
+export const User = defineModel<UserDoc>("User", userSchema);
+export const Category = defineModel<CategoryDoc>("Category", categorySchema);
+export const Author = defineModel<AuthorDoc>("Author", authorSchema);
+export const Publication = defineModel<PublicationDoc>("Publication", publicationSchema);
+export const Article = defineModel<ArticleDoc>("Article", articleSchema);
+export const Service = defineModel<ServiceDoc>("Service", serviceSchema);
+export const ManuscriptSubmission = defineModel<ManuscriptSubmissionDoc>(
+  "ManuscriptSubmission",
+  manuscriptSubmissionSchema,
+);
+export const ContactMessage = defineModel<ContactMessageDoc>(
+  "ContactMessage",
+  contactMessageSchema,
+);
+export const SiteSettings = defineModel<SiteSettingsDoc>("SiteSettings", siteSettingsSchema);
