@@ -75,14 +75,28 @@ Build order and exit criteria. Tick items as they land.
   real 404. Phase 4 must trigger a rebuild or revalidation when an admin
   publishes, or newly published titles will 404 until the next deploy.
 
-## Phase 4 — Database
+## Phase 4 — Database ✅
 
-- [ ] Models: User, Publication, Author, Category, Article, Service, ManuscriptSubmission, ContactMessage, SiteSettings
-- [ ] Unique slug indexes, `status + publicationDate`, `featured`, text index for search
-- [ ] Seed script: admin user from env + placeholder content
-- [ ] Replace Phase 3 fixtures with real queries
+- [x] Models: User, Publication, Author, Category, Article, Service, ManuscriptSubmission, ContactMessage, SiteSettings
+- [x] Unique slug indexes, plus `status + publicationDate`, `status + featured`,
+      `status + order` and submission/message compound indexes
+- [x] Idempotent seed script: admin from env, content upserted by slug,
+      `--reset` clears content but never accounts
+- [x] Query layer swapped to Mongoose with no change to any page or component
 
-**Exit:** seed runs clean; public pages render from MongoDB.
+**Exit:** seed runs clean and is idempotent; public pages render from MongoDB. ✅
+
+### Notes
+
+- Search uses `$lookup` + escaped `$regex` rather than a Mongo text index: a
+  text index is single-collection and cannot cover the author's name, which
+  Phase 3 search already matched. Move to Atlas Search or a denormalised
+  `authorName` if the catalogue outgrows a regex scan.
+- `next build` requires a reachable database and exits 1 if it is not — verified.
+  A reachable but empty database builds an empty site, which is correct for a
+  fresh install.
+- Still outstanding from Phase 3: publishing new content needs a rebuild or
+  revalidation, because detail routes set `dynamicParams = false`.
 
 ## Phase 5 — Authentication
 

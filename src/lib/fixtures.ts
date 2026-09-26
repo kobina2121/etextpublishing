@@ -3,10 +3,12 @@ import type { Article, Author, Category, Publication, Service } from "@/types/co
 /**
  * PLACEHOLDER CONTENT.
  *
- * Every record below is invented scaffolding that exists so the public site can
- * be laid out and reviewed before the database lands in Phase 4. None of it is
- * supplied company information. Titles, authors and ISBNs are fictional and are
- * expected to be replaced wholesale by seeded data.
+ * Every record below is invented scaffolding. None of it is supplied company
+ * information; titles, authors and ISBNs are fictional.
+ *
+ * Since Phase 4 these are seed input only — the site reads from MongoDB, and
+ * `npm run seed` upserts this content into it. Editing a record here and
+ * re-running the seed updates the matching document by slug.
  */
 
 export const categories: Category[] = [
