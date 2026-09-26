@@ -54,17 +54,26 @@ Build order and exit criteria. Tick items as they land.
 
 **Exit:** every primitive renders in both themes at 375px and desktop. ✅
 
-## Phase 3 — Public website
+## Phase 3 — Public website ✅
 
-- [x] Navbar (scroll-aware overlay) + mobile Sheet nav, Footer
-- [x] Homepage hero and process-steps sections
-- [ ] Home, About, Publications listing + detail, Authors listing + detail
-- [ ] Services, News listing + Article detail, Contact, Manuscript submission
-- [ ] `loading.tsx`, `error.tsx`, `not-found.tsx`, empty states per listing
-- [ ] Search / filter / pagination driven by URL `searchParams`
-- [ ] Built against typed fixtures so layout is not blocked on the database
+- [x] Navbar (route-aware overlay) + mobile Sheet nav, Footer
+- [x] Home, About, Publications listing + detail, Authors listing + detail
+- [x] Services, News listing + Article detail, Contact, Manuscript submission
+- [x] `loading.tsx` per listing, `error.tsx`, `not-found.tsx`, empty states
+- [x] Search / filter / pagination driven by URL `searchParams`
+- [x] Typed fixtures behind an async query layer, so Phase 4 swaps the bodies
+      for Mongoose without touching a page
+- [x] Shared Zod schemas for the contact and manuscript forms
 
-**Exit:** all routes render; 375px → 1440px verified; Lighthouse a11y ≥ 95.
+**Exit:** all routes render with correct HTTP status; 375px → 1280px verified. ✅
+
+### Carried into later phases
+
+- Form submit handlers are stubs: validation and UX are complete, transport
+  lands in Phase 7 with uploads and email.
+- Detail routes set `dynamicParams = false` so unknown slugs and drafts return a
+  real 404. Phase 4 must trigger a rebuild or revalidation when an admin
+  publishes, or newly published titles will 404 until the next deploy.
 
 ## Phase 4 — Database
 

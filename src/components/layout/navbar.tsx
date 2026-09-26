@@ -13,19 +13,40 @@ import { cn } from "@/lib/utils";
 import { siteConfig } from "@/lib/site-config";
 
 /**
+ * Routes whose page opens with a full-bleed dark band (Hero or PageHero), and
+ * can therefore carry white nav text over it.
+ *
+ * Matched exactly, so detail routes such as /publications/salt-roads fall
+ * through to the solid bar. Getting this wrong is not subtle: an overlay bar on
+ * a white page renders white links on white.
+ */
+const OVERLAY_ROUTES = new Set([
+  "/",
+  "/about",
+  "/publications",
+  "/authors",
+  "/services",
+  "/news",
+  "/contact",
+  "/submit",
+]);
+
+/**
  * Site header.
  *
- * On pages that open with a full-bleed hero the bar starts transparent and
- * turns solid once scrolled, so the hero image is never cropped by a band of
- * chrome. Pages without a hero pass `overlay={false}` and get the solid bar
- * immediately.
+ * Over a dark hero the bar starts transparent and turns solid once scrolled, so
+ * the hero image is never cropped by a band of chrome. Everywhere else it is
+ * solid from the start.
  */
-export function Navbar({ overlay = false }: { overlay?: boolean }) {
+export function Navbar() {
   const pathname = usePathname();
+  const overlay = OVERLAY_ROUTES.has(pathname);
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    // `transparent` already short-circuits on !overlay, so there is nothing to
+    // reset here — just skip the listener on solid-bar routes.
     if (!overlay) return;
     const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
