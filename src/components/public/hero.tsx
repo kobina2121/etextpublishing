@@ -39,7 +39,7 @@ export function Hero({ title, titleAccent, subtitle, actions = [], image, imageA
          * Deliberately not stock imagery, which would need its own licence. */
         <div
           aria-hidden
-          className="absolute inset-0 bg-[radial-gradient(120%_120%_at_15%_15%,oklch(0.42_0.05_45)_0%,oklch(0.26_0.03_40)_45%,oklch(0.17_0.02_35)_100%)]"
+          className="absolute inset-0 bg-[radial-gradient(120%_120%_at_15%_15%,oklch(0.38_0.045_155)_0%,oklch(0.24_0.03_160)_45%,oklch(0.16_0.02_160)_100%)]"
         />
       )}
 

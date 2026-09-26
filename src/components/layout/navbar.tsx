@@ -76,10 +76,14 @@ export function Navbar() {
               aria-current={isActive(item.href) ? "page" : undefined}
               className={cn(
                 "font-heading text-sm tracking-[0.08em] uppercase transition-colors",
+                // Over the hero the bar is dark, so brand-coloured text uses
+                // the lighter on-dark tone; --primary would fail AA there.
                 isActive(item.href)
-                  ? "text-primary"
+                  ? transparent
+                    ? "text-primary-on-dark"
+                    : "text-primary"
                   : transparent
-                    ? "text-white hover:text-primary"
+                    ? "text-white hover:text-primary-on-dark"
                     : "text-foreground hover:text-primary",
               )}
             >
