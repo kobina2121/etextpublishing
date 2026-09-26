@@ -19,7 +19,8 @@ Build order and exit criteria. Tick items as they land.
 ## Outstanding inputs
 
 - [ ] Real company information (name, tagline, contact, address, socials) — everything in `src/lib/site-config.ts` is a marked placeholder
-- [ ] Brand colours / logo — the ink-blue + warm-paper palette is a neutral default
+- [ ] Logo artwork — the book icon is a stand-in
+- [ ] Hero photography — the hero falls back to a tonal placeholder until real licensed images are supplied
 - [ ] S3 bucket + credentials (Phase 7)
 - [ ] Resend API key, sending domain, recipient addresses (Phase 7)
 
@@ -42,7 +43,8 @@ Build order and exit criteria. Tick items as they land.
 ## Phase 2 — Design system ✅
 
 - [x] Theme tokens in OKLCH for light and dark, plus motion tokens
-- [x] Serif display face (Source Serif 4) for headings, Geist for body
+- [x] Condensed display face (Oswald) for headings, Geist for body
+- [x] Brand red primary, square corners, full-bleed hero treatment
 - [x] `@tailwindcss/typography` wired to theme tokens for article bodies
 - [x] 26 shadcn primitives
 - [x] Layout primitives: `Container`, `Section`, `PageHeader`
@@ -54,7 +56,8 @@ Build order and exit criteria. Tick items as they land.
 
 ## Phase 3 — Public website
 
-- [ ] Navbar + mobile Sheet nav, Footer
+- [x] Navbar (scroll-aware overlay) + mobile Sheet nav, Footer
+- [x] Homepage hero and process-steps sections
 - [ ] Home, About, Publications listing + detail, Authors listing + detail
 - [ ] Services, News listing + Article detail, Contact, Manuscript submission
 - [ ] `loading.tsx`, `error.tsx`, `not-found.tsx`, empty states per listing

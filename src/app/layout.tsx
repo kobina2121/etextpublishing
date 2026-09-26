@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Source_Serif_4 } from "next/font/google";
+import { Geist, Oswald } from "next/font/google";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -12,9 +12,10 @@ import "./globals.css";
 
 const sans = Geist({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 
-const serif = Source_Serif_4({
+/** Condensed display face for headings, nav and buttons. */
+const display = Oswald({
   subsets: ["latin"],
-  variable: "--font-serif",
+  variable: "--font-display",
   display: "swap",
 });
 
@@ -31,7 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang={siteConfig.locale}
-      className={cn("font-sans", sans.variable, serif.variable)}
+      className={cn("font-sans", sans.variable, display.variable)}
       suppressHydrationWarning
     >
       <body className="min-h-dvh antialiased">
