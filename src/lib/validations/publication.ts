@@ -15,13 +15,31 @@ export const objectIdSchema = z
   .trim()
   .regex(/^[a-f\d]{24}$/i, "Select a valid option.");
 
+/**
+ * Either an uploaded image (a same-origin /api/images/... path) or an external
+ * URL. Relative paths would fail a plain .url() check, so both are allowed
+ * explicitly rather than loosening the validation to any string.
+ */
+export const imageRefSchema = z
+  .string()
+  .trim()
+  .refine(
+    (value) =>
+      value === "" ||
+      /^\/api\/images\/[a-f\d]{24}$/i.test(value) ||
+      /^https?:\/\/\S+$/i.test(value),
+    "Upload an image, or paste a valid http(s) URL.",
+  )
+  .optional()
+  .default("");
+
 export const publicationSchema = z.object({
   title: z.string().trim().min(2, "A title is required.").max(200),
   slug: slugSchema,
   author: objectIdSchema,
   category: objectIdSchema,
   isbn: z.string().trim().min(5, "An ISBN is required.").max(40),
-  coverImage: z.string().trim().url("Enter a valid URL.").optional().or(z.literal("")),
+  coverImage: imageRefSchema,
   excerpt: z.string().trim().min(10, "Write a short excerpt.").max(300),
   description: z.string().trim().min(30, "Write a fuller description.").max(5000),
   publicationDate: z.coerce.date({ message: "Choose a publication date." }),

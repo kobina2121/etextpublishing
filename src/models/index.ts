@@ -2,6 +2,7 @@ import { Schema, model, models, type Model } from "mongoose";
 
 import type {
   ArticleDoc,
+  ImageDoc,
   AuthorDoc,
   CategoryDoc,
   ContactMessageDoc,
@@ -181,6 +182,20 @@ const contactMessageSchema = new Schema<ContactMessageDoc>(
 
 contactMessageSchema.index({ archived: 1, read: 1, createdAt: -1 });
 
+// --- Image ------------------------------------------------------------------
+
+const imageSchema = new Schema<ImageDoc>(
+  {
+    data: { type: Buffer, required: true },
+    contentType: { type: String, required: true },
+    size: { type: Number, required: true, min: 1 },
+    filename: { type: String, required: true, trim: true },
+    width: { type: Number },
+    height: { type: Number },
+  },
+  { timestamps: true },
+);
+
 // --- SiteSettings -----------------------------------------------------------
 
 const siteSettingsSchema = new Schema<SiteSettingsDoc>(
@@ -228,4 +243,5 @@ export const ContactMessage = defineModel<ContactMessageDoc>(
   "ContactMessage",
   contactMessageSchema,
 );
+export const Image = defineModel<ImageDoc>("Image", imageSchema);
 export const SiteSettings = defineModel<SiteSettingsDoc>("SiteSettings", siteSettingsSchema);

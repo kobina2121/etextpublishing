@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import slugify from "slugify";
 
+import { deleteImageByUrl } from "@/lib/storage/images";
 import { publicationSchema } from "@/lib/validations/publication";
 import { Author, Publication } from "@/models";
 import {
@@ -73,9 +74,14 @@ export async function updatePublication(id: string, raw: unknown): Promise<Actio
 
     // Captured before the write so a slug change also refreshes the old URL,
     // which would otherwise keep serving a stale page.
-    const previous = await Publication.findById(id, { slug: 1, author: 1 }).lean<{
+    const previous = await Publication.findById(id, {
+      slug: 1,
+      author: 1,
+      coverImage: 1,
+    }).lean<{
       slug: string;
       author: { toString(): string };
+      coverImage?: string;
     } | null>();
     if (!previous) return { ok: false, error: "That publication no longer exists." };
 
@@ -88,6 +94,12 @@ export async function updatePublication(id: string, raw: unknown): Promise<Actio
         { returnDocument: "after", runValidators: true },
       );
       if (!updated) return { ok: false, error: "That publication no longer exists." };
+
+      // Drop the old upload once the new value is safely persisted, so a
+      // replaced cover does not linger in the database forever.
+      if (previous.coverImage && previous.coverImage !== updated.coverImage) {
+        await deleteImageByUrl(previous.coverImage);
+      }
 
       await refresh(updated.slug, updated.author.toString());
       if (previous.slug !== updated.slug) revalidatePath(`/publications/${previous.slug}`);
@@ -131,6 +143,7 @@ export async function deletePublication(id: string): Promise<ActionResult> {
     const deleted = await Publication.findByIdAndDelete(id);
     if (!deleted) return { ok: false, error: "That publication no longer exists." };
 
+    await deleteImageByUrl(deleted.coverImage);
     await refresh(deleted.slug, deleted.author.toString());
     return { ok: true, message: "Publication deleted." };
   });
