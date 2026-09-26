@@ -28,7 +28,7 @@ export function PublicationCard({
         </div>
 
         <div className="mt-4 space-y-1.5">
-          <p className="text-primary font-heading text-xs tracking-[0.14em] uppercase">
+          <p className="text-primary font-semibold text-xs tracking-[0.14em] uppercase">
             {publication.category.name}
           </p>
           <h3 className="group-hover:text-primary text-xl leading-snug transition-colors">

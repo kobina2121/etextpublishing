@@ -96,7 +96,7 @@ export default async function HomePage() {
               asChild
               size="xl"
               variant="outline"
-              className="font-heading tracking-[0.1em] uppercase"
+              className="font-semibold tracking-[0.1em] uppercase"
             >
               <Link href="/publications">Browse all publications</Link>
             </Button>
@@ -141,7 +141,7 @@ export default async function HomePage() {
               asChild
               size="xl"
               variant="outline"
-              className="font-heading tracking-[0.1em] uppercase"
+              className="font-semibold tracking-[0.1em] uppercase"
             >
               <Link href="/news">All news</Link>
             </Button>
@@ -158,7 +158,7 @@ export default async function HomePage() {
                 Submissions are read by a publishing consultant, not a queue.
               </p>
             </div>
-            <Button asChild size="xl" className="font-heading tracking-[0.1em] uppercase">
+            <Button asChild size="xl" className="font-semibold tracking-[0.1em] uppercase">
               <Link href="/submit">Submit a manuscript</Link>
             </Button>
           </div>

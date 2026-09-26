@@ -74,7 +74,7 @@ export function Hero({ title, titleAccent, subtitle, actions = [], image, imageA
                   size="xl"
                   variant={action.variant === "outline" ? "outline" : "default"}
                   className={cn(
-                    "font-heading tracking-[0.1em] uppercase",
+                    "font-semibold tracking-[0.1em] uppercase",
                     action.variant === "outline" &&
                       "border-white/70 bg-transparent text-white hover:bg-white hover:text-foreground dark:bg-transparent dark:hover:bg-white",
                   )}

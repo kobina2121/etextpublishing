@@ -43,7 +43,7 @@ export default function ContactPage() {
             </div>
 
             <aside className="h-fit border border-border p-8">
-              <h2 className="font-heading text-sm tracking-[0.14em] uppercase">Details</h2>
+              <h2 className="text-sm font-semibold tracking-[0.14em] uppercase">Details</h2>
               <ul className="mt-6 space-y-5 text-sm">
                 <li className="flex items-start gap-3">
                   <MapPinIcon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />

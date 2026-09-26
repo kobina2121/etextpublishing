@@ -75,7 +75,7 @@ export function Navbar() {
               href={item.href}
               aria-current={isActive(item.href) ? "page" : undefined}
               className={cn(
-                "font-heading text-sm tracking-[0.08em] uppercase transition-colors",
+                "text-sm font-semibold tracking-[0.08em] uppercase transition-colors",
                 // Over the hero the bar is dark, so brand-coloured text uses
                 // the lighter on-dark tone; --primary would fail AA there.
                 isActive(item.href)
@@ -120,7 +120,7 @@ export function Navbar() {
                     onClick={() => setOpen(false)}
                     aria-current={isActive(item.href) ? "page" : undefined}
                     className={cn(
-                      "border-b border-border py-4 font-heading text-base tracking-[0.08em] uppercase transition-colors",
+                      "border-b border-border py-4 text-base font-semibold tracking-[0.08em] uppercase transition-colors",
                       isActive(item.href) ? "text-primary" : "text-foreground hover:text-primary",
                     )}
                   >

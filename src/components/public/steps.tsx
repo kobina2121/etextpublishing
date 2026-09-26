@@ -18,7 +18,7 @@ export function Steps({ steps }: { steps: Step[] }) {
             className="bg-primary flex size-20 rotate-45 items-center justify-center"
             aria-hidden
           >
-            <span className="font-heading text-primary-foreground -rotate-45 text-2xl font-medium">
+            <span className="font-heading text-primary-foreground -rotate-45 text-3xl font-semibold">
               {String(index + 1).padStart(2, "0")}.
             </span>
           </div>

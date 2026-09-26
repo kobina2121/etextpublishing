@@ -107,7 +107,7 @@ export default async function AuthorDetailPage({ params }: PageProps<"/authors/[
 
           <div>
             {author.role ? (
-              <p className="font-heading text-xs tracking-[0.14em] text-primary uppercase">
+              <p className="text-xs font-semibold tracking-[0.14em] text-primary uppercase">
                 {author.role}
               </p>
             ) : null}

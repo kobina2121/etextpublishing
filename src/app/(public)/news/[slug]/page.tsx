@@ -79,7 +79,7 @@ export default async function ArticleDetailPage({ params }: PageProps<"/news/[sl
         </Breadcrumb>
 
         <article className="mt-10">
-          <p className="font-heading text-xs tracking-[0.14em] text-primary uppercase">
+          <p className="text-xs font-semibold tracking-[0.14em] text-primary uppercase">
             {article.category.name} ·{" "}
             <time dateTime={article.publishedAt.toISOString()}>
               {format(article.publishedAt, "d MMMM yyyy")}

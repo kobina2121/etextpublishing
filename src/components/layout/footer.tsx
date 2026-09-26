@@ -23,7 +23,7 @@ export function Footer() {
         </div>
 
         <nav aria-label="Footer" className="space-y-4">
-          <h2 className="font-heading text-sm tracking-[0.14em] text-background uppercase">
+          <h2 className="text-sm font-semibold tracking-[0.14em] text-background uppercase">
             Explore
           </h2>
           <ul className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
@@ -38,7 +38,7 @@ export function Footer() {
         </nav>
 
         <div className="space-y-4">
-          <h2 className="font-heading text-sm tracking-[0.14em] text-background uppercase">
+          <h2 className="text-sm font-semibold tracking-[0.14em] text-background uppercase">
             Contact
           </h2>
           <ul className="space-y-3 text-sm">

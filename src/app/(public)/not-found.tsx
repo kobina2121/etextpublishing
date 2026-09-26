@@ -14,14 +14,14 @@ export default function PublicNotFound() {
           That page does not exist, or the title may have been unpublished.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Button asChild size="xl" className="font-heading tracking-[0.1em] uppercase">
+          <Button asChild size="xl" className="font-semibold tracking-[0.1em] uppercase">
             <Link href="/publications">Browse publications</Link>
           </Button>
           <Button
             asChild
             size="xl"
             variant="outline"
-            className="font-heading tracking-[0.1em] uppercase"
+            className="font-semibold tracking-[0.1em] uppercase"
           >
             <Link href="/">Back to home</Link>
           </Button>
