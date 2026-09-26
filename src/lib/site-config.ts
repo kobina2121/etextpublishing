@@ -48,6 +48,7 @@ export const siteConfig = {
 
   /** Public navigation. Kept here so the Navbar and sitemap share one source. */
   nav: [
+    { label: "Home", href: "/" },
     { label: "About", href: "/about" },
     { label: "Publications", href: "/publications" },
     { label: "Authors", href: "/authors" },
