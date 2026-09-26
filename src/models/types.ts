@@ -117,6 +117,22 @@ export type ContactMessageDoc = WithTimestamps & {
   archived: boolean;
 };
 
+/**
+ * A single-use sign-in link.
+ *
+ * Only the SHA-256 hash of the token is stored, never the token itself: a leak
+ * of this collection must not hand anyone a working sign-in link, for the same
+ * reason passwords are hashed.
+ */
+export type MagicLinkTokenDoc = WithTimestamps & {
+  _id: Types.ObjectId;
+  email: string;
+  tokenHash: string;
+  expiresAt: Date;
+  usedAt?: Date;
+  requestedIp?: string;
+};
+
 export type ImageDoc = WithTimestamps & {
   _id: Types.ObjectId;
   /** Binary payload. Kept in Mongo so uploads work before object storage exists. */

@@ -7,7 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { siteConfig } from "@/lib/site-config";
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { LoginForm } from "./login-form";
+import { MagicLinkForm } from "./magic-link-form";
 
 export const metadata: Metadata = { title: "Sign in" };
 
@@ -29,10 +32,27 @@ export default function AdminLoginPage() {
             <CardDescription>Staff access only.</CardDescription>
           </CardHeader>
           <CardContent>
-            {/* useSearchParams needs a Suspense boundary to keep this page static. */}
-            <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-              <LoginForm />
-            </Suspense>
+            <Tabs defaultValue="link">
+              <TabsList className="w-full">
+                <TabsTrigger value="link" className="flex-1">
+                  Email link
+                </TabsTrigger>
+                <TabsTrigger value="password" className="flex-1">
+                  Password
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="link" className="pt-5">
+                <MagicLinkForm />
+              </TabsContent>
+
+              <TabsContent value="password" className="pt-5">
+                {/* useSearchParams needs a Suspense boundary to keep this page static. */}
+                <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+                  <LoginForm />
+                </Suspense>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 

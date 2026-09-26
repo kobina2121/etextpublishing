@@ -108,8 +108,22 @@ Admin login only: no public accounts, no signup, no user-facing auth.
 - [x] `/admin/login` with shared Zod schema, generic errors, safe callbackUrl
 - [x] Placeholder dashboard proving the gate; real screens are Phase 6
 
+- [x] Magic-link sign-in by email, alongside the password form
+
 **Exit:** logged-out `/admin/*` redirects; tampered tokens refused; non-admin
 roles rejected in `authorize()` as well as the proxy. ✅
+
+### Magic-link notes
+
+- Hand-rolled rather than Auth.js's Email provider, which requires a database
+  adapter. A second Credentials provider keeps JWT sessions, which the edge
+  proxy depends on.
+- Only the SHA-256 hash of a token is stored, tokens are single-use, expire
+  after 15 minutes, and are capped at 3 requests per address per window.
+- `/admin/verify` must stay outside the proxy gate, or the token is redirected
+  away before it can be exchanged for a session.
+- Without RESEND_API_KEY, development prints the link to the server console.
+  Production refuses to send rather than falling back silently.
 
 ### Next 16 gotchas worth remembering
 

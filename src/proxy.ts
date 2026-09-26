@@ -17,11 +17,18 @@ const { auth } = NextAuth(authConfig);
 export default auth((req) => {
   const { pathname } = req.nextUrl;
   const isAdmin = req.auth?.user?.role === "admin";
-  const isLoginPage = pathname === "/admin/login";
 
-  if (isLoginPage) {
-    // Already signed in: skip the form.
-    if (isAdmin) return Response.redirect(new URL("/admin", req.nextUrl));
+  // Reachable without a session, by necessity: /admin/verify is where a magic
+  // link lands, and gating it would redirect the token away before it could be
+  // exchanged for a session.
+  const PUBLIC_ADMIN_PATHS = new Set(["/admin/login", "/admin/verify"]);
+
+  if (PUBLIC_ADMIN_PATHS.has(pathname)) {
+    // Already signed in: skip the form. Verify is left alone, so following a
+    // link while signed in still lands somewhere sensible.
+    if (isAdmin && pathname === "/admin/login") {
+      return Response.redirect(new URL("/admin", req.nextUrl));
+    }
     return undefined;
   }
 

@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 
 import { authConfig } from "@/lib/auth/auth.config";
+import { consumeMagicLink } from "@/lib/auth/magic-link";
 import { connectToDatabase } from "@/lib/db";
 import { loginSchema } from "@/lib/validations/auth";
 import { User } from "@/models";
@@ -52,6 +53,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           role: user.role,
         };
+      },
+    }),
+    /**
+     * Magic-link sign-in.
+     *
+     * A second Credentials provider rather than Auth.js's Email provider,
+     * which requires a database adapter. Hand-rolling the token keeps JWT
+     * sessions, which the edge proxy depends on, and keeps the storage and
+     * expiry rules visible in one place.
+     */
+    Credentials({
+      id: "magic-link",
+      name: "Email link",
+      credentials: { token: { label: "Token", type: "text" } },
+      async authorize(raw) {
+        const token = typeof raw?.token === "string" ? raw.token : "";
+        const result = await consumeMagicLink(token);
+        if (!result.ok) return null;
+        return result.user;
       },
     }),
   ],
