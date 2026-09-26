@@ -122,15 +122,30 @@ roles rejected in `authorize()` as well as the proxy. ✅
   `@auth/core/jwt`; `next-auth` only re-exports them, so augmenting that module
   creates new, unrelated interfaces.
 
-## Phase 6 — Admin dashboard
+## Phase 6 — Admin dashboard ✅
 
-- [ ] Admin shell, dashboard counts, recent submissions/messages
-- [ ] CRUD for publications, authors, categories, articles, services
-- [ ] Manuscripts + messages: detail view with status workflow and notes
-- [ ] Settings: tabbed form over the `SiteSettings` singleton, cached read invalidated on save
-- [ ] Choose the categorical chart palette here, with the first dashboard tiles
+- [x] Admin shell, dashboard counts, recent submissions/messages
+- [x] CRUD for publications, authors, categories, articles, services
+- [x] Manuscripts + messages: detail view with status workflow and notes
+- [x] Settings: tabbed form over the `SiteSettings` singleton, upserted on save
+- [x] Image upload from a device, behind a storage interface (MongoDB now,
+      S3 in Phase 7)
+- [ ] Categorical chart palette — deferred: the dashboard uses count tiles, not
+      charts, so there is nothing yet for a data palette to colour
 
-**Exit:** every entity round-trips create → edit → publish → delete from the UI.
+**Exit:** every entity round-trips create → edit → publish → delete from the
+UI, and publishing appears on the public site without a rebuild. ✅
+
+### Notes
+
+- Deleting an author or category that is still referenced is refused with a
+  count, rather than cascading. Silently destroying titles is worse than making
+  the admin reassign them.
+- Detail routes are dynamic again (`dynamicParams = true`) and writes call
+  `revalidatePath`, which is what makes publishing take effect immediately.
+  The cost is a soft 404 on slugs that never existed.
+- Admin reads live in `server/admin/queries.ts`, separate from the public layer
+  that filters to `status: published`.
 
 ## Phase 7 — Uploads & email
 
