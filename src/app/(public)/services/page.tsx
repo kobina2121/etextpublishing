@@ -21,7 +21,7 @@ export default async function ServicesPage() {
     <>
       <PageHero
         title="Services"
-        description="Everything needed to take a manuscript from submission to finished, distributed book."
+        description="Textbook and story book publishing, from writing and review through to layout, illustration and quality assurance."
       />
 
       <Section>

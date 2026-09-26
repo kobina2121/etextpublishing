@@ -106,7 +106,7 @@ export default async function HomePage() {
 
       <Section size="lg">
         <Container width="wide">
-          <SectionHeading title="What we do" subtitle="Services for authors" />
+          <SectionHeading title="What we do" subtitle="Textbooks and story books" />
           <Stagger className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {services.slice(0, 6).map((service) => (
               <StaggerItem key={service.id}>
@@ -114,6 +114,18 @@ export default async function HomePage() {
               </StaggerItem>
             ))}
           </Stagger>
+          {/* The grid is capped at six so the rows stay even; without this link
+              any service beyond the sixth would be unreachable from here. */}
+          <div className="mt-12 text-center">
+            <Button
+              asChild
+              size="xl"
+              variant="outline"
+              className="font-semibold tracking-[0.1em] uppercase"
+            >
+              <Link href="/services">All services</Link>
+            </Button>
+          </div>
         </Container>
       </Section>
 

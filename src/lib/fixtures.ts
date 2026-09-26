@@ -298,65 +298,153 @@ export const articles: Article[] = [
   },
 ];
 
+/**
+ * SERVICES ARE REAL.
+ *
+ * Unlike the rest of this file, these are the company's actual services, as
+ * supplied. The titles are theirs verbatim; the summaries and bodies are
+ * conservative restatements written to fill the page and should be replaced
+ * with real marketing copy. No claims about turnaround, team or credentials
+ * have been invented.
+ *
+ * The six generic services seeded earlier are kept but set to `draft`, so they
+ * are off the public site while remaining one click from restoration in the
+ * admin.
+ */
 export const services: Service[] = [
   {
     id: "s1",
-    title: "Editorial assessment",
-    slug: "editorial-assessment",
-    summary: "A structured read of your manuscript with a written report and next steps.",
-    body: "Placeholder service description. A full explanation of what the assessment covers, who carries it out and what the author receives would sit here.",
-    icon: "FileSearch",
+    title: "Textbook Review and Editing",
+    slug: "textbook-review-and-editing",
+    summary: "Structural and line-level review of textbook manuscripts before production.",
+    body: "Review and editing of textbook manuscripts, covering structure, accuracy and consistency of language throughout the text.",
+    icon: "PenLine",
     order: 1,
     status: "published",
   },
   {
     id: "s2",
-    title: "Copy-editing and proofreading",
-    slug: "copy-editing-and-proofreading",
-    summary: "Line-level editing for consistency, accuracy and house style.",
-    body: "Placeholder service description covering the editing stages, turnaround and how changes are returned to the author.",
-    icon: "PenLine",
+    title: "Preparation for Textbook Tender",
+    slug: "preparation-for-textbook-tender",
+    summary: "Getting a title ready to meet the requirements of a textbook tender.",
+    body: "Preparation of textbook materials for submission to a tender, so the title meets the requirements set out by the awarding body.",
+    icon: "ScrollText",
     order: 2,
     status: "published",
   },
   {
     id: "s3",
-    title: "Design and typesetting",
-    slug: "design-and-typesetting",
-    summary: "Cover design and interior layout prepared to print specification.",
-    body: "Placeholder service description covering cover concepts, interior templates and print-ready file delivery.",
-    icon: "LayoutTemplate",
+    title: "Textbook Writing by subject experts",
+    slug: "textbook-writing-by-subject-experts",
+    summary: "Textbooks written by specialists in the relevant subject.",
+    body: "Writing of textbook content by subject experts, from outline through to a complete manuscript ready for editing and layout.",
+    icon: "BookOpen",
     order: 3,
     status: "published",
   },
   {
     id: "s4",
-    title: "Printing and production",
-    slug: "printing-and-production",
-    summary: "Short and long print runs managed end to end.",
-    body: "Placeholder service description covering paper stock, binding options, proofing and print scheduling.",
-    icon: "Printer",
+    title: "Layout Design: Textbooks & Story books",
+    slug: "layout-design-textbooks-and-story-books",
+    summary: "Interior layout and typesetting for textbooks and story books.",
+    body: "Interior layout and typesetting for both textbooks and story books, prepared to print specification.",
+    icon: "LayoutTemplate",
     order: 4,
     status: "published",
   },
   {
     id: "s5",
-    title: "Distribution",
-    slug: "distribution",
-    summary: "Getting finished titles into online retailers and bookshops.",
-    body: "Placeholder service description covering retail channels, metadata feeds and stock handling.",
-    icon: "Truck",
+    title: "Textbook Evaluation and Quality Assurance",
+    slug: "textbook-evaluation-and-quality-assurance",
+    summary: "Independent evaluation of a textbook against its quality criteria.",
+    body: "Evaluation and quality assurance of textbook material, assessed against the criteria the title needs to meet.",
+    icon: "Award",
     order: 5,
     status: "published",
   },
   {
     id: "s6",
+    title: "Suitable Illustrations: Textbooks & Story books",
+    slug: "suitable-illustrations-textbooks-and-story-books",
+    summary: "Illustration matched to the subject matter and the intended readership.",
+    body: "Commissioning and production of illustrations for textbooks and story books, matched to the subject matter and the age of the intended reader.",
+    icon: "Sparkles",
+    order: 6,
+    status: "published",
+  },
+  {
+    id: "s7",
+    title: "Capacity Building for your Publishing Staff",
+    slug: "capacity-building-for-your-publishing-staff",
+    summary: "Training for in-house publishing teams.",
+    body: "Capacity building and training for publishing staff, covering the skills needed to take a title through editing, layout and production in house.",
+    icon: "Users",
+    order: 7,
+    status: "published",
+  },
+
+  // --- Superseded placeholders ------------------------------------------
+  // Generic services invented as scaffolding before the real list arrived.
+  // Kept as drafts rather than deleted: they are off the public site, and an
+  // admin can restore any of them in one click if it turns out to apply.
+  {
+    id: "s101",
+    title: "Editorial assessment",
+    slug: "editorial-assessment",
+    summary: "A structured read of your manuscript with a written report and next steps.",
+    body: "Placeholder service description, superseded by the supplied service list.",
+    icon: "FileSearch",
+    order: 101,
+    status: "draft",
+  },
+  {
+    id: "s102",
+    title: "Copy-editing and proofreading",
+    slug: "copy-editing-and-proofreading",
+    summary: "Line-level editing for consistency, accuracy and house style.",
+    body: "Placeholder service description, superseded by the supplied service list.",
+    icon: "PenLine",
+    order: 102,
+    status: "draft",
+  },
+  {
+    id: "s103",
+    title: "Design and typesetting",
+    slug: "design-and-typesetting",
+    summary: "Cover design and interior layout prepared to print specification.",
+    body: "Placeholder service description, superseded by the supplied service list.",
+    icon: "LayoutTemplate",
+    order: 103,
+    status: "draft",
+  },
+  {
+    id: "s104",
+    title: "Printing and production",
+    slug: "printing-and-production",
+    summary: "Short and long print runs managed end to end.",
+    body: "Placeholder service description, superseded by the supplied service list.",
+    icon: "Printer",
+    order: 104,
+    status: "draft",
+  },
+  {
+    id: "s105",
+    title: "Distribution",
+    slug: "distribution",
+    summary: "Getting finished titles into online retailers and bookshops.",
+    body: "Placeholder service description, superseded by the supplied service list.",
+    icon: "Truck",
+    order: 105,
+    status: "draft",
+  },
+  {
+    id: "s106",
     title: "Publicity and marketing",
     slug: "publicity-and-marketing",
     summary: "Campaigns built around a title's audience and publication date.",
-    body: "Placeholder service description covering review outreach, events and paid promotion.",
+    body: "Placeholder service description, superseded by the supplied service list.",
     icon: "Megaphone",
-    order: 6,
-    status: "published",
+    order: 106,
+    status: "draft",
   },
 ];
