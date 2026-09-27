@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Container } from "@/components/layout/container";
@@ -10,6 +11,10 @@ import { PublicationCard } from "@/components/public/publication-card";
 import { SectionHeading } from "@/components/public/section-heading";
 import { ServiceCard } from "@/components/public/service-card";
 import { Steps, type Step } from "@/components/public/steps";
+import { JsonLd } from "@/components/seo/json-ld";
+import { organizationJsonLd, websiteJsonLd } from "@/lib/seo/json-ld";
+import { buildMetadata } from "@/lib/seo/metadata";
+import { getSiteMeta } from "@/lib/seo/site-meta";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/lib/site-config";
 import {
@@ -47,16 +52,26 @@ const STEPS: Step[] = [
   },
 ];
 
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMetadata({ path: "/" });
+}
+
 export default async function HomePage() {
-  const [publications, authors, articles, services] = await Promise.all([
+  const [publications, authors, articles, services, site] = await Promise.all([
     getFeaturedPublications(4),
     getFeaturedAuthors(3),
     getLatestArticles(2),
     listServices(),
+    getSiteMeta(),
   ]);
 
   return (
     <>
+      {/* Emitted once, on the home page: every other page's structured data
+          references these two by @id rather than repeating them. */}
+      <JsonLd data={organizationJsonLd(site)} />
+      <JsonLd data={websiteJsonLd(site)} />
+
       <Hero
         title="Publish & Sell Your Book"
         titleAccent={`with ${siteConfig.name}`}

@@ -3,6 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { format as formatDate } from "date-fns";
 
+import { JsonLd } from "@/components/seo/json-ld";
+import { bookJsonLd, breadcrumbJsonLd } from "@/lib/seo/json-ld";
+import { buildMetadata } from "@/lib/seo/metadata";
+
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
 import { BookCover } from "@/components/public/book-cover";
@@ -61,15 +65,13 @@ export async function generateMetadata({
   // still send a real 404 status rather than a soft 404 with a 200.
   if (!publication) notFound();
 
-  return {
+  return buildMetadata({
     title: publication.title,
     description: publication.excerpt,
-    openGraph: {
-      title: publication.title,
-      description: publication.excerpt,
-      type: "book",
-    },
-  };
+    path: `/publications/${publication.slug}`,
+    type: "article",
+    ...(publication.coverImage ? { image: publication.coverImage } : {}),
+  });
 }
 
 export default async function PublicationDetailPage({ params }: PageProps<"/publications/[slug]">) {
@@ -90,6 +92,14 @@ export default async function PublicationDetailPage({ params }: PageProps<"/publ
 
   return (
     <Section className="pt-32 sm:pt-36">
+      <JsonLd data={bookJsonLd(publication)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Publications", path: "/publications" },
+          { name: publication.title, path: `/publications/${publication.slug}` },
+        ])}
+      />
       <Container width="wide">
         <Breadcrumb>
           <BreadcrumbList>

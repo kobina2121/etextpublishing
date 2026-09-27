@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { buildMetadata } from "@/lib/seo/metadata";
+
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
 import { PageHero } from "@/components/public/page-hero";
@@ -8,10 +10,12 @@ import { FadeIn } from "@/components/motion/fade-in";
 import { Stagger, StaggerItem } from "@/components/motion/stagger";
 import { siteConfig } from "@/lib/site-config";
 
-export const metadata: Metadata = {
-  title: "About",
-  description: `About ${siteConfig.name}.`,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMetadata({
+    title: "About",
+    path: "/about",
+  });
+}
 
 /** PLACEHOLDER COPY throughout — no company history has been supplied. */
 const VALUES = [

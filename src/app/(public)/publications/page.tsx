@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { buildMetadata } from "@/lib/seo/metadata";
+
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
 import { EmptyResults } from "@/components/public/empty-results";
@@ -9,10 +11,13 @@ import { PublicationCard } from "@/components/public/publication-card";
 import { SearchFilters } from "@/components/public/search-filters";
 import { getCategories, getPublicationFormats, listPublications } from "@/server/queries";
 
-export const metadata: Metadata = {
-  title: "Publications",
-  description: "Browse every title we publish, across fiction, non-fiction and academic lists.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMetadata({
+    title: "Publications",
+    description: "Browse every title we publish, across fiction, non-fiction and academic lists.",
+    path: "/publications",
+  });
+}
 
 const FORMAT_LABELS: Record<string, string> = {
   paperback: "Paperback",

@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 
+import { JsonLd } from "@/components/seo/json-ld";
+import { articleJsonLd, breadcrumbJsonLd } from "@/lib/seo/json-ld";
+import { buildMetadata } from "@/lib/seo/metadata";
+
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
 import {
@@ -42,16 +46,14 @@ export async function generateMetadata({ params }: PageProps<"/news/[slug]">): P
   // streamed shell flushes, or the 404 degrades to a soft 404.
   if (!article) notFound();
 
-  return {
+  return buildMetadata({
     title: article.title,
     description: article.excerpt,
-    openGraph: {
-      title: article.title,
-      description: article.excerpt,
-      type: "article",
-      publishedTime: article.publishedAt.toISOString(),
-    },
-  };
+    path: `/news/${article.slug}`,
+    type: "article",
+    publishedTime: article.publishedAt,
+    ...(article.coverImage ? { image: article.coverImage } : {}),
+  });
 }
 
 export default async function ArticleDetailPage({ params }: PageProps<"/news/[slug]">) {
@@ -61,6 +63,14 @@ export default async function ArticleDetailPage({ params }: PageProps<"/news/[sl
 
   return (
     <Section className="pt-32 sm:pt-36">
+      <JsonLd data={articleJsonLd(article)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "News", path: "/news" },
+          { name: article.title, path: `/news/${article.slug}` },
+        ])}
+      />
       <Container width="prose">
         <Breadcrumb>
           <BreadcrumbList>

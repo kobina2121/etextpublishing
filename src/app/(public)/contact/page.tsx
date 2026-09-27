@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+
+import { buildMetadata } from "@/lib/seo/metadata";
 import { MailIcon, MapPinIcon, PhoneIcon } from "lucide-react";
 
 import { Container } from "@/components/layout/container";
@@ -7,10 +9,12 @@ import { PageHero } from "@/components/public/page-hero";
 import { ContactForm } from "@/components/forms/contact-form";
 import { siteConfig } from "@/lib/site-config";
 
-export const metadata: Metadata = {
-  title: "Contact",
-  description: `Get in touch with ${siteConfig.name}.`,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMetadata({
+    title: "Contact",
+    path: "/contact",
+  });
+}
 
 const { contact } = siteConfig;
 
