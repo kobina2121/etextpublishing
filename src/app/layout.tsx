@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { publicEnv } from "@/lib/env";
+import { getSiteMeta } from "@/lib/seo/site-meta";
 import { siteConfig } from "@/lib/site-config";
 
 import "./globals.css";
@@ -26,14 +27,25 @@ const display = Cormorant_Garamond({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(publicEnv.siteUrl),
-  title: {
-    default: `${siteConfig.name} — ${siteConfig.tagline}`,
-    template: `%s | ${siteConfig.name}`,
-  },
-  description: siteConfig.description,
-};
+/**
+ * Title and description come from the admin-editable settings, so renaming the
+ * company does not need a deploy. `generateMetadata` rather than a static
+ * export because that read is async.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const site = await getSiteMeta();
+
+  return {
+    metadataBase: new URL(publicEnv.siteUrl),
+    title: {
+      default: `${site.name} — ${site.tagline}`,
+      template: `%s | ${site.name}`,
+    },
+    description: site.description,
+    applicationName: site.name,
+    formatDetection: { telephone: false },
+  };
+}
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

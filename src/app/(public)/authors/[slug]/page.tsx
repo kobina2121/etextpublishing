@@ -3,6 +3,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 
+import { JsonLd } from "@/components/seo/json-ld";
+import { breadcrumbJsonLd, personJsonLd } from "@/lib/seo/json-ld";
+import { buildMetadata } from "@/lib/seo/metadata";
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
 import { PublicationCard } from "@/components/public/publication-card";
@@ -47,10 +50,13 @@ export async function generateMetadata({
   // streamed shell flushes, or the 404 degrades to a soft 404.
   if (!author) notFound();
 
-  return {
+  return buildMetadata({
     title: author.name,
     description: author.bio.slice(0, 160),
-  };
+    path: `/authors/${author.slug}`,
+    type: "profile",
+    ...(author.photo ? { image: author.photo } : {}),
+  });
 }
 
 export default async function AuthorDetailPage({ params }: PageProps<"/authors/[slug]">) {
@@ -69,6 +75,14 @@ export default async function AuthorDetailPage({ params }: PageProps<"/authors/[
 
   return (
     <Section className="pt-32 sm:pt-36">
+      <JsonLd data={personJsonLd(author)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Authors", path: "/authors" },
+          { name: author.name, path: `/authors/${author.slug}` },
+        ])}
+      />
       <Container width="wide">
         <Breadcrumb>
           <BreadcrumbList>

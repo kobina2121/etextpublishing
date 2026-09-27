@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+
+import { buildMetadata } from "@/lib/seo/metadata";
 import Link from "next/link";
 
 import { Container } from "@/components/layout/container";
@@ -9,10 +11,13 @@ import { Stagger, StaggerItem } from "@/components/motion/stagger";
 import { Button } from "@/components/ui/button";
 import { listServices } from "@/server/queries";
 
-export const metadata: Metadata = {
-  title: "Services",
-  description: "Editorial, design, production, distribution and publicity services for authors.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMetadata({
+    title: "Services",
+    description: "Textbook and story book publishing services.",
+    path: "/services",
+  });
+}
 
 export default async function ServicesPage() {
   const services = await listServices();

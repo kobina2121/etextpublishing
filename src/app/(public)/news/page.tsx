@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { buildMetadata } from "@/lib/seo/metadata";
+
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
 import { ArticleCard } from "@/components/public/article-card";
@@ -9,10 +11,13 @@ import { PageHero } from "@/components/public/page-hero";
 import { SearchFilters } from "@/components/public/search-filters";
 import { getCategories, listArticles } from "@/server/queries";
 
-export const metadata: Metadata = {
-  title: "News",
-  description: "Announcements, interviews and notes from the editorial desk.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMetadata({
+    title: "News",
+    description: "Announcements, interviews and notes from the editorial desk.",
+    path: "/news",
+  });
+}
 
 export default async function NewsPage({ searchParams }: PageProps<"/news">) {
   const params = await searchParams;

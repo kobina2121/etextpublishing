@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { buildMetadata } from "@/lib/seo/metadata";
+
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
 import { AuthorCard } from "@/components/public/author-card";
@@ -9,10 +11,13 @@ import { PageHero } from "@/components/public/page-hero";
 import { SearchFilters } from "@/components/public/search-filters";
 import { listAuthors } from "@/server/queries";
 
-export const metadata: Metadata = {
-  title: "Authors",
-  description: "The writers we publish.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildMetadata({
+    title: "Authors",
+    description: "The writers we publish.",
+    path: "/authors",
+  });
+}
 
 export default async function AuthorsPage({ searchParams }: PageProps<"/authors">) {
   const params = await searchParams;
