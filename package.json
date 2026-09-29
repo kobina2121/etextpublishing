@@ -22,7 +22,6 @@
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
     "date-fns": "^4.4.0",
-    "isomorphic-dompurify": "^4.4.0",
     "lucide-react": "^1.48.0",
     "mongoose": "^9.10.2",
     "motion": "^13.4.4",

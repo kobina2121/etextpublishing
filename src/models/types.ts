@@ -124,6 +124,20 @@ export type ContactMessageDoc = WithTimestamps & {
  * of this collection must not hand anyone a working sign-in link, for the same
  * reason passwords are hashed.
  */
+/**
+ * A counted attempt, used for rate limiting.
+ *
+ * Stored in Mongo rather than in memory because serverless instances do not
+ * share memory: an in-process counter resets on every cold start and is
+ * trivially evaded by spreading requests across instances.
+ */
+export type RateLimitDoc = {
+  _id: Types.ObjectId;
+  /** Scope plus subject, e.g. "login:someone@example.com". */
+  key: string;
+  createdAt: Date;
+};
+
 export type MagicLinkTokenDoc = WithTimestamps & {
   _id: Types.ObjectId;
   email: string;

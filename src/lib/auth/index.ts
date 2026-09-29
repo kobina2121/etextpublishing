@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { authConfig } from "@/lib/auth/auth.config";
 import { consumeMagicLink } from "@/lib/auth/magic-link";
 import { connectToDatabase } from "@/lib/db";
+import { checkRateLimit, clearRateLimit, rateLimitKey } from "@/lib/rate-limit";
 import { loginSchema } from "@/lib/validations/auth";
 import { User } from "@/models";
 
@@ -30,6 +31,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!parsed.success) return null;
 
         await connectToDatabase();
+
+        // Brute-force guard, keyed on the address being attempted. Checked
+        // before the password is compared, so a locked-out attacker learns
+        // nothing further and costs us no bcrypt work.
+        const key = rateLimitKey("login", parsed.data.email);
+        const limit = await checkRateLimit({ key, limit: 5, windowSeconds: 900 });
+        if (!limit.allowed) return null;
+
         const user = await User.findOne({ email: parsed.data.email.toLowerCase() });
 
         if (!user) {
@@ -46,6 +55,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const valid = await bcrypt.compare(parsed.data.password, user.passwordHash);
         if (!valid) return null;
+
+        // Signing in clears the counter, so someone who mistyped twice is not
+        // still carrying those failures into their next session.
+        await clearRateLimit(key);
 
         return {
           id: user._id.toString(),

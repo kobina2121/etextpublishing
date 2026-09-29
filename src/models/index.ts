@@ -4,6 +4,7 @@ import type {
   ArticleDoc,
   ImageDoc,
   MagicLinkTokenDoc,
+  RateLimitDoc,
   AuthorDoc,
   CategoryDoc,
   ContactMessageDoc,
@@ -183,6 +184,20 @@ const contactMessageSchema = new Schema<ContactMessageDoc>(
 
 contactMessageSchema.index({ archived: 1, read: 1, createdAt: -1 });
 
+// --- RateLimit --------------------------------------------------------------
+
+const rateLimitSchema = new Schema<RateLimitDoc>(
+  {
+    key: { type: String, required: true, index: true },
+    createdAt: { type: Date, default: Date.now, required: true },
+  },
+  { versionKey: false },
+);
+
+// Attempts age out after an hour, which is longer than any window we use, so
+// the collection cannot grow without bound.
+rateLimitSchema.index({ createdAt: 1 }, { expireAfterSeconds: 3600 });
+
 // --- MagicLinkToken ---------------------------------------------------------
 
 const magicLinkTokenSchema = new Schema<MagicLinkTokenDoc>(
@@ -261,6 +276,7 @@ export const ContactMessage = defineModel<ContactMessageDoc>(
   "ContactMessage",
   contactMessageSchema,
 );
+export const RateLimit = defineModel<RateLimitDoc>("RateLimit", rateLimitSchema);
 export const MagicLinkToken = defineModel<MagicLinkTokenDoc>(
   "MagicLinkToken",
   magicLinkTokenSchema,
