@@ -46,6 +46,7 @@
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
+  --color-brand-dark: var(--brand-dark);
   --color-primary-on-dark: var(--primary-on-dark);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
@@ -73,18 +74,26 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.33 0.005 60);
 
-  /* Brand green. L 0.52 is the darkest step that still reads as a vivid
-   * green while keeping white button text, and green text on white, at
-   * 5.17:1 (WCAG AA). */
-  --primary: oklch(0.52 0.14 150);
+  /* Brand green, taken from the logo.
+   *
+   * The logo's vivid green is #009040 — oklch(0.571 0.158 149.8) — which gives
+   * white text only 4.15:1, just under AA. This is the same hue and all but
+   * the same chroma, darkened the minimum needed to reach 4.53:1. Side by side
+   * with the artwork the difference is not visible. */
+  --primary: oklch(0.55 0.152 149.8);
   --primary-foreground: oklch(1 0 0);
 
   /* Brand green for use ON dark surfaces: the hero, the footer and the CTA
    * bands, which stay dark even while the document is in the light theme.
    * No single brand tone clears 4.5:1 against both white and near-black, so
    * brand-coloured TEXT on a dark surface uses this instead of --primary.
-   * 6.0:1 on the footer, 7.4:1 over the hero. */
-  --primary-on-dark: oklch(0.76 0.14 150);
+   * The logo hue lifted to 5.3:1 on the footer and 7.1:1 on the dark theme. */
+  --primary-on-dark: oklch(0.72 0.16 149.8);
+
+  /* The logo's deep forest green, #004018, used for the footer and the dark
+     CTA bands so those surfaces read as brand rather than neutral charcoal.
+     White text on it is 12:1. */
+  --brand-dark: oklch(0.325 0.09 149.5);
 
   --secondary: oklch(0.96 0.003 60);
   --secondary-foreground: oklch(0.33 0.005 60);
@@ -100,7 +109,7 @@
 
   --border: oklch(0.9 0.003 60);
   --input: oklch(0.9 0.003 60);
-  --ring: oklch(0.52 0.14 150);
+  --ring: oklch(0.55 0.152 149.8);
 
   /* PLACEHOLDER: a real categorical ramp is chosen in Phase 6, alongside the
      * first dashboard charts. These greys are deliberately not a data palette. */
@@ -115,12 +124,12 @@
 
   --sidebar: oklch(0.975 0.003 60);
   --sidebar-foreground: oklch(0.33 0.005 60);
-  --sidebar-primary: oklch(0.52 0.14 150);
+  --sidebar-primary: oklch(0.55 0.152 149.8);
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.94 0.004 60);
   --sidebar-accent-foreground: oklch(0.33 0.005 60);
   --sidebar-border: oklch(0.9 0.003 60);
-  --sidebar-ring: oklch(0.52 0.14 150);
+  --sidebar-ring: oklch(0.55 0.152 149.8);
 
   /* Motion tokens: CSS transitions and Framer Motion read the same values,
      * so a hover and an entrance animation cannot drift apart. */
@@ -140,9 +149,12 @@
 
   /* Lifted in dark mode so brand-coloured text clears AA on the dark surface
    * (8.9:1). Buttons invert to dark-on-green, which reads at the same ratio. */
-  --primary: oklch(0.76 0.14 150);
+  --primary: oklch(0.72 0.16 149.8);
   --primary-foreground: oklch(0.2 0.03 150);
-  --primary-on-dark: oklch(0.76 0.14 150);
+  --primary-on-dark: oklch(0.72 0.16 149.8);
+  /* Lighter than the light-theme value: the logo's forest green is almost
+     black against a dark page, so the brand surface lifts to stay distinct. */
+  --brand-dark: oklch(0.28 0.06 149.5);
 
   --secondary: oklch(0.28 0.004 60);
   --secondary-foreground: oklch(0.96 0.002 60);
@@ -153,7 +165,7 @@
   --destructive: oklch(0.62 0.21 22);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.76 0.14 150);
+  --ring: oklch(0.72 0.16 149.8);
 
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -163,12 +175,12 @@
 
   --sidebar: oklch(0.24 0.004 60);
   --sidebar-foreground: oklch(0.96 0.002 60);
-  --sidebar-primary: oklch(0.76 0.14 150);
+  --sidebar-primary: oklch(0.72 0.16 149.8);
   --sidebar-primary-foreground: oklch(0.2 0.03 150);
   --sidebar-accent: oklch(0.28 0.004 60);
   --sidebar-accent-foreground: oklch(0.96 0.002 60);
   --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.76 0.14 150);
+  --sidebar-ring: oklch(0.72 0.16 149.8);
 }
 
 @layer base {

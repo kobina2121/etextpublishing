@@ -176,7 +176,7 @@ export default async function HomePage() {
         </Container>
       </Section>
 
-      <Section size="lg" className="bg-foreground text-background">
+      <Section size="lg" className="bg-brand-dark text-background">
         <Container>
           <div className="flex flex-col items-start gap-6 text-left sm:flex-row sm:items-center sm:justify-between">
             <div>

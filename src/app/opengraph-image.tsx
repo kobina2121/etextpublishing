@@ -25,13 +25,14 @@ export default async function OpengraphImage() {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        background: "#1a1a17",
+        // The logo's forest green, so the card matches the site.
+        background: "#004018",
         padding: 72,
         fontFamily: "sans-serif",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        <div style={{ width: 40, height: 40, background: "#0a7e3a" }} />
+        <div style={{ width: 40, height: 40, background: "#4bc06c" }} />
         <div
           style={{
             fontSize: 26,
@@ -48,12 +49,12 @@ export default async function OpengraphImage() {
         <div style={{ fontSize: 68, lineHeight: 1.1, color: "#ffffff", maxWidth: 940 }}>
           {site.tagline}
         </div>
-        <div style={{ fontSize: 28, color: "#a8a29e", maxWidth: 860 }}>
+        <div style={{ fontSize: 28, color: "#a7d4b5", maxWidth: 860 }}>
           {site.description.slice(0, 120)}
         </div>
       </div>
 
-      <div style={{ display: "flex", height: 8, width: 200, background: "#0a7e3a" }} />
+      <div style={{ display: "flex", height: 8, width: 200, background: "#4bc06c" }} />
     </div>,
     size,
   );

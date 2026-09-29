@@ -15,7 +15,7 @@ export function Footer() {
   ].filter(Boolean);
 
   return (
-    <footer className="mt-auto bg-foreground text-background/80">
+    <footer className="mt-auto bg-brand-dark text-background/85">
       <div className="mx-auto grid w-full max-w-7xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-3">
         <div className="space-y-4">
           <Logo inverted />

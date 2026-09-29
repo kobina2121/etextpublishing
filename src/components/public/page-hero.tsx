@@ -6,7 +6,7 @@ import { Ornament } from "@/components/public/ornament";
  */
 export function PageHero({ title, description }: { title: string; description?: string }) {
   return (
-    <section className="bg-foreground text-background relative isolate overflow-hidden">
+    <section className="bg-brand-dark text-background relative isolate overflow-hidden">
       <div
         aria-hidden
         className="absolute inset-0 bg-[radial-gradient(90%_140%_at_20%_0%,oklch(0.36_0.04_155)_0%,transparent_70%)] opacity-70"
