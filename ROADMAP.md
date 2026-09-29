@@ -194,13 +194,36 @@ drafts absent from the sitemap. ✅
 - Rich Results itself was not run: it needs a public URL. The payloads were
   verified as valid JSON with the required fields present.
 
-## Phase 9 — Security
+## Phase 9 — Security ✅
 
-- [ ] Zod at every trust boundary; sanitise rendered article HTML
-- [ ] Security headers + CSP; rate limits on public POSTs
-- [ ] NoSQL-injection-safe queries; no secrets in client bundles
+- [x] Security headers and a CSP, applied in `next.config` so static routes
+      are covered too
+- [x] Brute-force protection on password sign-in, and a cap on uploads
+- [x] Query-injection audit: every `searchParams` read is `typeof`-guarded, so
+      `?q[$ne]=` cannot arrive as an object, and every `$regex` is escaped
+- [x] No server secret reaches the client bundle — verified by scanning the
+      built assets, not by inspection
+- [x] `/security-review` pass: no HIGH or MEDIUM findings
+- [x] Removed `isomorphic-dompurify`, which was never imported
 
-**Exit:** `/security-review` pass, then fixes.
+**Exit:** `/security-review` pass, then fixes. ✅
+
+### Notes
+
+- `script-src` allows `'unsafe-inline'`. A nonce is the strict alternative, but
+  Next can only inject one while server-rendering, so every page carrying it
+  must be dynamic — which would undo the static rendering Phase 8 depends on,
+  and silently break any page that later becomes static. The app renders no
+  user-supplied HTML, so the gap has no route to it. Upgrade path is documented
+  in `next.config.ts`.
+- Rate limiting is stored in MongoDB, not memory: serverless instances do not
+  share memory, so a process-local counter resets on cold start and is evaded
+  by spreading requests across instances.
+- The article body is plain text rendered as React text nodes, so there is
+  nothing to sanitise yet. If rich text is ever added, sanitisation has to come
+  with it.
+- `img-src 'self'` means externally hosted images need `NEXT_PUBLIC_ASSET_HOST`
+  set; the image picker's "paste a URL" option is otherwise limited to uploads.
 
 ## Phase 10 — Testing, optimisation, ship
 
