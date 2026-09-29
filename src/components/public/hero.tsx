@@ -43,10 +43,19 @@ export function Hero({ title, titleAccent, subtitle, actions = [], image, imageA
         />
       )}
 
-      {/* Scrim: keeps white copy legible over any photograph. */}
+      {/*
+        Scrim, responsive on purpose.
+
+        A left-to-right gradient only works while the copy is confined to the
+        left of the frame. On a narrow screen the headline spans the full
+        width and its last words land on bare photograph — measured at 2.36:1
+        against this image, a clear fail. A uniform scrim holds 5.8:1
+        everywhere, so narrow screens get that and the gradient starts once
+        there is room for the photo to show beside the text.
+      */}
       <div
         aria-hidden
-        className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/55 to-black/25"
+        className="absolute inset-0 bg-black/60 lg:bg-transparent lg:bg-gradient-to-r lg:from-black/75 lg:via-black/55 lg:to-black/25"
       />
 
       <div className="relative mx-auto w-full max-w-7xl px-4 py-32 sm:px-6">

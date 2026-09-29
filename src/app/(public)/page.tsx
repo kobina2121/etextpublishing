@@ -76,6 +76,8 @@ export default async function HomePage() {
         title="Publish & Sell Your Book"
         titleAccent={`with ${siteConfig.name}`}
         subtitle={siteConfig.tagline}
+        image="/hero-books.jpg"
+        imageAlt=""
         actions={[
           { label: "View services", href: "/services", variant: "outline" },
           { label: "Our publications", href: "/publications" },
