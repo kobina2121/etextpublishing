@@ -39,6 +39,10 @@ const serverEnvSchema = z.object({
   S3_SECRET_ACCESS_KEY: optionalString,
   S3_ENDPOINT: optionalString,
 
+  // Payments
+  PAYSTACK_SECRET_KEY: optionalString,
+  PAYSTACK_PUBLIC_KEY: optionalString,
+
   // Email (Phase 7)
   RESEND_API_KEY: optionalString,
   EMAIL_FROM: optionalString.pipe(z.string().email().optional()),

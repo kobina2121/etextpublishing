@@ -31,7 +31,11 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import { publicationSchema, type PublicationInput } from "@/lib/validations/publication";
+import {
+  CURRENCIES,
+  publicationSchema,
+  type PublicationInput,
+} from "@/lib/validations/publication";
 import { PUBLICATION_FORMATS, PUBLICATION_STATUSES } from "@/types/content";
 import { createPublication, updatePublication } from "@/server/actions/publications";
 import type { Option, PublicationFormValues } from "@/server/admin/queries";
@@ -81,6 +85,9 @@ export function PublicationForm({
           publicationDate: new Date().toISOString().slice(0, 10),
           format: "paperback",
           pages: 1,
+          priceMajor: 0,
+          currency: "GHS",
+          stockQuantity: 0,
           featured: false,
           status: "draft",
         },
@@ -268,6 +275,65 @@ export function PublicationForm({
         </div>
 
         <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Selling</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FieldSet>
+                <FieldGroup>
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <Field data-invalid={!!errors.priceMajor}>
+                      <FieldLabel htmlFor="pub-price">Price</FieldLabel>
+                      <Input
+                        id="pub-price"
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        {...register("priceMajor")}
+                      />
+                      <FieldDescription>0 means it is not for sale.</FieldDescription>
+                      <FieldError errors={[errors.priceMajor]} />
+                    </Field>
+
+                    <Field data-invalid={!!errors.currency}>
+                      <FieldLabel htmlFor="pub-currency">Currency</FieldLabel>
+                      <Controller
+                        control={control}
+                        name="currency"
+                        render={({ field }) => (
+                          <Select value={field.value ?? "GHS"} onValueChange={field.onChange}>
+                            <SelectTrigger id="pub-currency" onBlur={field.onBlur}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {CURRENCIES.map((c) => (
+                                <SelectItem key={c} value={c}>
+                                  {c}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                      <FieldError errors={[errors.currency]} />
+                    </Field>
+                  </div>
+
+                  <Field data-invalid={!!errors.stockQuantity}>
+                    <FieldLabel htmlFor="pub-stock">Stock</FieldLabel>
+                    <Input id="pub-stock" type="number" min={0} {...register("stockQuantity")} />
+                    <FieldDescription>
+                      Counted down as orders are paid. Ignored for e-books and audiobooks, which
+                      cannot run out.
+                    </FieldDescription>
+                    <FieldError errors={[errors.stockQuantity]} />
+                  </Field>
+                </FieldGroup>
+              </FieldSet>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Publishing</CardTitle>

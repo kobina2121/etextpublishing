@@ -33,6 +33,9 @@ export const imageRefSchema = z
   .optional()
   .default("");
 
+export const CURRENCIES = ["GHS", "NGN", "USD", "ZAR", "KES"] as const;
+export type Currency = (typeof CURRENCIES)[number];
+
 export const publicationSchema = z.object({
   title: z.string().trim().min(2, "A title is required.").max(200),
   slug: slugSchema,
@@ -49,6 +52,30 @@ export const publicationSchema = z.object({
     .int("Whole numbers only.")
     .min(1, "Must be at least 1.")
     .max(20000),
+  /**
+   * Entered in major units — what a person types — and converted to integer
+   * minor units before storage. Two decimal places only; a third would be
+   * silently rounded away at the currency boundary.
+   */
+  priceMajor: z.coerce
+    .number({ message: "Enter a price, or 0 if it is not for sale." })
+    .min(0, "A price cannot be negative.")
+    .max(1_000_000)
+    .refine(
+      (v) =>
+        Number.isInteger(Math.round(v * 100)) && Math.abs(v * 100 - Math.round(v * 100)) < 1e-6,
+      {
+        message: "Use at most two decimal places.",
+      },
+    )
+    .default(0),
+  currency: z.enum(CURRENCIES).default("GHS"),
+  stockQuantity: z.coerce
+    .number({ message: "Enter a stock count." })
+    .int("Whole numbers only.")
+    .min(0)
+    .max(100000)
+    .default(0),
   featured: z.boolean().default(false),
   status: z.enum(PUBLICATION_STATUSES).default("draft"),
 });
