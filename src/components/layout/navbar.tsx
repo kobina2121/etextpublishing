@@ -7,6 +7,7 @@ import { MenuIcon } from "lucide-react";
 
 import { Logo } from "@/components/layout/logo";
 import { ModeToggle } from "@/components/layout/mode-toggle";
+import { CartLink } from "@/components/shop/cart-link";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -93,6 +94,8 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-1">
+          <CartLink inverted={transparent} />
+
           <div className={cn(transparent && "text-white [&_button]:hover:bg-white/10")}>
             <ModeToggle />
           </div>

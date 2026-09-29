@@ -2,8 +2,16 @@ import Link from "next/link";
 import { format } from "date-fns";
 
 import { BookCover } from "@/components/public/book-cover";
+import { AddToCart } from "@/components/shop/add-to-cart";
 import { Badge } from "@/components/ui/badge";
+import { formatMoney } from "@/lib/money";
 import type { PublicationWithRelations } from "@/types/content";
+
+/** Printed formats can sell out; downloads cannot. */
+function purchasable(publication: PublicationWithRelations): boolean {
+  const physical = publication.format === "paperback" || publication.format === "hardcover";
+  return publication.price > 0 && (!physical || publication.stockQuantity > 0);
+}
 
 export function PublicationCard({
   publication,
@@ -40,6 +48,22 @@ export function PublicationCard({
           </p>
         </div>
       </Link>
+
+      {publication.price > 0 ? (
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <span className="font-semibold">
+            {formatMoney(publication.price, publication.currency)}
+          </span>
+          {/* Outside the Link: a button nested in an anchor is invalid markup
+              and swallows the click. */}
+          <AddToCart
+            publicationId={publication.id}
+            title={publication.title}
+            size="default"
+            disabled={!purchasable(publication)}
+          />
+        </div>
+      ) : null}
     </article>
   );
 }

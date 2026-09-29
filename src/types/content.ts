@@ -54,6 +54,10 @@ export type Publication = {
   pages: number;
   featured: boolean;
   status: PublicationStatus;
+  /** Integer minor units. 0 means not for sale. */
+  price: number;
+  currency: string;
+  stockQuantity: number;
 };
 
 /** A publication with its author and category resolved, as pages consume it. */

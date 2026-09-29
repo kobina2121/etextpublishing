@@ -149,7 +149,16 @@ export async function verifyTransaction(reference: string): Promise<VerifyResult
 export function verifyWebhookSignature(rawBody: string, signature: string | null): boolean {
   if (!signature) return false;
 
-  const expected = createHmac("sha512", secretKey()).update(rawBody, "utf8").digest("hex");
+  // Fail closed rather than throw. Letting the missing-key error escape turned
+  // a forged webhook into a 500, which both advertises that the key is unset
+  // and makes Paystack retry an event that can never succeed.
+  const key = process.env.PAYSTACK_SECRET_KEY?.trim();
+  if (!key) {
+    console.error("[paystack] webhook received but PAYSTACK_SECRET_KEY is not set");
+    return false;
+  }
+
+  const expected = createHmac("sha512", key).update(rawBody, "utf8").digest("hex");
   const a = Buffer.from(expected, "utf8");
   const b = Buffer.from(signature, "utf8");
   if (a.length !== b.length) return false;

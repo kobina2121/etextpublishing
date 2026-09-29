@@ -3,7 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { format as formatDate } from "date-fns";
 
+import { AddToCart } from "@/components/shop/add-to-cart";
 import { JsonLd } from "@/components/seo/json-ld";
+import { formatMoney, formatRequiresShipping } from "@/lib/money";
 import { bookJsonLd, breadcrumbJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 
@@ -80,6 +82,10 @@ export default async function PublicationDetailPage({ params }: PageProps<"/publ
   if (!publication) notFound();
 
   const related = await getRelatedPublications(publication);
+
+  const needsShipping = formatRequiresShipping(publication.format);
+  // Only printed formats can run out; a download never does.
+  const inStock = !needsShipping || publication.stockQuantity > 0;
 
   const details = [
     { label: "Author", value: publication.author.name },
@@ -160,6 +166,22 @@ export default async function PublicationDetailPage({ params }: PageProps<"/publ
                 </div>
               ))}
             </dl>
+
+            {publication.price > 0 ? (
+              <div className="mt-8 flex flex-wrap items-center gap-4 border-t border-border pt-6">
+                <span className="text-3xl font-semibold">
+                  {formatMoney(publication.price, publication.currency)}
+                </span>
+                {inStock ? (
+                  <AddToCart publicationId={publication.id} title={publication.title} size="xl" />
+                ) : (
+                  <span className="text-sm font-medium text-destructive">Out of stock</span>
+                )}
+                <span className="w-full text-xs text-muted-foreground sm:w-auto">
+                  {needsShipping ? "Printed and posted to you." : "Download after payment."}
+                </span>
+              </div>
+            ) : null}
 
             <div className="mt-10 flex flex-wrap gap-4">
               <Button asChild size="xl" className="font-semibold tracking-[0.1em] uppercase">
