@@ -57,9 +57,16 @@ export default function AboutPage() {
               Supplied copy. Punctuation has been added to the list of
               adjectives and the company name capitalised to match the logo;
               the wording is otherwise untouched.
+
+              Every paragraph is the same size on purpose. The opening one used
+              a `lead` at 20px against 16px for the rest, which put a visible
+              step in the middle of one continuous passage. The site's pattern
+              is a larger intro *above* the prose block — the banner
+              description here, the excerpt on an article — and a flat 16px
+              inside it.
             */}
             <div className="prose max-w-none dark:prose-invert">
-              <p className="lead text-xl">
+              <p>
                 {siteConfig.name} is a young, vibrant, evolving, unprecedented publishing house,
                 established to build the capacity of existing publishing houses in Ghana.
               </p>
