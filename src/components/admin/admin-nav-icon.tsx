@@ -5,6 +5,7 @@ import {
   MailIcon,
   NewspaperIcon,
   SettingsIcon,
+  ShoppingBagIcon,
   TagsIcon,
   UsersIcon,
   WrenchIcon,
@@ -26,6 +27,7 @@ const ICONS = {
   Inbox: InboxIcon,
   Mail: MailIcon,
   Settings: SettingsIcon,
+  ShoppingBag: ShoppingBagIcon,
 } satisfies Record<string, LucideIcon>;
 
 export type AdminIconName = keyof typeof ICONS;

@@ -9,6 +9,7 @@ import {
   Category,
   ContactMessage,
   ManuscriptSubmission,
+  Order,
   Publication,
   Service,
   SiteSettings,
@@ -681,4 +682,138 @@ export async function getSettingsForEdit(): Promise<SettingsFormValues | null> {
     socials: (doc.socials ?? []).map((s) => ({ label: s.label, href: s.href })),
     footerText: doc.footerText ?? "",
   };
+}
+
+// --- Orders -----------------------------------------------------------------
+
+export type AdminOrderRow = {
+  id: string;
+  reference: string;
+  customerName: string;
+  email: string;
+  total: number;
+  currency: string;
+  status: string;
+  fulfilment: string;
+  requiresShipping: boolean;
+  itemCount: number;
+  createdAt: Date;
+};
+
+export async function listOrdersAdmin(
+  filters: { q?: string; status?: string } = {},
+): Promise<AdminOrderRow[]> {
+  await connectToDatabase();
+
+  const match: Record<string, unknown> = {};
+  if (filters.status === "awaiting") {
+    // What the admin actually has to act on: paid, physical, not yet sent.
+    Object.assign(match, { status: "paid", fulfilment: { $in: ["pending", "packed"] } });
+  } else if (filters.status) {
+    match.status = filters.status;
+  }
+
+  const docs = await Order.find(match).sort({ createdAt: -1 }).limit(200).lean();
+  const term = filters.q?.trim().toLowerCase();
+
+  return docs
+    .map((doc) => ({
+      id: doc._id.toString(),
+      reference: doc.reference,
+      customerName: doc.customerName,
+      email: doc.email,
+      total: doc.total,
+      currency: doc.currency,
+      status: doc.status,
+      fulfilment: doc.fulfilment,
+      requiresShipping: doc.requiresShipping,
+      itemCount: doc.items.reduce((n, i) => n + i.quantity, 0),
+      createdAt: new Date(doc.createdAt),
+    }))
+    .filter((row) =>
+      term
+        ? [row.reference, row.customerName, row.email].some((v) => v.toLowerCase().includes(term))
+        : true,
+    );
+}
+
+export type AdminOrderDetail = AdminOrderRow & {
+  phone: string;
+  items: {
+    title: string;
+    slug: string;
+    format: string;
+    unitPrice: number;
+    quantity: number;
+    lineTotal: number;
+    requiresShipping: boolean;
+  }[];
+  shippingAddress?: {
+    line1: string;
+    line2?: string;
+    city: string;
+    region: string;
+    postalCode?: string;
+    country: string;
+  };
+  paystackReference: string;
+  paidAt: Date | null;
+  adminNotes: string;
+};
+
+export async function getOrder(id: string): Promise<AdminOrderDetail | null> {
+  await connectToDatabase();
+  const doc = await Order.findById(id).lean();
+  if (!doc) return null;
+
+  return {
+    id: doc._id.toString(),
+    reference: doc.reference,
+    customerName: doc.customerName,
+    email: doc.email,
+    phone: doc.phone ?? "",
+    total: doc.total,
+    currency: doc.currency,
+    status: doc.status,
+    fulfilment: doc.fulfilment,
+    requiresShipping: doc.requiresShipping,
+    itemCount: doc.items.reduce((n, i) => n + i.quantity, 0),
+    createdAt: new Date(doc.createdAt),
+    items: doc.items.map((i) => ({
+      title: i.title,
+      slug: i.slug,
+      format: i.format,
+      unitPrice: i.unitPrice,
+      quantity: i.quantity,
+      lineTotal: i.unitPrice * i.quantity,
+      requiresShipping: i.requiresShipping,
+    })),
+    ...(doc.shippingAddress?.line1
+      ? {
+          shippingAddress: {
+            line1: doc.shippingAddress.line1,
+            line2: doc.shippingAddress.line2 ?? undefined,
+            city: doc.shippingAddress.city,
+            region: doc.shippingAddress.region,
+            postalCode: doc.shippingAddress.postalCode ?? undefined,
+            country: doc.shippingAddress.country,
+          },
+        }
+      : {}),
+    paystackReference: doc.paystackReference ?? "",
+    paidAt: doc.paidAt ? new Date(doc.paidAt) : null,
+    adminNotes: doc.adminNotes ?? "",
+  };
+}
+
+export async function getOrderCounts(): Promise<{ awaiting: number; paidTotal: number }> {
+  await connectToDatabase();
+  const [awaiting, paid] = await Promise.all([
+    Order.countDocuments({ status: "paid", fulfilment: { $in: ["pending", "packed"] } }),
+    Order.aggregate<{ total: number }>([
+      { $match: { status: "paid" } },
+      { $group: { _id: null, total: { $sum: "$total" } } },
+    ]),
+  ]);
+  return { awaiting, paidTotal: paid[0]?.total ?? 0 };
 }
