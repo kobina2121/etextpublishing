@@ -4,6 +4,7 @@ import type {
   ArticleDoc,
   ImageDoc,
   MagicLinkTokenDoc,
+  OrderDoc,
   RateLimitDoc,
   AuthorDoc,
   CategoryDoc,
@@ -92,6 +93,12 @@ const publicationSchema = new Schema<PublicationDoc>(
     pages: { type: Number, required: true, min: 1 },
     featured: { type: Boolean, default: false },
     status: { type: String, enum: STATUSES, default: "draft", required: true },
+
+    // Integer minor units. 0 means the title is not for sale.
+    price: { type: Number, default: 0, min: 0, required: true },
+    currency: { type: String, default: "GHS", uppercase: true, trim: true, required: true },
+    stockQuantity: { type: Number, default: 0, min: 0, required: true },
+    digitalFileKey: { type: String, trim: true },
   },
   { timestamps: true },
 );
@@ -183,6 +190,65 @@ const contactMessageSchema = new Schema<ContactMessageDoc>(
 );
 
 contactMessageSchema.index({ archived: 1, read: 1, createdAt: -1 });
+
+// --- Order ------------------------------------------------------------------
+
+const orderItemSchema = new Schema(
+  {
+    publication: { type: Schema.Types.ObjectId, ref: "Publication", required: true },
+    title: { type: String, required: true },
+    slug: { type: String, required: true },
+    format: { type: String, enum: FORMATS, required: true },
+    unitPrice: { type: Number, required: true, min: 0 },
+    quantity: { type: Number, required: true, min: 1 },
+    requiresShipping: { type: Boolean, required: true },
+  },
+  { _id: false },
+);
+
+const orderSchema = new Schema<OrderDoc>(
+  {
+    reference: { type: String, required: true, unique: true, trim: true },
+    email: { type: String, required: true, lowercase: true, trim: true },
+    customerName: { type: String, required: true, trim: true },
+    phone: { type: String, trim: true },
+    items: { type: [orderItemSchema], required: true },
+    total: { type: Number, required: true, min: 0 },
+    currency: { type: String, required: true, uppercase: true, trim: true },
+    requiresShipping: { type: Boolean, required: true, default: false },
+    shippingAddress: {
+      line1: { type: String, trim: true },
+      line2: { type: String, trim: true },
+      city: { type: String, trim: true },
+      region: { type: String, trim: true },
+      postalCode: { type: String, trim: true },
+      country: { type: String, trim: true },
+    },
+    status: {
+      type: String,
+      enum: ["pending", "paid", "failed", "abandoned"],
+      default: "pending",
+      required: true,
+    },
+    fulfilment: {
+      type: String,
+      enum: ["not_required", "pending", "packed", "shipped", "delivered"],
+      default: "not_required",
+      required: true,
+    },
+    paystackReference: { type: String, trim: true },
+    paidAt: { type: Date },
+    // Set once, inside a conditional update, so a replayed webhook cannot
+    // fulfil the same order twice.
+    fulfilledAt: { type: Date },
+    adminNotes: { type: String },
+  },
+  { timestamps: true },
+);
+
+orderSchema.index({ status: 1, createdAt: -1 });
+orderSchema.index({ fulfilment: 1, createdAt: -1 });
+orderSchema.index({ email: 1, createdAt: -1 });
 
 // --- RateLimit --------------------------------------------------------------
 
@@ -276,6 +342,7 @@ export const ContactMessage = defineModel<ContactMessageDoc>(
   "ContactMessage",
   contactMessageSchema,
 );
+export const Order = defineModel<OrderDoc>("Order", orderSchema);
 export const RateLimit = defineModel<RateLimitDoc>("RateLimit", rateLimitSchema);
 export const MagicLinkToken = defineModel<MagicLinkTokenDoc>(
   "MagicLinkToken",

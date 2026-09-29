@@ -1,6 +1,8 @@
 import "server-only";
 
 import { connectToDatabase } from "@/lib/db";
+import { toMajorUnits } from "@/lib/money";
+import type { Currency } from "@/lib/validations/publication";
 import {
   Article,
   Author,
@@ -191,6 +193,9 @@ export async function listPublicationsAdmin(
 
 export type PublicationFormValues = {
   id: string;
+  priceMajor: number;
+  currency: Currency;
+  stockQuantity: number;
   title: string;
   slug: string;
   author: string;
@@ -213,6 +218,10 @@ export async function getPublicationForEdit(id: string): Promise<PublicationForm
 
   return {
     id: doc._id.toString(),
+    // Converted back for the form, which works in major units.
+    priceMajor: toMajorUnits(doc.price ?? 0, doc.currency ?? "GHS"),
+    currency: (doc.currency ?? "GHS") as Currency,
+    stockQuantity: doc.stockQuantity ?? 0,
     title: doc.title,
     slug: doc.slug,
     author: doc.author.toString(),

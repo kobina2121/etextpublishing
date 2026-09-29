@@ -44,6 +44,58 @@ export type AuthorDoc = WithTimestamps & {
   socials: { label: string; href: string }[];
 };
 
+export const ORDER_STATUSES = ["pending", "paid", "failed", "abandoned"] as const;
+export type OrderStatusValue = (typeof ORDER_STATUSES)[number];
+
+export const FULFILMENT_STATUSES = [
+  "not_required",
+  "pending",
+  "packed",
+  "shipped",
+  "delivered",
+] as const;
+export type FulfilmentStatusValue = (typeof FULFILMENT_STATUSES)[number];
+
+export type OrderItemDoc = {
+  publication: Types.ObjectId;
+  /** Snapshot: an order must not change when a title is later repriced or renamed. */
+  title: string;
+  slug: string;
+  format: PublicationFormatValue;
+  unitPrice: number;
+  quantity: number;
+  requiresShipping: boolean;
+};
+
+export type OrderDoc = WithTimestamps & {
+  _id: Types.ObjectId;
+  /** Our reference, sent to Paystack and used to reconcile the callback. */
+  reference: string;
+  email: string;
+  customerName: string;
+  phone?: string;
+  items: OrderItemDoc[];
+  /** Integer minor units, recomputed server-side. Never taken from the client. */
+  total: number;
+  currency: string;
+  requiresShipping: boolean;
+  shippingAddress?: {
+    line1: string;
+    line2?: string;
+    city: string;
+    region: string;
+    postalCode?: string;
+    country: string;
+  };
+  status: OrderStatusValue;
+  fulfilment: FulfilmentStatusValue;
+  paystackReference?: string;
+  paidAt?: Date;
+  /** Guards against a replayed or duplicated webhook fulfilling twice. */
+  fulfilledAt?: Date;
+  adminNotes?: string;
+};
+
 export type PublicationDoc = WithTimestamps & {
   _id: Types.ObjectId;
   title: string;
@@ -59,6 +111,20 @@ export type PublicationDoc = WithTimestamps & {
   pages: number;
   featured: boolean;
   status: PublicationStatusValue;
+
+  /**
+   * Integer minor units (pesewas for GHS), never a float. Storing money as a
+   * decimal invites rounding errors that only show up once real sums are being
+   * added together.
+   *
+   * 0 means not for sale.
+   */
+  price: number;
+  currency: string;
+  /** Physical formats only; ignored for ebook and audiobook. */
+  stockQuantity: number;
+  /** Digital formats only: object key for the purchasable file. Phase 7. */
+  digitalFileKey?: string;
 };
 
 export type ArticleDoc = WithTimestamps & {
