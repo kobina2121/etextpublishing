@@ -26,10 +26,14 @@ const isProduction = process.env.NODE_ENV === "production";
  *
  * To upgrade: generate a nonce in src/proxy.ts, force every page dynamic, and
  * drop 'unsafe-inline'.
+ *
+ * 'unsafe-eval' is added in development only. React's dev build uses eval() to
+ * rebuild stack traces across the server/client boundary, and without it the
+ * console fills with CSP errors that bury real ones. Production never gets it.
  */
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}`,
   // Tailwind ships a stylesheet, but Next still emits inline style attributes.
   "style-src 'self' 'unsafe-inline'",
   // data: and blob: cover next/image placeholders and client-side previews.
