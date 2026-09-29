@@ -18,7 +18,9 @@ Build order and exit criteria. Tick items as they land.
 
 ## Outstanding inputs
 
-- [ ] Real company information (tagline, contact, address, socials) — editable at `/admin/settings`; the name and brand colours now come from the supplied logo
+- [ ] Contact details, address and social links — still the seeded placeholders, editable at `/admin/settings`
+- [ ] Homepage headline: "Publish & Sell Your Book" addresses individual authors, but the stated mandate and the service list are aimed at publishing houses. Needs the client's wording.
+- [ ] Homepage "Become a published author" steps still describe a generic author journey rather than the capacity-building process
 - [ ] Higher-resolution hero photograph — the supplied image is 800x533, which is upscaled across a full-bleed hero and looks soft above about 1280px wide
 - [ ] S3 bucket + credentials (Phase 7)
 - [ ] Resend API key, sending domain, recipient addresses (Phase 7)

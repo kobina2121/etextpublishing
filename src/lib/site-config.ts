@@ -14,11 +14,18 @@ import { publicEnv } from "@/lib/env";
 export const siteConfig = {
   /** Taken from the supplied logo artwork, which reads "etext PUBLISHING NETWORK". */
   name: "eText Publishing Network",
-  /** TODO(client): supply real tagline. */
-  tagline: "Publishing that puts authors first",
-  /** TODO(client): supply real description (used as the default meta description). */
+  /**
+   * The mandate as stated by the client, used verbatim. The previous line
+   * ("Publishing that puts authors first") described an author-services house,
+   * which this is not. Editable at /admin/settings.
+   */
+  tagline: "Bridging academia and industry",
+  /**
+   * Condensed from the supplied description — no claims added. Used as the
+   * default meta description, in the footer and on the social card.
+   */
   description:
-    "An independent publishing house representing authors across fiction, non-fiction and academic titles.",
+    "A publishing house established to build the capacity of existing publishing houses in Ghana, bridging the gap between academia and industry.",
   url: publicEnv.siteUrl,
   locale: "en",
 
