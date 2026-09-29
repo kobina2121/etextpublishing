@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BookOpenIcon } from "lucide-react";
 
+import { LogoMark } from "@/components/layout/logo";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { siteConfig } from "@/lib/site-config";
@@ -19,7 +19,7 @@ export default function AdminLoginPage() {
     <main className="flex min-h-dvh items-center justify-center px-4 py-16">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          <BookOpenIcon className="size-9 text-primary" strokeWidth={1.5} aria-hidden />
+          <LogoMark className="h-14" />
           <div>
             <p className="font-semibold tracking-[0.12em] uppercase">{siteConfig.name}</p>
             <p className="mt-1 text-xs text-muted-foreground">Content management</p>

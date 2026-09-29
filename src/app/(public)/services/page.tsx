@@ -39,7 +39,7 @@ export default async function ServicesPage() {
             ))}
           </Stagger>
 
-          <div className="mt-20 flex flex-col items-start gap-6 bg-foreground p-10 text-background sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-20 flex flex-col items-start gap-6 bg-brand-dark p-10 text-background sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-2xl">Have a manuscript ready?</h2>
               <p className="mt-2 text-background/75">

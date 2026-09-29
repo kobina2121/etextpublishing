@@ -12,8 +12,8 @@ import { publicEnv } from "@/lib/env";
  * company data. Replace via the admin Settings screen or the seed script.
  */
 export const siteConfig = {
-  /** TODO(client): confirm legal/trading name and preferred capitalisation. */
-  name: "eText Publishing",
+  /** Taken from the supplied logo artwork, which reads "etext PUBLISHING NETWORK". */
+  name: "eText Publishing Network",
   /** TODO(client): supply real tagline. */
   tagline: "Publishing that puts authors first",
   /** TODO(client): supply real description (used as the default meta description). */

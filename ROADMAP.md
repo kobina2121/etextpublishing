@@ -18,8 +18,7 @@ Build order and exit criteria. Tick items as they land.
 
 ## Outstanding inputs
 
-- [ ] Real company information (name, tagline, contact, address, socials) — everything in `src/lib/site-config.ts` is a marked placeholder
-- [ ] Logo artwork — the book icon is a stand-in
+- [ ] Real company information (tagline, contact, address, socials) — editable at `/admin/settings`; the name and brand colours now come from the supplied logo
 - [ ] Hero photography — the hero falls back to a tonal placeholder until real licensed images are supplied
 - [ ] S3 bucket + credentials (Phase 7)
 - [ ] Resend API key, sending domain, recipient addresses (Phase 7)

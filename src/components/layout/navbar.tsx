@@ -66,7 +66,7 @@ export function Navbar() {
       )}
     >
       <div className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between gap-6 px-4 sm:px-6">
-        <Logo inverted={transparent} />
+        <Logo inverted={transparent} priority />
 
         <nav aria-label="Main" className="hidden items-center gap-6 lg:flex">
           {siteConfig.nav.map((item) => (

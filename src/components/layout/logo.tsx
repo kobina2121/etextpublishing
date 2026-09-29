@@ -1,43 +1,64 @@
+import Image from "next/image";
 import Link from "next/link";
-import { BookOpenIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/lib/site-config";
 
 /**
- * Wordmark. PLACEHOLDER: the icon stands in for a real logo asset, and the
- * name comes from siteConfig until the client supplies brand artwork.
+ * The brand lockup.
+ *
+ * Two files rather than one recoloured with CSS: the artwork is two-tone, and
+ * its deep forest green all but disappears against a dark surface. `inverted`
+ * swaps to the white knockout used over the hero and in the footer.
+ *
+ * The wordmark is part of the image, so the company name is not repeated as
+ * text beside it — a screen reader would otherwise hear it twice. The link's
+ * aria-label carries the name instead, and the image is decorative.
  */
-export function Logo({ className, inverted = false }: { className?: string; inverted?: boolean }) {
+export function Logo({
+  className,
+  inverted = false,
+  priority = false,
+}: {
+  className?: string;
+  inverted?: boolean;
+  priority?: boolean;
+}) {
   return (
     <Link
       href="/"
-      className={cn("group flex items-center gap-3", className)}
       aria-label={`${siteConfig.name} — home`}
+      className={cn("inline-flex shrink-0 items-center", className)}
     >
-      <BookOpenIcon
-        className={cn("size-8 shrink-0", inverted ? "text-white" : "text-primary")}
-        strokeWidth={1.5}
-        aria-hidden
+      <Image
+        src={inverted ? "/logo-light.png" : "/logo.png"}
+        alt=""
+        width={1000}
+        height={372}
+        priority={priority}
+        sizes="(min-width: 640px) 240px, 200px"
+        className="h-12 w-auto sm:h-14"
       />
-      <span className="flex flex-col leading-none">
-        <span
-          className={cn(
-            "text-xl font-medium font-semibold tracking-[0.12em] uppercase",
-            inverted ? "text-white" : "text-foreground",
-          )}
-        >
-          {siteConfig.name}
-        </span>
-        <span
-          className={cn(
-            "mt-1 text-[0.7rem] tracking-wide",
-            inverted ? "text-white/70" : "text-muted-foreground",
-          )}
-        >
-          Publishing Company
-        </span>
-      </span>
     </Link>
+  );
+}
+
+/** Mark only, for tight spaces such as the admin sidebar and the login card. */
+export function LogoMark({
+  className,
+  inverted = false,
+}: {
+  className?: string;
+  inverted?: boolean;
+}) {
+  return (
+    <Image
+      src={inverted ? "/logo-mark-light.png" : "/logo-mark.png"}
+      alt=""
+      width={400}
+      height={579}
+      sizes="64px"
+      className={cn("w-auto", className)}
+    />
   );
 }

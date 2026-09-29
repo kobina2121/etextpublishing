@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { BookOpenIcon, ExternalLinkIcon } from "lucide-react";
+import { ExternalLinkIcon } from "lucide-react";
 
+import { LogoMark } from "@/components/layout/logo";
 import { AdminSidebarNav } from "@/components/admin/admin-sidebar-nav";
 import { AdminMobileNav } from "@/components/admin/admin-mobile-nav";
 import { SignOutButton } from "@/components/admin/sign-out-button";
@@ -14,7 +15,7 @@ export function AdminShell({ admin, children }: { admin: AdminSessionUser; child
     <div className="flex min-h-dvh">
       <aside className="hidden w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
         <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-4">
-          <BookOpenIcon className="size-5 shrink-0 text-primary" aria-hidden />
+          <LogoMark className="h-7 shrink-0" />
           <span className="truncate text-sm font-semibold tracking-[0.1em] uppercase">
             {siteConfig.name}
           </span>

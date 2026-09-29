@@ -19,7 +19,7 @@ export function ListingSkeleton({
 }) {
   return (
     <>
-      <div className="bg-foreground pt-36 pb-16 sm:pt-40 sm:pb-20">
+      <div className="bg-brand-dark pt-36 pb-16 sm:pt-40 sm:pb-20">
         <Container width="wide">
           <Skeleton className="h-11 w-64 bg-white/15" />
           <Skeleton className="mt-4 h-5 w-full max-w-xl bg-white/10" />
