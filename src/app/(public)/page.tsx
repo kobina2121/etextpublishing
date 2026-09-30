@@ -8,6 +8,7 @@ import { ArticleCard } from "@/components/public/article-card";
 import { AuthorCard } from "@/components/public/author-card";
 import { Hero } from "@/components/public/hero";
 import { PublicationCard } from "@/components/public/publication-card";
+import { PublicationCarousel } from "@/components/public/publication-carousel";
 import { SectionHeading } from "@/components/public/section-heading";
 import { ServiceCard } from "@/components/public/service-card";
 import { Steps, type Step } from "@/components/public/steps";
@@ -21,8 +22,15 @@ import {
   getFeaturedAuthors,
   getFeaturedPublications,
   getLatestArticles,
+  listPublications,
   listServices,
 } from "@/server/queries";
+
+/**
+ * Enough titles for the carousel to have somewhere to go. At three per view on
+ * a wide screen, anything less than this is a static row wearing arrows.
+ */
+const CAROUSEL_MIN = 6;
 
 /**
  * PLACEHOLDER COPY. Every string below is scaffolding describing a generic
@@ -57,13 +65,26 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const [publications, authors, articles, services, site] = await Promise.all([
-    getFeaturedPublications(4),
+  const [featured, recent, authors, articles, services, site] = await Promise.all([
+    getFeaturedPublications(CAROUSEL_MIN * 2),
+    listPublications({ pageSize: CAROUSEL_MIN * 2 }),
     getFeaturedAuthors(3),
     getLatestArticles(2),
     listServices(),
     getSiteMeta(),
   ]);
+
+  // Featured titles lead, and are the whole carousel as soon as there are
+  // enough of them. Only while there are too few does it top up from the most
+  // recent published titles, so the section is never a lone card in a track.
+  const alreadyShown = new Set(featured.map((publication) => publication.id));
+  const publications =
+    featured.length >= CAROUSEL_MIN
+      ? featured
+      : [
+          ...featured,
+          ...recent.items.filter((publication) => !alreadyShown.has(publication.id)),
+        ].slice(0, CAROUSEL_MIN);
 
   return (
     <>
@@ -99,15 +120,13 @@ export default async function HomePage() {
       <Section size="lg" className="bg-muted/40">
         <Container width="wide">
           <SectionHeading title="Featured titles" subtitle="Recently published" />
-          <div className="mt-14 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-            {publications.map((publication, index) => (
-              <PublicationCard
-                key={publication.id}
-                publication={publication}
-                priority={index < 2}
-              />
-            ))}
-          </div>
+          <PublicationCarousel
+            label="Featured titles"
+            slides={publications.map((publication, index) => ({
+              id: publication.id,
+              content: <PublicationCard publication={publication} priority={index < 2} />,
+            }))}
+          />
           <div className="mt-12 text-center">
             <Button
               asChild
