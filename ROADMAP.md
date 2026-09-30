@@ -23,6 +23,9 @@ Build order and exit criteria. Tick items as they land.
 - [ ] Homepage "Become a published author" steps still describe a generic author journey rather than the capacity-building process
 - [ ] Higher-resolution photographs — the hero is 800x533 and the inner-page banner 1200x900. Both are upscaled full-bleed and soften above roughly 1280px wide
 - [ ] Paystack secret key, and the webhook registered at `<site>/api/webhooks/paystack` (Payments)
+- [ ] Google OAuth client id + secret, with `/api/auth/callback/google` added as
+      an authorised redirect URI for both localhost and the real domain. Until
+      both are set, Google sign-in is simply not offered
 - [ ] S3 bucket + credentials (Phase 7)
 - [ ] Resend API key, sending domain, recipient addresses (Phase 7)
 - [ ] `NEXT_PUBLIC_SITE_URL` — still `http://localhost:3000`; every canonical, sitemap entry and payment callback points at localhost until it is set
@@ -209,6 +212,41 @@ once, and stock moves. Not yet reachable.
   Paystack retry an error that will never resolve.
 - Verified with a throwaway key: no signature 401, wrong signature 401, valid
   200, and valid-but-tampered-body 401.
+
+## Reader accounts ✅
+
+Added after the original plan: Google sign-in for readers, and a third way in
+for staff.
+
+- [x] Google provider, registered only when both credentials are present
+- [x] `customer` role, below editor and admin; the sign-in path can never
+      create anything higher, and an existing account keeps the role it has
+- [x] Only Google-verified addresses accepted
+- [x] `/login` for readers and `/account` for their orders, gated separately
+      from `/admin` — a customer sent to the admin form would be asked for a
+      password they have never set
+- [x] Orders attach to the account when signed in, and are matched back by
+      verified email when bought as a guest
+- [ ] End-to-end Google round trip — blocked on an OAuth client only the site
+      owner can create
+
+**Exit:** a reader signs in, sees a past order, and signs out. Not yet
+reachable without the credentials.
+
+### Notes
+
+- Guest checkout is untouched. Signing in is never required to buy, because a
+  sign-in wall in front of a basket loses sales.
+- The role lookup lives in the Node-only half of the auth config: the `jwt`
+  callback in `auth.config.ts` must stay free of Mongoose, because `proxy.ts`
+  loads it on the Edge.
+- `passwordHash` is optional now. The password form still compares against the
+  dummy hash when an account has none, so "no password set" is not measurably
+  faster than "wrong password".
+- Verified without a live OAuth client: a new profile resolves to `customer`,
+  an existing admin keeps `admin` and is matched by email rather than Google
+  id, repeats and differently-cased addresses create no duplicates, and the
+  created account has no password hash.
 
 ## Phase 7 — Uploads & email
 
