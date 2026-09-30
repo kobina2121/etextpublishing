@@ -3,7 +3,7 @@ import NextAuth from "next-auth";
 import { authConfig } from "@/lib/auth/auth.config";
 
 /**
- * Route gate for /admin and /account.
+ * Route gate for /admin, /account and the sign-in page.
  *
  * Next 16 renamed the `middleware` file convention to `proxy`; the file must be
  * named proxy.ts and export the handler as default or as `proxy`.
@@ -13,15 +13,16 @@ import { authConfig } from "@/lib/auth/auth.config";
  * page and Server Action re-checks with `requireAdmin()`, and every account
  * page with `requireUser()`.
  *
- * The two areas answer to different rules and bounce to different places.
- * /admin needs the admin role; /account needs only a session, and a customer
- * sent to the admin form would be asked for a password they have never set.
+ * Both areas bounce to the same place. /admin needs the admin role and
+ * /account needs only a session, but there is one sign-in page for everyone
+ * and the role decides where they land afterwards.
  */
 const { auth } = NextAuth(authConfig);
 
 // Reachable without a session, by necessity: /admin/verify is where a magic
 // link lands, and gating it would redirect the token away before it could be
-// exchanged for a session.
+// exchanged for a session. /admin/login is now just a redirect to /login, and
+// has to be reachable for that redirect to run.
 const PUBLIC_ADMIN_PATHS = new Set(["/admin/login", "/admin/verify"]);
 
 export default auth((req) => {
@@ -55,8 +56,15 @@ export default auth((req) => {
   }
 
   if (!isAdmin) {
-    const url = new URL("/admin/login", req.nextUrl);
-    // Preserve where they were heading so login can send them back.
+    // Signed in, but not staff. Sending them to the sign-in page would be a
+    // dead end — they are already signed in, and signing in again changes
+    // nothing — so they go where their account actually lives.
+    if (isSignedIn) {
+      return Response.redirect(new URL("/account", req.nextUrl));
+    }
+
+    const url = new URL("/login", req.nextUrl);
+    // Preserve where they were heading so sign-in can send them back.
     url.searchParams.set("callbackUrl", pathname);
     return Response.redirect(url);
   }

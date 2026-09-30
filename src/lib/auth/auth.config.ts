@@ -11,9 +11,19 @@ import type { NextAuthConfig } from "next-auth";
 export const authConfig = {
   trustHost: true,
   session: { strategy: "jwt" },
+  /**
+   * The public page, not the staff one.
+   *
+   * These are where Auth.js sends someone when it needs a sign-in or has an
+   * error to report, and most of those people are now readers. Pointing them
+   * at /admin/login asked a reader for a password they have never had.
+   *
+   * Staff are unaffected: the proxy redirects to /admin/login itself, the
+   * admin form posts its credentials directly, and /login links across to it.
+   */
   pages: {
-    signIn: "/admin/login",
-    error: "/admin/login",
+    signIn: "/login",
+    error: "/login",
   },
   providers: [],
   callbacks: {

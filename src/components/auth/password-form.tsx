@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 
-export function LoginForm() {
+export function PasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [formError, setFormError] = useState<string | null>(null);
