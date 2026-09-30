@@ -5,19 +5,36 @@ import { useSyncExternalStore } from "react";
 /**
  * The basket, kept in localStorage.
  *
- * Only publication ids and quantities are stored. Prices are never held here
- * and never sent — the server reprices the whole basket from the database at
- * checkout, so a tampered basket buys nothing but a corrected total.
+ * Only publication ids, the chosen edition and quantities are stored. Prices
+ * are never held here and never sent — the server reprices the whole basket
+ * from the database at checkout, so a tampered basket buys nothing but a
+ * corrected total.
+ *
+ * A line is identified by title *and* edition, so the same book can sit in the
+ * basket as both a hardcopy and a download.
  *
  * `useSyncExternalStore` rather than state plus an effect: it takes a separate
  * server snapshot, so the first render matches the server and there is no
  * hydration mismatch and no mounted flag.
  */
 
-const KEY = "etx.cart.v1";
+// v2: entries gained an `edition`. A v1 entry has no edition and cannot be
+// priced, so the old key is abandoned rather than migrated — a stale basket is
+// not worth guessing a binding for.
+const KEY = "etx.cart.v2";
 const EVENT = "etx:cart";
 
-export type CartEntry = { publicationId: string; quantity: number };
+export type EditionKind = "hardcopy" | "softcopy";
+export type CartEntry = { publicationId: string; edition: EditionKind; quantity: number };
+
+function isEditionKind(value: unknown): value is EditionKind {
+  return value === "hardcopy" || value === "softcopy";
+}
+
+/** Stable identity for a basket line. Mirrors the server's key. */
+export function lineKey(publicationId: string, edition: EditionKind): string {
+  return `${publicationId}:${edition}`;
+}
 
 const EMPTY: CartEntry[] = [];
 
@@ -55,6 +72,7 @@ function read(): CartEntry[] {
             typeof e === "object" &&
             e !== null &&
             typeof (e as CartEntry).publicationId === "string" &&
+            isEditionKind((e as CartEntry).edition) &&
             Number.isFinite((e as CartEntry).quantity),
         )
       : EMPTY;
@@ -92,28 +110,31 @@ export function useCartCount(): number {
   return cart.reduce((sum, entry) => sum + entry.quantity, 0);
 }
 
-export function addToCart(publicationId: string, quantity = 1) {
+export function addToCart(publicationId: string, edition: EditionKind, quantity = 1) {
   const current = read();
-  const existing = current.find((e) => e.publicationId === publicationId);
+  const key = lineKey(publicationId, edition);
+  const existing = current.find((e) => lineKey(e.publicationId, e.edition) === key);
   const next = existing
     ? current.map((e) =>
-        e.publicationId === publicationId
+        lineKey(e.publicationId, e.edition) === key
           ? { ...e, quantity: Math.min(20, e.quantity + quantity) }
           : e,
       )
-    : [...current, { publicationId, quantity: Math.min(20, quantity) }];
+    : [...current, { publicationId, edition, quantity: Math.min(20, quantity) }];
   write(next);
 }
 
-export function setQuantity(publicationId: string, quantity: number) {
+export function setQuantity(publicationId: string, edition: EditionKind, quantity: number) {
+  const key = lineKey(publicationId, edition);
   const next = read()
-    .map((e) => (e.publicationId === publicationId ? { ...e, quantity } : e))
+    .map((e) => (lineKey(e.publicationId, e.edition) === key ? { ...e, quantity } : e))
     .filter((e) => e.quantity > 0);
   write(next);
 }
 
-export function removeFromCart(publicationId: string) {
-  write(read().filter((e) => e.publicationId !== publicationId));
+export function removeFromCart(publicationId: string, edition: EditionKind) {
+  const key = lineKey(publicationId, edition);
+  write(read().filter((e) => lineKey(e.publicationId, e.edition) !== key));
 }
 
 export function clearCart() {

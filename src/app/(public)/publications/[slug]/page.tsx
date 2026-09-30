@@ -3,9 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { format as formatDate } from "date-fns";
 
-import { AddToCart } from "@/components/shop/add-to-cart";
+import { EditionChoice } from "@/components/shop/edition-choice";
+import { editionOptions } from "@/components/shop/edition-options";
 import { JsonLd } from "@/components/seo/json-ld";
-import { formatMoney, formatRequiresShipping } from "@/lib/money";
 import { bookJsonLd, breadcrumbJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 
@@ -29,13 +29,6 @@ import {
   getPublicationSlugs,
   getRelatedPublications,
 } from "@/server/queries";
-
-const FORMAT_LABELS: Record<string, string> = {
-  paperback: "Paperback",
-  hardcover: "Hardcover",
-  ebook: "E-book",
-  audiobook: "Audiobook",
-};
 
 /**
  * Known slugs are prerendered at build time; anything else renders on demand.
@@ -83,14 +76,13 @@ export default async function PublicationDetailPage({ params }: PageProps<"/publ
 
   const related = await getRelatedPublications(publication);
 
-  const needsShipping = formatRequiresShipping(publication.format);
-  // Only printed formats can run out; a download never does.
-  const inStock = !needsShipping || publication.stockQuantity > 0;
+  const options = editionOptions(publication);
+  const offeredLabels = options.map((option) => option.label).join(" or ");
 
   const details = [
     { label: "Author", value: publication.author.name },
     { label: "Category", value: publication.category.name },
-    { label: "Format", value: FORMAT_LABELS[publication.format] ?? publication.format },
+    { label: "Available as", value: offeredLabels || "Not currently for sale" },
     { label: "Pages", value: String(publication.pages) },
     { label: "Published", value: formatDate(publication.publicationDate, "d MMMM yyyy") },
     { label: "ISBN", value: publication.isbn },
@@ -167,21 +159,31 @@ export default async function PublicationDetailPage({ params }: PageProps<"/publ
               ))}
             </dl>
 
-            {publication.price > 0 ? (
-              <div className="mt-8 flex flex-wrap items-center gap-4 border-t border-border pt-6">
-                <span className="text-3xl font-semibold">
-                  {formatMoney(publication.price, publication.currency)}
-                </span>
-                {inStock ? (
-                  <AddToCart publicationId={publication.id} title={publication.title} size="xl" />
-                ) : (
-                  <span className="text-sm font-medium text-destructive">Out of stock</span>
-                )}
-                <span className="w-full text-xs text-muted-foreground sm:w-auto">
-                  {needsShipping ? "Printed and posted to you." : "Download after payment."}
-                </span>
-              </div>
-            ) : null}
+            <div className="mt-8 border-t border-border pt-6">
+              {options.length > 0 ? (
+                <>
+                  <p className="mb-4 text-sm font-semibold tracking-[0.12em] uppercase">
+                    Choose an edition
+                  </p>
+                  <div className="max-w-sm">
+                    <EditionChoice
+                      publicationId={publication.id}
+                      title={publication.title}
+                      currency={publication.currency}
+                      options={options}
+                      size="xl"
+                    />
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    A hardcopy is printed and posted to you. A softcopy downloads after payment.
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm font-medium text-destructive">
+                  This title is not currently for sale.
+                </p>
+              )}
+            </div>
 
             <div className="mt-10 flex flex-wrap gap-4">
               <Button asChild size="xl" className="font-semibold tracking-[0.1em] uppercase">

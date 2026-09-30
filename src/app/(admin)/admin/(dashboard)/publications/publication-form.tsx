@@ -30,22 +30,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   CURRENCIES,
   publicationSchema,
   type PublicationInput,
 } from "@/lib/validations/publication";
-import { PUBLICATION_FORMATS, PUBLICATION_STATUSES } from "@/types/content";
+import { PUBLICATION_STATUSES } from "@/types/content";
 import { createPublication, updatePublication } from "@/server/actions/publications";
 import type { Option, PublicationFormValues } from "@/server/admin/queries";
-
-const FORMAT_LABELS: Record<string, string> = {
-  paperback: "Paperback",
-  hardcover: "Hardcover",
-  ebook: "E-book",
-  audiobook: "Audiobook",
-};
 
 const STATUS_LABELS: Record<string, string> = {
   draft: "Draft",
@@ -70,7 +64,6 @@ export function PublicationForm({
     defaultValues: initial
       ? {
           ...initial,
-          format: initial.format as PublicationInput["format"],
           status: initial.status as PublicationInput["status"],
         }
       : {
@@ -83,11 +76,15 @@ export function PublicationForm({
           excerpt: "",
           description: "",
           publicationDate: new Date().toISOString().slice(0, 10),
-          format: "paperback",
           pages: 1,
-          priceMajor: 0,
           currency: "GHS",
-          stockQuantity: 0,
+          // A new title defaults to selling both ways; the admin turns off
+          // whichever does not apply.
+          hardcopyAvailable: true,
+          hardcopyPriceMajor: 0,
+          hardcopyStock: 0,
+          softcopyAvailable: true,
+          softcopyPriceMajor: 0,
           featured: false,
           status: "draft",
         },
@@ -220,29 +217,6 @@ export function PublicationForm({
                       <FieldError errors={[errors.pages]} />
                     </Field>
 
-                    <Field data-invalid={!!errors.format}>
-                      <FieldLabel htmlFor="pub-format">Format</FieldLabel>
-                      <Controller
-                        control={control}
-                        name="format"
-                        render={({ field }) => (
-                          <Select value={field.value ?? ""} onValueChange={field.onChange}>
-                            <SelectTrigger id="pub-format" onBlur={field.onBlur}>
-                              <SelectValue placeholder="Choose…" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {PUBLICATION_FORMATS.map((v) => (
-                                <SelectItem key={v} value={v}>
-                                  {FORMAT_LABELS[v] ?? v}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      />
-                      <FieldError errors={[errors.format]} />
-                    </Field>
-
                     <Field data-invalid={!!errors.publicationDate}>
                       <FieldLabel htmlFor="pub-date">Publication date</FieldLabel>
                       <Input id="pub-date" type="date" {...register("publicationDate")} />
@@ -282,20 +256,7 @@ export function PublicationForm({
             <CardContent>
               <FieldSet>
                 <FieldGroup>
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <Field data-invalid={!!errors.priceMajor}>
-                      <FieldLabel htmlFor="pub-price">Price</FieldLabel>
-                      <Input
-                        id="pub-price"
-                        type="number"
-                        step="0.01"
-                        min={0}
-                        {...register("priceMajor")}
-                      />
-                      <FieldDescription>0 means it is not for sale.</FieldDescription>
-                      <FieldError errors={[errors.priceMajor]} />
-                    </Field>
-
+                  <div className="grid gap-5">
                     <Field data-invalid={!!errors.currency}>
                       <FieldLabel htmlFor="pub-currency">Currency</FieldLabel>
                       <Controller
@@ -320,15 +281,90 @@ export function PublicationForm({
                     </Field>
                   </div>
 
-                  <Field data-invalid={!!errors.stockQuantity}>
-                    <FieldLabel htmlFor="pub-stock">Stock</FieldLabel>
-                    <Input id="pub-stock" type="number" min={0} {...register("stockQuantity")} />
-                    <FieldDescription>
-                      Counted down as orders are paid. Ignored for e-books and audiobooks, which
-                      cannot run out.
-                    </FieldDescription>
-                    <FieldError errors={[errors.stockQuantity]} />
-                  </Field>
+                  {/*
+                    One title, two things a buyer can pay for. Each is switched
+                    on independently, so a print-only title and a
+                    download-only title are both expressible without a separate
+                    record for each.
+                  */}
+                  <div className="space-y-4 border-t border-border pt-5">
+                    <div className="flex items-center justify-between gap-4">
+                      <FieldLabel htmlFor="pub-hardcopy-on" className="mb-0">
+                        Sell a hardcopy
+                      </FieldLabel>
+                      <Controller
+                        control={control}
+                        name="hardcopyAvailable"
+                        render={({ field }) => (
+                          <Switch
+                            id="pub-hardcopy-on"
+                            checked={!!field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid gap-5 sm:grid-cols-2">
+                      <Field data-invalid={!!errors.hardcopyPriceMajor}>
+                        <FieldLabel htmlFor="pub-hardcopy-price">Hardcopy price</FieldLabel>
+                        <Input
+                          id="pub-hardcopy-price"
+                          type="number"
+                          step="0.01"
+                          min={0}
+                          {...register("hardcopyPriceMajor")}
+                        />
+                        <FieldError errors={[errors.hardcopyPriceMajor]} />
+                      </Field>
+
+                      <Field data-invalid={!!errors.hardcopyStock}>
+                        <FieldLabel htmlFor="pub-hardcopy-stock">Printed stock</FieldLabel>
+                        <Input
+                          id="pub-hardcopy-stock"
+                          type="number"
+                          min={0}
+                          {...register("hardcopyStock")}
+                        />
+                        <FieldDescription>Counted down as orders are paid.</FieldDescription>
+                        <FieldError errors={[errors.hardcopyStock]} />
+                      </Field>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 border-t border-border pt-5">
+                    <div className="flex items-center justify-between gap-4">
+                      <FieldLabel htmlFor="pub-softcopy-on" className="mb-0">
+                        Sell a softcopy
+                      </FieldLabel>
+                      <Controller
+                        control={control}
+                        name="softcopyAvailable"
+                        render={({ field }) => (
+                          <Switch
+                            id="pub-softcopy-on"
+                            checked={!!field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        )}
+                      />
+                    </div>
+
+                    <Field data-invalid={!!errors.softcopyPriceMajor}>
+                      <FieldLabel htmlFor="pub-softcopy-price">Softcopy price</FieldLabel>
+                      <Input
+                        id="pub-softcopy-price"
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        {...register("softcopyPriceMajor")}
+                      />
+                      <FieldDescription>
+                        A download has no stock — it cannot run out.
+                      </FieldDescription>
+                      <FieldError errors={[errors.softcopyPriceMajor]} />
+                    </Field>
+                  </div>
                 </FieldGroup>
               </FieldSet>
             </CardContent>

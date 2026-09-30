@@ -15,6 +15,7 @@ export type WithTimestamps = {
 
 export type PublicationStatusValue = "draft" | "published" | "archived";
 export type PublicationFormatValue = "paperback" | "hardcover" | "ebook" | "audiobook";
+export type EditionKindValue = "hardcopy" | "softcopy";
 export type SubmissionStatusValue = "new" | "under_review" | "accepted" | "rejected" | "archived";
 export type UserRole = "admin" | "editor";
 
@@ -61,7 +62,7 @@ export type OrderItemDoc = {
   /** Snapshot: an order must not change when a title is later repriced or renamed. */
   title: string;
   slug: string;
-  format: PublicationFormatValue;
+  edition: EditionKindValue;
   unitPrice: number;
   quantity: number;
   requiresShipping: boolean;
@@ -107,24 +108,29 @@ export type PublicationDoc = WithTimestamps & {
   description: string;
   excerpt: string;
   publicationDate: Date;
-  format: PublicationFormatValue;
   pages: number;
   featured: boolean;
   status: PublicationStatusValue;
 
   /**
-   * Integer minor units (pesewas for GHS), never a float. Storing money as a
-   * decimal invites rounding errors that only show up once real sums are being
-   * added together.
+   * One title, up to two things a buyer can pay for.
    *
-   * 0 means not for sale.
+   * Prices are integer minor units (pesewas for GHS), never floats. Storing
+   * money as a decimal invites rounding errors that only surface once real
+   * sums are being added together. 0 means not for sale, whichever way
+   * `available` is set.
    */
-  price: number;
+  editions: Record<EditionKindValue, EditionDoc>;
   currency: string;
-  /** Physical formats only; ignored for ebook and audiobook. */
-  stockQuantity: number;
-  /** Digital formats only: object key for the purchasable file. Phase 7. */
+  /** Softcopy only: object key for the purchasable file. Phase 7. */
   digitalFileKey?: string;
+};
+
+export type EditionDoc = {
+  available: boolean;
+  price: number;
+  /** Hardcopy only; a download cannot run out, so it stays 0. */
+  stockQuantity: number;
 };
 
 export type ArticleDoc = WithTimestamps & {

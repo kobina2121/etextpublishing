@@ -77,6 +77,7 @@ export default async function AdminPublicationsPage({
                 <TableHead>Title</TableHead>
                 <TableHead className="hidden md:table-cell">Author</TableHead>
                 <TableHead className="hidden lg:table-cell">Category</TableHead>
+                <TableHead className="hidden lg:table-cell">On sale as</TableHead>
                 <TableHead className="hidden sm:table-cell">Published</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -101,6 +102,9 @@ export default async function AdminPublicationsPage({
                   </TableCell>
                   <TableCell className="hidden md:table-cell">{row.authorName}</TableCell>
                   <TableCell className="hidden lg:table-cell">{row.categoryName}</TableCell>
+                  <TableCell className="hidden whitespace-nowrap lg:table-cell">
+                    {row.editions}
+                  </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     {format(row.publicationDate, "MMM yyyy")}
                   </TableCell>

@@ -100,11 +100,10 @@ async function seedContent() {
           description: publication.description,
           excerpt: publication.excerpt,
           publicationDate: publication.publicationDate,
-          format: publication.format,
+
           pages: publication.pages,
-          price: publication.price,
           currency: publication.currency,
-          stockQuantity: publication.stockQuantity,
+          editions: publication.editions,
           featured: publication.featured,
           status: publication.status,
         },

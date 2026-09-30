@@ -70,7 +70,11 @@ export async function startCheckout(raw: {
   }
 
   const priced = await priceCart(
-    cart.data.map((i) => ({ publicationId: i.publicationId, quantity: i.quantity })),
+    cart.data.map((i) => ({
+      publicationId: i.publicationId,
+      edition: i.edition,
+      quantity: i.quantity,
+    })),
   );
 
   if (priced.lines.length === 0) {
@@ -113,7 +117,7 @@ export async function startCheckout(raw: {
       publication: Types.ObjectId.createFromHexString(line.publicationId),
       title: line.title,
       slug: line.slug,
-      format: line.format as OrderItemDoc["format"],
+      edition: line.edition as OrderItemDoc["edition"],
       unitPrice: line.unitPrice,
       quantity: line.quantity,
       requiresShipping: line.requiresShipping,
