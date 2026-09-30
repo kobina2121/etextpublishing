@@ -9,12 +9,17 @@ import { siteConfig } from "@/lib/site-config";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+import { GoogleButton } from "@/components/auth/google-button";
+import { isGoogleSignInEnabled } from "@/lib/auth/google";
+
 import { LoginForm } from "./login-form";
 import { MagicLinkForm } from "./magic-link-form";
 
 export const metadata: Metadata = { title: "Sign in" };
 
 export default function AdminLoginPage() {
+  const googleEnabled = isGoogleSignInEnabled();
+
   return (
     <main className="flex min-h-dvh items-center justify-center px-4 py-16">
       <div className="w-full max-w-sm">
@@ -53,6 +58,24 @@ export default function AdminLoginPage() {
                 </Suspense>
               </TabsContent>
             </Tabs>
+
+            {googleEnabled ? (
+              <>
+                <div className="my-6 flex items-center gap-3">
+                  <span className="h-px flex-1 bg-border" />
+                  <span className="text-xs tracking-[0.14em] text-muted-foreground uppercase">
+                    or
+                  </span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                {/*
+                  Google reaches the dashboard only for an address that is
+                  already staff here. A Google account on its own creates a
+                  customer, which the proxy bounces away from /admin.
+                */}
+                <GoogleButton callbackUrl="/admin" label="Continue with Google" />
+              </>
+            ) : null}
           </CardContent>
         </Card>
 

@@ -11,6 +11,7 @@ import { checkRateLimit, rateLimitKey } from "@/lib/rate-limit";
 import { cartPayloadSchema, checkoutSchema } from "@/lib/validations/checkout";
 import { Order } from "@/models";
 import type { OrderItemDoc } from "@/models/types";
+import { getSessionUser } from "@/lib/auth/guards";
 import { priceCart } from "@/server/cart";
 
 export type CheckoutResult =
@@ -108,8 +109,18 @@ export async function startCheckout(raw: {
   // Built as one explicit object rather than with conditional spreads: those
   // widen the literal into a union and Mongoose's create() overloads then fail
   // to resolve. Optional fields are set to undefined, which Mongoose omits.
+  // Attach the order to the account when there is one, so it shows up under
+  // "your orders" even if they later change the email on a future purchase.
+  // Signing in is never required: a guest order simply has no owner, and is
+  // matched back by verified email if they sign up afterwards.
+  const sessionUser = await getSessionUser();
+
   const order = await Order.create({
     reference,
+    user:
+      sessionUser && Types.ObjectId.isValid(sessionUser.id)
+        ? Types.ObjectId.createFromHexString(sessionUser.id)
+        : undefined,
     email: details.data.email,
     customerName: details.data.customerName,
     phone: details.data.phone || undefined,

@@ -45,9 +45,20 @@ const linkSchema = new Schema(
 const userSchema = new Schema<UserDoc>(
   {
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    passwordHash: { type: String, required: true },
+    // Optional: a Google account has no password here, and must not be given a
+    // guessable placeholder one.
+    passwordHash: { type: String },
     name: { type: String, required: true, trim: true },
-    role: { type: String, enum: ["admin", "editor"], default: "editor", required: true },
+    // `customer` is the floor, and the default: nothing in the sign-in path
+    // may create an account with more than this.
+    role: {
+      type: String,
+      enum: ["admin", "editor", "customer"],
+      default: "customer",
+      required: true,
+    },
+    image: { type: String, trim: true },
+    googleId: { type: String, trim: true, index: true },
   },
   { timestamps: true },
 );
@@ -228,6 +239,9 @@ const orderItemSchema = new Schema(
 const orderSchema = new Schema<OrderDoc>(
   {
     reference: { type: String, required: true, unique: true, trim: true },
+    // Set when the buyer was signed in. Guest checkout stays supported, so an
+    // order is matched back to an account by verified email as well.
+    user: { type: Schema.Types.ObjectId, ref: "User", index: true },
     email: { type: String, required: true, lowercase: true, trim: true },
     customerName: { type: String, required: true, trim: true },
     phone: { type: String, trim: true },

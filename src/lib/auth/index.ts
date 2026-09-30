@@ -1,8 +1,10 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 
 import { authConfig } from "@/lib/auth/auth.config";
+import { googleCredentials, resolveGoogleUser } from "@/lib/auth/google";
 import { consumeMagicLink } from "@/lib/auth/magic-link";
 import { connectToDatabase } from "@/lib/db";
 import { checkRateLimit, clearRateLimit, rateLimitKey } from "@/lib/rate-limit";
@@ -17,6 +19,8 @@ import { User } from "@/models";
  * timing tells an attacker which email addresses exist.
  */
 const DUMMY_HASH = "$2b$12$C6UzMDM.H6dfI/f/IKcEe.Q0Q0Q0Q0Q0Q0Q0Q0Q0Q0Q0Q0Q0Q0Q0";
+
+const google = googleCredentials();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -46,9 +50,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        // This application only has an admin login. Any other role is refused
-        // here as well as in the proxy, so a downgraded account cannot sign in.
+        // This form is the admin login. Any other role — including the
+        // customers that Google sign-in creates — is refused here as well as
+        // in the proxy, so a downgraded account cannot sign in.
         if (user.role !== "admin") {
+          await bcrypt.compare(parsed.data.password, DUMMY_HASH);
+          return null;
+        }
+
+        // An account that only ever signs in through a provider has no hash.
+        // Compare against the dummy anyway: returning early would make
+        // "no password set" measurably faster than "wrong password".
+        if (!user.passwordHash) {
           await bcrypt.compare(parsed.data.password, DUMMY_HASH);
           return null;
         }
@@ -87,5 +100,51 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return result.user;
       },
     }),
+    /**
+     * Google, registered only when both halves of the credential are present.
+     * An unconfigured provider would still publish a callback route that fails
+     * at the redirect, which reads as a broken site rather than a feature that
+     * is switched off.
+     */
+    ...(google ? [Google(google)] : []),
   ],
+  callbacks: {
+    ...authConfig.callbacks,
+
+    /**
+     * Google hands back a profile, not one of our accounts. The `jwt` callback
+     * in auth.config.ts has to stay free of Mongoose — the proxy loads it on
+     * the Edge — so the lookup happens here, in the Node-only half, and only
+     * on the sign-in pass where `user` is present.
+     */
+    async jwt({ token, user, account, profile }) {
+      if (!user) return token;
+
+      if (account?.provider === "google") {
+        // Auth.js has already validated the ID token; this checks the claim we
+        // actually depend on. An unverified address proves nothing about who
+        // reads that mailbox, and orders are matched back by email.
+        if (profile?.email_verified !== true || !profile.email) return token;
+
+        const resolved = await resolveGoogleUser({
+          email: profile.email,
+          name: typeof profile.name === "string" ? profile.name : "",
+          googleId: typeof profile.sub === "string" ? profile.sub : "",
+          ...(typeof profile.picture === "string" ? { image: profile.picture } : {}),
+        });
+        if (!resolved) return token;
+
+        token.id = resolved.id;
+        token.role = resolved.role;
+        token.name = resolved.name;
+        token.email = resolved.email;
+        if (resolved.image) token.picture = resolved.image;
+        return token;
+      }
+
+      token.id = user.id;
+      token.role = user.role;
+      return token;
+    },
+  },
 });

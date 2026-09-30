@@ -5,12 +5,16 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import type { UserRole } from "@/models/types";
 
-export type AdminSessionUser = {
+export type SessionUser = {
   id: string;
   email: string;
   name: string;
   role: UserRole;
+  image?: string;
 };
+
+/** Kept as an alias: admin code reads better saying what it requires. */
+export type AdminSessionUser = SessionUser;
 
 /**
  * Asserts an admin session.
@@ -45,5 +49,40 @@ export async function getAdminSession(): Promise<AdminSessionUser | null> {
     email: user.email ?? "",
     name: user.name ?? "",
     role: user.role,
+  };
+}
+
+/**
+ * Asserts any signed-in account, whatever its role.
+ *
+ * Account pages show a person their own orders, which staff have as much right
+ * to as a reader. The gate here is "is this someone", not "is this staff".
+ */
+export async function requireUser(): Promise<SessionUser> {
+  const session = await auth();
+  const user = session?.user;
+
+  if (!user) redirect("/login");
+
+  return {
+    id: user.id,
+    email: user.email ?? "",
+    name: user.name ?? "",
+    role: user.role,
+    ...(user.image ? { image: user.image } : {}),
+  };
+}
+
+/** Non-redirecting variant, for chrome that renders either way. */
+export async function getSessionUser(): Promise<SessionUser | null> {
+  const session = await auth();
+  const user = session?.user;
+  if (!user) return null;
+  return {
+    id: user.id,
+    email: user.email ?? "",
+    name: user.name ?? "",
+    role: user.role,
+    ...(user.image ? { image: user.image } : {}),
   };
 }

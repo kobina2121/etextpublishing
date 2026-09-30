@@ -17,14 +17,23 @@ export type PublicationStatusValue = "draft" | "published" | "archived";
 export type PublicationFormatValue = "paperback" | "hardcover" | "ebook" | "audiobook";
 export type EditionKindValue = "hardcopy" | "softcopy";
 export type SubmissionStatusValue = "new" | "under_review" | "accepted" | "rejected" | "archived";
-export type UserRole = "admin" | "editor";
+/**
+ * `customer` is a reader with an account, not staff. It grants nothing beyond
+ * seeing one's own orders, and no sign-in path can ever mint anything higher:
+ * a role above customer is only ever set deliberately, by seed or by hand.
+ */
+export type UserRole = "admin" | "editor" | "customer";
 
 export type UserDoc = WithTimestamps & {
   _id: Types.ObjectId;
   email: string;
-  passwordHash: string;
+  /** Absent for accounts that only ever sign in through a provider. */
+  passwordHash?: string;
   name: string;
   role: UserRole;
+  image?: string;
+  /** Provider account ids, so a returning user matches even if they change name. */
+  googleId?: string;
 };
 
 export type CategoryDoc = WithTimestamps & {
@@ -70,6 +79,8 @@ export type OrderItemDoc = {
 
 export type OrderDoc = WithTimestamps & {
   _id: Types.ObjectId;
+  /** Present when the buyer was signed in; guest orders have none. */
+  user?: Types.ObjectId;
   /** Our reference, sent to Paystack and used to reconcile the callback. */
   reference: string;
   email: string;
