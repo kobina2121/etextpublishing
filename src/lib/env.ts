@@ -27,6 +27,11 @@ const serverEnvSchema = z.object({
   // Auth (Phase 5)
   AUTH_SECRET: z.string().trim().min(32, "AUTH_SECRET must be at least 32 characters"),
 
+  // Google sign-in. Optional: without both, the provider is not registered and
+  // the button does not render, rather than offering a route that 500s.
+  AUTH_GOOGLE_ID: optionalString,
+  AUTH_GOOGLE_SECRET: optionalString,
+
   // Seed (Phase 4)
   SEED_ADMIN_EMAIL: optionalString.pipe(z.string().email().optional()),
   SEED_ADMIN_PASSWORD: optionalString,

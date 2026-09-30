@@ -3,12 +3,13 @@ import "server-only";
 import { Types, type PipelineStage } from "mongoose";
 
 import { connectToDatabase } from "@/lib/db";
-import { Article, Author, Category, Publication, Service, SiteSettings } from "@/models";
+import { Article, Author, Category, Order, Publication, Service, SiteSettings } from "@/models";
 import type {
   ArticleDoc,
   AuthorDoc,
   CategoryDoc,
   EditionDoc,
+  OrderDoc,
   PublicationDoc,
   ServiceDoc,
   SiteSettingsDoc,
@@ -526,4 +527,75 @@ export async function getSiteSettings(): Promise<SiteSettingsValues | null> {
     socials: doc.socials,
     ...(doc.footerText ? { footerText: doc.footerText } : {}),
   };
+}
+
+// --- Customer account -------------------------------------------------------
+
+export type CustomerOrderLine = {
+  title: string;
+  slug: string;
+  edition: EditionKind;
+  quantity: number;
+  unitPrice: number;
+  requiresShipping: boolean;
+};
+
+export type CustomerOrder = {
+  reference: string;
+  placedAt: Date;
+  status: string;
+  fulfilment: string;
+  total: number;
+  currency: string;
+  requiresShipping: boolean;
+  items: CustomerOrderLine[];
+};
+
+/**
+ * A reader's own orders.
+ *
+ * Matched by account *and* by verified email address. Google only ever gives
+ * us an address it has verified, so an order placed as a guest with that same
+ * address belongs to the person now signed in — and without this, signing up
+ * after buying would show an empty history.
+ *
+ * Only paid orders are listed. A `pending` row is an abandoned payment
+ * attempt, and showing those as "orders" reads as having been charged twice.
+ */
+export async function getOrdersForCustomer(input: {
+  userId: string;
+  email: string;
+}): Promise<CustomerOrder[]> {
+  await connectToDatabase();
+
+  const email = input.email.trim().toLowerCase();
+  const or: Record<string, unknown>[] = [];
+  if (Types.ObjectId.isValid(input.userId)) {
+    or.push({ user: Types.ObjectId.createFromHexString(input.userId) });
+  }
+  if (email) or.push({ email });
+  if (or.length === 0) return [];
+
+  const docs = await Order.find({ $or: or, status: "paid" })
+    .sort({ createdAt: -1 })
+    .limit(100)
+    .lean<Lean<OrderDoc>[]>();
+
+  return docs.map((doc) => ({
+    reference: doc.reference,
+    placedAt: new Date(doc.paidAt ?? doc.createdAt),
+    status: doc.status,
+    fulfilment: doc.fulfilment,
+    total: doc.total,
+    currency: (doc.currency ?? "GHS").toUpperCase(),
+    requiresShipping: doc.requiresShipping,
+    items: doc.items.map((item) => ({
+      title: item.title,
+      slug: item.slug,
+      edition: item.edition as EditionKind,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      requiresShipping: item.requiresShipping,
+    })),
+  }));
 }

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MenuIcon } from "lucide-react";
+import { MenuIcon, UserIcon, UserRoundCheckIcon } from "lucide-react";
 
 import { Logo } from "@/components/layout/logo";
 import { ModeToggle } from "@/components/layout/mode-toggle";
@@ -39,7 +39,12 @@ const OVERLAY_ROUTES = new Set([
  * the hero image is never cropped by a band of chrome. Everywhere else it is
  * solid from the start.
  */
-export function Navbar() {
+export function Navbar({
+  account,
+}: {
+  /** Null when signed out. The navbar never fetches this itself. */
+  account?: { name: string; isAdmin: boolean } | null;
+}) {
   const pathname = usePathname();
   const overlay = OVERLAY_ROUTES.has(pathname);
   const [scrolled, setScrolled] = useState(false);
@@ -94,6 +99,23 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-1">
+          <Link
+            href={account ? "/account" : "/login"}
+            aria-label={account ? `Your account, signed in as ${account.name}` : "Sign in"}
+            className={cn(
+              "relative inline-flex size-9 items-center justify-center transition-colors",
+              transparent
+                ? "text-white hover:text-primary-on-dark"
+                : "text-foreground hover:text-primary",
+            )}
+          >
+            {account ? (
+              <UserRoundCheckIcon className="size-5" aria-hidden />
+            ) : (
+              <UserIcon className="size-5" aria-hidden />
+            )}
+          </Link>
+
           <CartLink inverted={transparent} />
 
           <div className={cn(transparent && "text-white [&_button]:hover:bg-white/10")}>
@@ -130,6 +152,13 @@ export function Navbar() {
                     {item.label}
                   </Link>
                 ))}
+                <Link
+                  href={account ? "/account" : "/login"}
+                  onClick={() => setOpen(false)}
+                  className="border-b border-border py-4 text-base font-semibold tracking-[0.08em] text-foreground uppercase transition-colors hover:text-primary"
+                >
+                  {account ? "Your account" : "Sign in"}
+                </Link>
               </nav>
             </SheetContent>
           </Sheet>
