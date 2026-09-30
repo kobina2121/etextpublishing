@@ -21,9 +21,11 @@ Build order and exit criteria. Tick items as they land.
 - [ ] Contact details, address and social links — still the seeded placeholders, editable at `/admin/settings`
 - [ ] Homepage headline: "Publish & Sell Your Book" addresses individual authors, but the stated mandate and the service list are aimed at publishing houses. Needs the client's wording.
 - [ ] Homepage "Become a published author" steps still describe a generic author journey rather than the capacity-building process
-- [ ] Higher-resolution hero photograph — the supplied image is 800x533, which is upscaled across a full-bleed hero and looks soft above about 1280px wide
+- [ ] Higher-resolution photographs — the hero is 800x533 and the inner-page banner 1200x900. Both are upscaled full-bleed and soften above roughly 1280px wide
+- [ ] Paystack secret key, and the webhook registered at `<site>/api/webhooks/paystack` (Payments)
 - [ ] S3 bucket + credentials (Phase 7)
 - [ ] Resend API key, sending domain, recipient addresses (Phase 7)
+- [ ] `NEXT_PUBLIC_SITE_URL` — still `http://localhost:3000`; every canonical, sitemap entry and payment callback points at localhost until it is set
 
 ---
 
@@ -161,6 +163,38 @@ UI, and publishing appears on the public site without a rebuild. ✅
   The cost is a soft 404 on slugs that never existed.
 - Admin reads live in `server/admin/queries.ts`, separate from the public layer
   that filters to `status: published`.
+
+## Payments & storefront ✅
+
+Added after the original plan, at the client's request: readers buy titles with
+Paystack, physical formats ship and digital formats download.
+
+- [x] Money as integer minor units; `formatMoney`, `formatRequiresShipping`
+- [x] Paystack: initialise, verify, and HMAC-SHA512 webhook signature over the
+      raw body
+- [x] Basket in localStorage via `useSyncExternalStore`, ids and quantities only
+- [x] Server-side repricing on every basket view and again at checkout
+- [x] Orders written `pending` before Paystack is contacted; only `settleOrder`
+      may mark one paid, idempotently, decrementing stock for shipped items
+- [x] Admin order list, detail and fulfilment status
+- [ ] Digital download delivery — blocked on S3 (Phase 7). A paid ebook records
+      the entitlement but there is nowhere to serve the file from yet
+- [ ] End-to-end test against live Paystack — blocked on the secret key
+
+**Exit:** a real test transaction completes, the webhook marks the order paid
+once, and stock moves. Not yet reachable.
+
+### Notes
+
+- The browser sends only ids and quantities. A tampered basket was verified to
+  buy nothing but a corrected total, and a digital line is forced to one copy.
+- Signature verification fails closed when the key is unset. It was throwing,
+  which turned a forged webhook into a 500 that advertised the missing key and
+  made Paystack retry an event that could never succeed.
+- The webhook returns 200 on anything it cannot act on: a non-2xx makes
+  Paystack retry an error that will never resolve.
+- Verified with a throwaway key: no signature 401, wrong signature 401, valid
+  200, and valid-but-tampered-body 401.
 
 ## Phase 7 — Uploads & email
 
