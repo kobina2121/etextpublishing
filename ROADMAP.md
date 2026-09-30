@@ -169,13 +169,18 @@ UI, and publishing appears on the public site without a rebuild. ✅
 Added after the original plan, at the client's request: readers buy titles with
 Paystack, physical formats ship and digital formats download.
 
-- [x] Money as integer minor units; `formatMoney`, `formatRequiresShipping`
+- [x] Money as integer minor units; `formatMoney`, `editionRequiresShipping`
 - [x] Paystack: initialise, verify, and HMAC-SHA512 webhook signature over the
       raw body
-- [x] Basket in localStorage via `useSyncExternalStore`, ids and quantities only
+- [x] Hardcopy and softcopy editions per title, each with its own availability,
+      price and (for print) stock; admin switches and prices each one
+- [x] Buyer chooses an edition before adding to the basket; the picker hides
+      when only one is for sale
+- [x] Basket in localStorage via `useSyncExternalStore`, keyed by title *and*
+      edition, ids and quantities only
 - [x] Server-side repricing on every basket view and again at checkout
 - [x] Orders written `pending` before Paystack is contacted; only `settleOrder`
-      may mark one paid, idempotently, decrementing stock for shipped items
+      may mark one paid, idempotently, decrementing the bought edition's stock
 - [x] Admin order list, detail and fulfilment status
 - [ ] Digital download delivery — blocked on S3 (Phase 7). A paid ebook records
       the entitlement but there is nowhere to serve the file from yet
@@ -186,8 +191,17 @@ once, and stock moves. Not yet reachable.
 
 ### Notes
 
-- The browser sends only ids and quantities. A tampered basket was verified to
-  buy nothing but a corrected total, and a digital line is forced to one copy.
+- The browser sends only ids, an edition and quantities. A tampered basket was
+  verified to buy nothing but a corrected total: a client-supplied unit price
+  was ignored, a forged edition value refused, and a download forced to one
+  copy. Stock decrements the bought edition, so a download cannot reduce print
+  stock.
+- `format` (paperback/hardcover/ebook/audiobook) survives only as
+  manuscript-submission vocabulary. It says nothing about what is for sale.
+- The stored basket is on a `v2` key. A v1 entry has no edition and cannot be
+  priced, so old baskets are dropped rather than guessed at.
+- Seeded edition prices are placeholders — the softcopy sits at roughly 45% of
+  the printed price, which is scaffolding, not a commercial decision.
 - Signature verification fails closed when the key is unset. It was throwing,
   which turned a forged webhook into a 500 that advertised the missing key and
   made Paystack retry an event that could never succeed.
@@ -198,6 +212,13 @@ once, and stock moves. Not yet reachable.
 
 ## Phase 7 — Uploads & email
 
+The only part blocked on credentials is the file storage and the email itself.
+Persisting a submission needs neither — see the first item.
+
+- [ ] **Unblocked:** contact and manuscript forms actually save. Validation and
+      UX are complete and the models and admin screens exist, but there is no
+      public create action, so both forms currently discard what is typed into
+      them
 - [ ] Presign route with server-side MIME + size validation
 - [ ] Private manuscript prefix; admin download via short-lived presigned GET
 - [ ] Submission and contact forms end-to-end, rate limited, honeypot
@@ -266,6 +287,9 @@ drafts absent from the sitemap. ✅
 - [ ] Playwright smoke: homepage, publication detail, search, submission, admin login, admin CRUD
 - [ ] `typecheck` → `lint` → `build`, fix everything
 - [ ] Manual pass over public + admin at 375 / 768 / 1440; Lighthouse
+- [ ] Drive the admin publication form logged in — the two edition switches are
+      type-checked, linted and building, but have never been clicked. Reading
+      the seeded admin password is blocked, so this one needs a human
 - [ ] Final commit and push
 
 **Exit:** green gates, verified pages, shipped.
