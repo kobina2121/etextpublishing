@@ -51,7 +51,12 @@ export function formatMoney(minor: number, currency = DEFAULT_CURRENCY, locale =
   }
 }
 
-/** Physical formats need an address and consume stock; digital ones do not. */
-export function formatRequiresShipping(format: string): boolean {
-  return format === "paperback" || format === "hardcover";
+/**
+ * Hardcopies need an address and consume stock; softcopies do neither.
+ *
+ * Kept here as well as in types/content.ts because the server modules import
+ * money helpers without pulling in the public content types.
+ */
+export function editionRequiresShipping(kind: string): boolean {
+  return kind === "hardcopy";
 }

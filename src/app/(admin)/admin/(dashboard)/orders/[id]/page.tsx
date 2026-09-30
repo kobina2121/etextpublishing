@@ -44,13 +44,12 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
             <CardContent>
               <ul className="divide-y divide-border">
                 {order.items.map((item) => (
-                  <li key={item.slug + item.format} className="flex justify-between gap-4 py-3">
+                  <li key={item.slug + item.edition} className="flex justify-between gap-4 py-3">
                     <div className="min-w-0">
                       <p className="font-medium">{item.title}</p>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {item.format} · {item.quantity} ×{" "}
-                        {formatMoney(item.unitPrice, order.currency)}
-                        {item.requiresShipping ? "" : " · download"}
+                      <p className="text-xs text-muted-foreground">
+                        {item.edition === "hardcopy" ? "Hardcopy · posted" : "Softcopy · download"}{" "}
+                        · {item.quantity} × {formatMoney(item.unitPrice, order.currency)}
                       </p>
                     </div>
                     <span className="shrink-0 font-medium">

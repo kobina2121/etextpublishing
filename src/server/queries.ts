@@ -8,6 +8,7 @@ import type {
   ArticleDoc,
   AuthorDoc,
   CategoryDoc,
+  EditionDoc,
   PublicationDoc,
   ServiceDoc,
   SiteSettingsDoc,
@@ -16,8 +17,9 @@ import type {
   ArticleWithRelations,
   Author as AuthorType,
   Category as CategoryType,
+  Edition,
+  EditionKind,
   Paginated,
-  PublicationFormat,
   PublicationWithRelations,
   Service as ServiceType,
 } from "@/types/content";
@@ -69,6 +71,14 @@ type JoinedPublication = Lean<Omit<PublicationDoc, "author" | "category">> & {
   category: Lean<CategoryDoc>;
 };
 
+function toEdition(edition: EditionDoc | undefined): Edition {
+  return {
+    available: edition?.available ?? false,
+    price: edition?.price ?? 0,
+    stockQuantity: edition?.stockQuantity ?? 0,
+  };
+}
+
 function toPublication(doc: JoinedPublication): PublicationWithRelations {
   return {
     id: id(doc._id),
@@ -80,13 +90,16 @@ function toPublication(doc: JoinedPublication): PublicationWithRelations {
     description: doc.description,
     excerpt: doc.excerpt,
     publicationDate: new Date(doc.publicationDate),
-    format: doc.format,
     pages: doc.pages,
     featured: doc.featured,
     status: doc.status,
-    price: doc.price ?? 0,
+    // Defensive defaults: a document written before editions existed has no
+    // `editions` path at all, and a half-read title must not crash a listing.
+    editions: {
+      hardcopy: toEdition(doc.editions?.hardcopy),
+      softcopy: toEdition(doc.editions?.softcopy),
+    },
     currency: (doc.currency ?? "GHS").toUpperCase(),
-    stockQuantity: doc.stockQuantity ?? 0,
     author: toAuthor(doc.author),
     category: toCategory(doc.category),
     ...(doc.coverImage ? { coverImage: doc.coverImage } : {}),
@@ -138,7 +151,7 @@ function toService(doc: Lean<ServiceDoc>): ServiceType {
 function publicationPipeline(filters: {
   q?: string;
   category?: string;
-  format?: string;
+  edition?: string;
   slug?: string;
   featured?: boolean;
   authorId?: string;
@@ -147,7 +160,12 @@ function publicationPipeline(filters: {
 }): PipelineStage[] {
   const match: Record<string, unknown> = { status: "published" };
   if (filters.slug) match.slug = filters.slug;
-  if (filters.format) match.format = filters.format;
+  // An edition filter asks "can I buy it this way", not "what is it" — so it
+  // matches on the edition actually being on sale, not on a label.
+  if (filters.edition === "hardcopy" || filters.edition === "softcopy") {
+    match[`editions.${filters.edition}.available`] = true;
+    match[`editions.${filters.edition}.price`] = { $gt: 0 };
+  }
   if (filters.featured) match.featured = true;
 
   const stages: PipelineStage[] = [
@@ -196,7 +214,7 @@ export async function getCategories(): Promise<CategoryType[]> {
 export type PublicationFilters = {
   q?: string;
   category?: string;
-  format?: string;
+  edition?: string;
   page?: number;
   pageSize?: number;
 };
@@ -204,13 +222,13 @@ export type PublicationFilters = {
 export async function listPublications(
   filters: PublicationFilters = {},
 ): Promise<Paginated<PublicationWithRelations>> {
-  const { q, category, format, page = 1, pageSize = DEFAULT_PAGE_SIZE } = filters;
+  const { q, category, edition, page = 1, pageSize = DEFAULT_PAGE_SIZE } = filters;
   await connectToDatabase();
 
   const base = publicationPipeline({
     ...(q ? { q } : {}),
     ...(category ? { category } : {}),
-    ...(format ? { format } : {}),
+    ...(edition ? { edition } : {}),
   });
 
   // One round trip: $facet returns the page and the total count together.
@@ -467,10 +485,25 @@ export async function listServices(): Promise<ServiceType[]> {
 
 // --- Filter option helpers --------------------------------------------------
 
-export async function getPublicationFormats(): Promise<PublicationFormat[]> {
+/**
+ * Edition kinds that at least one published title can actually be bought in.
+ *
+ * Asked of the data rather than hardcoded, so the filter never offers
+ * "Softcopy" on a catalogue that has none priced.
+ */
+export async function getPurchasableEditionKinds(): Promise<EditionKind[]> {
   await connectToDatabase();
-  const values = await Publication.distinct("format", { status: "published" });
-  return (values as PublicationFormat[]).sort();
+  const kinds: EditionKind[] = ["hardcopy", "softcopy"];
+  const found = await Promise.all(
+    kinds.map((kind) =>
+      Publication.exists({
+        status: "published",
+        [`editions.${kind}.available`]: true,
+        [`editions.${kind}.price`]: { $gt: 0 },
+      }),
+    ),
+  );
+  return kinds.filter((_, index) => found[index]);
 }
 
 // --- Site settings ----------------------------------------------------------

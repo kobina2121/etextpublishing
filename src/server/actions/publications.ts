@@ -4,6 +4,37 @@ import { revalidatePath } from "next/cache";
 import slugify from "slugify";
 
 import { toMinorUnits } from "@/lib/money";
+
+/**
+ * Form fields to stored editions.
+ *
+ * The form asks for availability, a price in major units and (for print) a
+ * stock count; the document stores integer minor units. Turning an edition off
+ * keeps its price, so an admin who toggles it back does not have to retype it.
+ */
+function toEditions(values: {
+  currency: string;
+  hardcopyAvailable: boolean;
+  hardcopyPriceMajor: number;
+  hardcopyStock: number;
+  softcopyAvailable: boolean;
+  softcopyPriceMajor: number;
+}) {
+  return {
+    hardcopy: {
+      available: values.hardcopyAvailable,
+      price: toMinorUnits(values.hardcopyPriceMajor, values.currency),
+      stockQuantity: values.hardcopyStock,
+    },
+    softcopy: {
+      available: values.softcopyAvailable,
+      price: toMinorUnits(values.softcopyPriceMajor, values.currency),
+      // A download cannot run out.
+      stockQuantity: 0,
+    },
+  };
+}
+
 import { deleteImageByUrl } from "@/lib/storage/images";
 import { publicationSchema } from "@/lib/validations/publication";
 import { Author, Publication } from "@/models";
@@ -40,14 +71,29 @@ export async function createPublication(raw: unknown): Promise<ActionResult> {
       };
     }
 
-    const { coverImage, priceMajor, currency, ...rest } = parsed.data;
+    const {
+      coverImage,
+      currency,
+      hardcopyAvailable,
+      hardcopyPriceMajor,
+      hardcopyStock,
+      softcopyAvailable,
+      softcopyPriceMajor,
+      ...rest
+    } = parsed.data;
 
     try {
       const created = await Publication.create({
         ...rest,
         currency,
-        // Stored as integer minor units; the form works in major units.
-        price: toMinorUnits(priceMajor, currency),
+        editions: toEditions({
+          currency,
+          hardcopyAvailable,
+          hardcopyPriceMajor,
+          hardcopyStock,
+          softcopyAvailable,
+          softcopyPriceMajor,
+        }),
         ...(coverImage ? { coverImage } : {}),
       });
       await refresh(created.slug, created.author.toString());
@@ -89,7 +135,16 @@ export async function updatePublication(id: string, raw: unknown): Promise<Actio
     } | null>();
     if (!previous) return { ok: false, error: "That publication no longer exists." };
 
-    const { coverImage, priceMajor, currency, ...rest } = parsed.data;
+    const {
+      coverImage,
+      currency,
+      hardcopyAvailable,
+      hardcopyPriceMajor,
+      hardcopyStock,
+      softcopyAvailable,
+      softcopyPriceMajor,
+      ...rest
+    } = parsed.data;
 
     try {
       const updated = await Publication.findByIdAndUpdate(
@@ -98,7 +153,14 @@ export async function updatePublication(id: string, raw: unknown): Promise<Actio
           $set: {
             ...rest,
             currency,
-            price: toMinorUnits(priceMajor, currency),
+            editions: toEditions({
+              currency,
+              hardcopyAvailable,
+              hardcopyPriceMajor,
+              hardcopyStock,
+              softcopyAvailable,
+              softcopyPriceMajor,
+            }),
             coverImage: coverImage || undefined,
           },
         },

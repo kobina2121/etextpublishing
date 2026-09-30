@@ -54,7 +54,10 @@ export const checkoutSchema = z
 export type CheckoutInput = z.input<typeof checkoutSchema>;
 export type CheckoutValues = z.output<typeof checkoutSchema>;
 
-/** What the browser is allowed to send about the basket: ids and counts only. */
+/**
+ * What the browser is allowed to send about the basket: ids, the chosen
+ * edition and counts. Never a price — the server looks that up itself.
+ */
 export const cartPayloadSchema = z
   .array(
     z.object({
@@ -62,6 +65,7 @@ export const cartPayloadSchema = z
         .string()
         .trim()
         .regex(/^[a-f\d]{24}$/i),
+      edition: z.enum(["hardcopy", "softcopy"]),
       quantity: z.number().int().min(1).max(20),
     }),
   )

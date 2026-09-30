@@ -9,7 +9,8 @@ import { ListPagination } from "@/components/public/list-pagination";
 import { PageHero } from "@/components/public/page-hero";
 import { PublicationCard } from "@/components/public/publication-card";
 import { SearchFilters } from "@/components/public/search-filters";
-import { getCategories, getPublicationFormats, listPublications } from "@/server/queries";
+import { getCategories, getPurchasableEditionKinds, listPublications } from "@/server/queries";
+import { EDITION_LABELS } from "@/types/content";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({
@@ -19,32 +20,25 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-const FORMAT_LABELS: Record<string, string> = {
-  paperback: "Paperback",
-  hardcover: "Hardcover",
-  ebook: "E-book",
-  audiobook: "Audiobook",
-};
-
 export default async function PublicationsPage({ searchParams }: PageProps<"/publications">) {
   const params = await searchParams;
 
   const q = typeof params.q === "string" ? params.q : undefined;
   const category = typeof params.category === "string" ? params.category : undefined;
-  const format = typeof params.format === "string" ? params.format : undefined;
+  const edition = typeof params.edition === "string" ? params.edition : undefined;
   const page = Number(typeof params.page === "string" ? params.page : "1") || 1;
 
-  const [{ items, total, pageCount, page: current }, categories, formats] = await Promise.all([
-    listPublications({ q, category, format, page }),
+  const [{ items, total, pageCount, page: current }, categories, editionKinds] = await Promise.all([
+    listPublications({ q, category, edition, page }),
     getCategories(),
-    getPublicationFormats(),
+    getPurchasableEditionKinds(),
   ]);
 
   return (
     <>
       <PageHero
         title="Publications"
-        description="Every title on our list, newest first. Filter by category or format, or search by title, author or ISBN."
+        description="Every title on our list, newest first. Filter by category or edition, or search by title, author or ISBN."
       />
 
       <Section>
@@ -58,9 +52,9 @@ export default async function PublicationsPage({ searchParams }: PageProps<"/pub
                 options: categories.map((c) => ({ label: c.name, value: c.slug })),
               },
               {
-                name: "format",
-                label: "Formats",
-                options: formats.map((f) => ({ label: FORMAT_LABELS[f] ?? f, value: f })),
+                name: "edition",
+                label: "Editions",
+                options: editionKinds.map((kind) => ({ label: EDITION_LABELS[kind], value: kind })),
               },
             ]}
           />
@@ -93,7 +87,7 @@ export default async function PublicationsPage({ searchParams }: PageProps<"/pub
             page={current}
             pageCount={pageCount}
             basePath="/publications"
-            params={{ q, category, format }}
+            params={{ q, category, edition }}
           />
         </Container>
       </Section>

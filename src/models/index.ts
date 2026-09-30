@@ -28,7 +28,9 @@ function defineModel<T>(name: string, schema: Schema<T>): Model<T> {
 }
 
 const STATUSES = ["draft", "published", "archived"] as const;
+/** Manuscript-submission vocabulary only; what is for sale is EDITION_KINDS. */
 const FORMATS = ["paperback", "hardcover", "ebook", "audiobook"] as const;
+const EDITION_KINDS = ["hardcopy", "softcopy"] as const;
 
 const linkSchema = new Schema(
   {
@@ -78,6 +80,20 @@ const authorSchema = new Schema<AuthorDoc>(
 
 // --- Publication ------------------------------------------------------------
 
+/**
+ * A buyable edition. Stored as a subdocument per kind rather than an array, so
+ * "the hardcopy price" is a path (`editions.hardcopy.price`) that can be
+ * queried and indexed, not a position in a list.
+ */
+const editionSchema = new Schema(
+  {
+    available: { type: Boolean, default: false, required: true },
+    price: { type: Number, default: 0, min: 0, required: true },
+    stockQuantity: { type: Number, default: 0, min: 0, required: true },
+  },
+  { _id: false },
+);
+
 const publicationSchema = new Schema<PublicationDoc>(
   {
     title: { type: String, required: true, trim: true },
@@ -89,15 +105,18 @@ const publicationSchema = new Schema<PublicationDoc>(
     description: { type: String, required: true },
     excerpt: { type: String, required: true },
     publicationDate: { type: Date, required: true },
-    format: { type: String, enum: FORMATS, required: true },
     pages: { type: Number, required: true, min: 1 },
     featured: { type: Boolean, default: false },
     status: { type: String, enum: STATUSES, default: "draft", required: true },
 
-    // Integer minor units. 0 means the title is not for sale.
-    price: { type: Number, default: 0, min: 0, required: true },
+    // One title, up to two things a buyer can pay for. Both subdocuments
+    // always exist; `available` is what an admin turns on and off. Prices are
+    // integer minor units, and 0 means not for sale whatever `available` says.
+    editions: {
+      hardcopy: { type: editionSchema, default: () => ({}) },
+      softcopy: { type: editionSchema, default: () => ({}) },
+    },
     currency: { type: String, default: "GHS", uppercase: true, trim: true, required: true },
-    stockQuantity: { type: Number, default: 0, min: 0, required: true },
     digitalFileKey: { type: String, trim: true },
   },
   { timestamps: true },
@@ -198,7 +217,7 @@ const orderItemSchema = new Schema(
     publication: { type: Schema.Types.ObjectId, ref: "Publication", required: true },
     title: { type: String, required: true },
     slug: { type: String, required: true },
-    format: { type: String, enum: FORMATS, required: true },
+    edition: { type: String, enum: EDITION_KINDS, required: true },
     unitPrice: { type: Number, required: true, min: 0 },
     quantity: { type: Number, required: true, min: 1 },
     requiresShipping: { type: Boolean, required: true },

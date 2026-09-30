@@ -63,7 +63,9 @@ export function bookJsonLd(publication: PublicationWithRelations) {
     description: publication.description,
     isbn: publication.isbn,
     numberOfPages: publication.pages,
-    bookFormat: bookFormat(publication.format),
+    ...(bookFormats(publication).length > 0
+      ? { bookFormat: bookFormats(publication) }
+      : {}),
     datePublished: publication.publicationDate.toISOString().slice(0, 10),
     inLanguage: "en",
     genre: publication.category.name,
@@ -77,20 +79,22 @@ export function bookJsonLd(publication: PublicationWithRelations) {
   };
 }
 
-/** Maps our format values onto schema.org's BookFormatType. */
-function bookFormat(format: string): string {
-  switch (format) {
-    case "hardcover":
-      return "https://schema.org/Hardcover";
-    case "paperback":
-      return "https://schema.org/Paperback";
-    case "ebook":
-      return "https://schema.org/EBook";
-    case "audiobook":
-      return "https://schema.org/AudiobookFormat";
-    default:
-      return "https://schema.org/Paperback";
+/**
+ * schema.org BookFormatType for each edition actually on sale.
+ *
+ * `bookFormat` accepts a list, which is the honest representation now that one
+ * record can be both a printed book and a download. A title with nothing for
+ * sale omits the property rather than claiming a format it does not offer.
+ */
+function bookFormats(publication: PublicationWithRelations): string[] {
+  const formats: string[] = [];
+  if (publication.editions.hardcopy.available && publication.editions.hardcopy.price > 0) {
+    formats.push("https://schema.org/Paperback");
   }
+  if (publication.editions.softcopy.available && publication.editions.softcopy.price > 0) {
+    formats.push("https://schema.org/EBook");
+  }
+  return formats;
 }
 
 export function personJsonLd(author: Author) {

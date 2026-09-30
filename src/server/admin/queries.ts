@@ -3,6 +3,7 @@ import "server-only";
 import { connectToDatabase } from "@/lib/db";
 import { toMajorUnits } from "@/lib/money";
 import type { Currency } from "@/lib/validations/publication";
+import type { PublicationDoc } from "@/models/types";
 import {
   Article,
   Author,
@@ -151,11 +152,24 @@ export type AdminPublicationRow = {
   slug: string;
   authorName: string;
   categoryName: string;
-  format: string;
+  /** Short human summary of what is on sale, e.g. "Hardcopy + Softcopy". */
+  editions: string;
   status: string;
   featured: boolean;
   publicationDate: Date;
 };
+
+/**
+ * One line for the admin list. A title can be sold two ways, so the column
+ * has to say which — "—" means nothing is on sale, which is worth seeing at a
+ * glance rather than discovering in the form.
+ */
+function editionSummary(editions: PublicationDoc["editions"] | undefined): string {
+  const offered: string[] = [];
+  if (editions?.hardcopy?.available && (editions.hardcopy.price ?? 0) > 0) offered.push("Hardcopy");
+  if (editions?.softcopy?.available && (editions.softcopy.price ?? 0) > 0) offered.push("Softcopy");
+  return offered.join(" + ") || "—";
+}
 
 export async function listPublicationsAdmin(
   filters: { q?: string; status?: string } = {},
@@ -180,7 +194,7 @@ export async function listPublicationsAdmin(
       slug: row.slug,
       authorName: row.author?.name ?? "—",
       categoryName: row.category?.name ?? "—",
-      format: row.format,
+      editions: editionSummary(row.editions),
       status: row.status,
       featured: row.featured,
       publicationDate: new Date(row.publicationDate),
@@ -194,9 +208,12 @@ export async function listPublicationsAdmin(
 
 export type PublicationFormValues = {
   id: string;
-  priceMajor: number;
   currency: Currency;
-  stockQuantity: number;
+  hardcopyAvailable: boolean;
+  hardcopyPriceMajor: number;
+  hardcopyStock: number;
+  softcopyAvailable: boolean;
+  softcopyPriceMajor: number;
   title: string;
   slug: string;
   author: string;
@@ -206,7 +223,6 @@ export type PublicationFormValues = {
   excerpt: string;
   description: string;
   publicationDate: string;
-  format: string;
   pages: number;
   featured: boolean;
   status: string;
@@ -217,12 +233,17 @@ export async function getPublicationForEdit(id: string): Promise<PublicationForm
   const doc = await Publication.findById(id).lean();
   if (!doc) return null;
 
+  const currency = (doc.currency ?? "GHS") as Currency;
+
   return {
     id: doc._id.toString(),
+    currency,
     // Converted back for the form, which works in major units.
-    priceMajor: toMajorUnits(doc.price ?? 0, doc.currency ?? "GHS"),
-    currency: (doc.currency ?? "GHS") as Currency,
-    stockQuantity: doc.stockQuantity ?? 0,
+    hardcopyAvailable: doc.editions?.hardcopy?.available ?? false,
+    hardcopyPriceMajor: toMajorUnits(doc.editions?.hardcopy?.price ?? 0, currency),
+    hardcopyStock: doc.editions?.hardcopy?.stockQuantity ?? 0,
+    softcopyAvailable: doc.editions?.softcopy?.available ?? false,
+    softcopyPriceMajor: toMajorUnits(doc.editions?.softcopy?.price ?? 0, currency),
     title: doc.title,
     slug: doc.slug,
     author: doc.author.toString(),
@@ -233,7 +254,6 @@ export async function getPublicationForEdit(id: string): Promise<PublicationForm
     description: doc.description,
     // <input type="date"> needs yyyy-MM-dd, not an ISO timestamp.
     publicationDate: new Date(doc.publicationDate).toISOString().slice(0, 10),
-    format: doc.format,
     pages: doc.pages,
     featured: doc.featured,
     status: doc.status,
@@ -742,7 +762,7 @@ export type AdminOrderDetail = AdminOrderRow & {
   items: {
     title: string;
     slug: string;
-    format: string;
+    edition: string;
     unitPrice: number;
     quantity: number;
     lineTotal: number;
@@ -782,7 +802,7 @@ export async function getOrder(id: string): Promise<AdminOrderDetail | null> {
     items: doc.items.map((i) => ({
       title: i.title,
       slug: i.slug,
-      format: i.format,
+      edition: i.edition,
       unitPrice: i.unitPrice,
       quantity: i.quantity,
       lineTotal: i.unitPrice * i.quantity,

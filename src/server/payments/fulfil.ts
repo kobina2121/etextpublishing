@@ -76,13 +76,17 @@ export async function settleOrder(reference: string): Promise<SettleResult> {
     return { ok: true, status: "already-paid", orderReference: order.reference };
   }
 
-  // Stock comes down only for shipped formats, and only once, guarded by that
-  // single claim.
+  // Stock comes down only for shipped editions, and only once, guarded by that
+  // single claim. The decrement targets the hardcopy's own stock, so buying a
+  // download can never reduce the printed count.
   for (const item of claimed.items) {
     if (!item.requiresShipping) continue;
     await Publication.updateOne(
-      { _id: item.publication, stockQuantity: { $gte: item.quantity } },
-      { $inc: { stockQuantity: -item.quantity } },
+      {
+        _id: item.publication,
+        [`editions.${item.edition}.stockQuantity`]: { $gte: item.quantity },
+      },
+      { $inc: { [`editions.${item.edition}.stockQuantity`]: -item.quantity } },
     );
   }
 

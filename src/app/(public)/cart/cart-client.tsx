@@ -15,7 +15,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCart, removeFromCart, setQuantity } from "@/lib/cart-store";
+import { useCart, removeFromCart, setQuantity, lineKey } from "@/lib/cart-store";
 import { formatMoney } from "@/lib/money";
 import type { PricedCart } from "@/server/cart";
 
@@ -89,7 +89,7 @@ export function CartClient() {
     return (
       <div className="space-y-4">
         {cart.map((entry) => (
-          <Skeleton key={entry.publicationId} className="h-28 w-full" />
+          <Skeleton key={lineKey(entry.publicationId, entry.edition)} className="h-28 w-full" />
         ))}
       </div>
     );
@@ -120,7 +120,7 @@ export function CartClient() {
 
         <ul className="divide-y divide-border">
           {priced.lines.map((line) => (
-            <li key={line.publicationId} className="flex gap-4 py-5">
+            <li key={lineKey(line.publicationId, line.edition)} className="flex gap-4 py-5">
               <Link href={`/publications/${line.slug}`} className="w-16 shrink-0">
                 <BookCover title={line.title} src={line.coverImage} sizes="64px" />
               </Link>
@@ -132,9 +132,8 @@ export function CartClient() {
                 >
                   {line.title}
                 </Link>
-                <p className="mt-0.5 text-xs text-muted-foreground capitalize">
-                  {line.format}
-                  {line.requiresShipping ? "" : " · download"}
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {line.edition === "hardcopy" ? "Hardcopy · posted" : "Softcopy · download"}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {formatMoney(line.unitPrice, priced.currency)} each
@@ -147,7 +146,9 @@ export function CartClient() {
                         variant="ghost"
                         size="icon-sm"
                         aria-label="Reduce quantity"
-                        onClick={() => setQuantity(line.publicationId, line.quantity - 1)}
+                        onClick={() =>
+                          setQuantity(line.publicationId, line.edition, line.quantity - 1)
+                        }
                       >
                         <MinusIcon aria-hidden />
                       </Button>
@@ -156,7 +157,9 @@ export function CartClient() {
                         variant="ghost"
                         size="icon-sm"
                         aria-label="Increase quantity"
-                        onClick={() => setQuantity(line.publicationId, line.quantity + 1)}
+                        onClick={() =>
+                          setQuantity(line.publicationId, line.edition, line.quantity + 1)
+                        }
                       >
                         <PlusIcon aria-hidden />
                       </Button>
@@ -168,7 +171,7 @@ export function CartClient() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => removeFromCart(line.publicationId)}
+                    onClick={() => removeFromCart(line.publicationId, line.edition)}
                   >
                     <Trash2Icon aria-hidden />
                     Remove
