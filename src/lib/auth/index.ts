@@ -5,22 +5,28 @@ import bcrypt from "bcryptjs";
 
 import { authConfig } from "@/lib/auth/auth.config";
 import { googleCredentials, resolveGoogleUser } from "@/lib/auth/google";
-import { consumeMagicLink } from "@/lib/auth/magic-link";
 import { connectToDatabase } from "@/lib/db";
 import { checkRateLimit, clearRateLimit, rateLimitKey } from "@/lib/rate-limit";
 import { loginSchema } from "@/lib/validations/auth";
 import { User } from "@/models";
 
 /**
+ * Two ways in: an email and password, or Google.
+ *
+ * Signing in never grants more than a customer, and neither does signing up.
+ * What an account may do is decided by the role already on the record, set
+ * with `npm run grant-admin -- <email>` on the server.
+ */
+const google = googleCredentials();
+
+/**
  * A valid bcrypt hash of a value nobody knows.
  *
- * When no user matches, the password is still compared against this so a
- * missing account and a wrong password take the same time. Without it, response
- * timing tells an attacker which email addresses exist.
+ * When no account matches, or it has no password, the password is still
+ * compared against this so every failure takes the same time. Without it,
+ * response timing tells an attacker which email addresses exist.
  */
 const DUMMY_HASH = "$2b$12$C6UzMDM.H6dfI/f/IKcEe.Q0Q0Q0Q0Q0Q0Q0Q0Q0Q0Q0Q0Q0Q0Q0";
-
-const google = googleCredentials();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -45,23 +51,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const user = await User.findOne({ email: parsed.data.email.toLowerCase() });
 
-        if (!user) {
-          await bcrypt.compare(parsed.data.password, DUMMY_HASH);
-          return null;
-        }
-
-        // This form is the admin login. Any other role — including the
-        // customers that Google sign-in creates — is refused here as well as
-        // in the proxy, so a downgraded account cannot sign in.
-        if (user.role !== "admin") {
-          await bcrypt.compare(parsed.data.password, DUMMY_HASH);
-          return null;
-        }
-
-        // An account that only ever signs in through a provider has no hash.
-        // Compare against the dummy anyway: returning early would make
-        // "no password set" measurably faster than "wrong password".
-        if (!user.passwordHash) {
+        // An account that only ever signs in with Google has no hash.
+        if (!user?.passwordHash) {
           await bcrypt.compare(parsed.data.password, DUMMY_HASH);
           return null;
         }
@@ -78,33 +69,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           name: user.name,
           role: user.role,
+          ...(user.image ? { image: user.image } : {}),
         };
       },
     }),
     /**
-     * Magic-link sign-in.
-     *
-     * A second Credentials provider rather than Auth.js's Email provider,
-     * which requires a database adapter. Hand-rolling the token keeps JWT
-     * sessions, which the edge proxy depends on, and keeps the storage and
-     * expiry rules visible in one place.
-     */
-    Credentials({
-      id: "magic-link",
-      name: "Email link",
-      credentials: { token: { label: "Token", type: "text" } },
-      async authorize(raw) {
-        const token = typeof raw?.token === "string" ? raw.token : "";
-        const result = await consumeMagicLink(token);
-        if (!result.ok) return null;
-        return result.user;
-      },
-    }),
-    /**
-     * Google, registered only when both halves of the credential are present.
-     * An unconfigured provider would still publish a callback route that fails
-     * at the redirect, which reads as a broken site rather than a feature that
-     * is switched off.
+     * Registered only when both halves of the credential are present. An
+     * unconfigured provider would still publish a callback route that fails at
+     * the redirect, which reads as a broken site rather than one that has the
+     * feature switched off.
      */
     ...(google ? [Google(google)] : []),
   ],

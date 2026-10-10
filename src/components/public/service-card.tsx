@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import type { Service } from "@/types/content";
+import { HeadingText } from "@/components/ui/heading-text";
 
 /**
  * Curated icon set for services.
@@ -52,7 +53,7 @@ export function ServiceCard({ service }: { service: Service }) {
       <div className="bg-primary text-primary-foreground flex size-14 items-center justify-center">
         <Icon className="size-6" aria-hidden />
       </div>
-      <h3 className="group-hover:text-primary mt-6 text-xl transition-colors">{service.title}</h3>
+      <h3 className="group-hover:text-primary mt-6 text-xl transition-colors"><HeadingText>{service.title}</HeadingText></h3>
       <p className="text-muted-foreground mt-3 leading-relaxed">{service.summary}</p>
     </article>
   );

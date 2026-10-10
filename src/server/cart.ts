@@ -63,7 +63,10 @@ export async function priceCart(items: CartRequestItem[]): Promise<PricedCart> {
   // Collapse duplicates and drop anything implausible before it reaches the
   // database. Two entries for the same title in different editions are not
   // duplicates, so the key carries the edition.
-  const wanted = new Map<string, { publicationId: string; edition: EditionKindValue; quantity: number }>();
+  const wanted = new Map<
+    string,
+    { publicationId: string; edition: EditionKindValue; quantity: number }
+  >();
   for (const item of items) {
     if (!Types.ObjectId.isValid(item.publicationId)) continue;
     if (!isEditionKind(item.edition)) continue;

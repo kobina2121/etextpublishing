@@ -29,6 +29,7 @@ import {
   getPublicationSlugs,
   getRelatedPublications,
 } from "@/server/queries";
+import { HeadingText } from "@/components/ui/heading-text";
 
 /**
  * Known slugs are prerendered at build time; anything else renders on demand.
@@ -129,7 +130,9 @@ export default async function PublicationDetailPage({ params }: PageProps<"/publ
             <p className="text-xs font-semibold tracking-[0.14em] text-primary uppercase">
               {publication.category.name}
             </p>
-            <h1 className="mt-3 text-4xl leading-tight sm:text-5xl">{publication.title}</h1>
+            <h1 className="mt-3 text-4xl leading-tight sm:text-5xl">
+              <HeadingText>{publication.title}</HeadingText>
+            </h1>
             <p className="mt-3 text-lg text-muted-foreground">
               by{" "}
               <Link

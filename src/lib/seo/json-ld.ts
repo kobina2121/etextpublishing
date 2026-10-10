@@ -63,9 +63,7 @@ export function bookJsonLd(publication: PublicationWithRelations) {
     description: publication.description,
     isbn: publication.isbn,
     numberOfPages: publication.pages,
-    ...(bookFormats(publication).length > 0
-      ? { bookFormat: bookFormats(publication) }
-      : {}),
+    ...(bookFormats(publication).length > 0 ? { bookFormat: bookFormats(publication) } : {}),
     datePublished: publication.publicationDate.toISOString().slice(0, 10),
     inLanguage: "en",
     genre: publication.category.name,

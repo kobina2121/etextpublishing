@@ -3,7 +3,7 @@ import NextAuth from "next-auth";
 import { authConfig } from "@/lib/auth/auth.config";
 
 /**
- * Route gate for /admin, /account and the sign-in page.
+ * Route gate for /admin, /account and the sign-in and sign-up pages.
  *
  * Next 16 renamed the `middleware` file convention to `proxy`; the file must be
  * named proxy.ts and export the handler as default or as `proxy`.
@@ -19,11 +19,9 @@ import { authConfig } from "@/lib/auth/auth.config";
  */
 const { auth } = NextAuth(authConfig);
 
-// Reachable without a session, by necessity: /admin/verify is where a magic
-// link lands, and gating it would redirect the token away before it could be
-// exchanged for a session. /admin/login is now just a redirect to /login, and
-// has to be reachable for that redirect to run.
-const PUBLIC_ADMIN_PATHS = new Set(["/admin/login", "/admin/verify"]);
+// /admin/login is now just a redirect to /login, kept for old bookmarks. It has
+// to be reachable without a session for that redirect to run.
+const PUBLIC_ADMIN_PATHS = new Set(["/admin/login"]);
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
@@ -31,7 +29,7 @@ export default auth((req) => {
   const isAdmin = role === "admin";
   const isSignedIn = Boolean(req.auth?.user);
 
-  if (pathname === "/login") {
+  if (pathname === "/login" || pathname === "/register") {
     // Already signed in: skip the form, and send staff somewhere useful.
     if (isSignedIn) {
       return Response.redirect(new URL(isAdmin ? "/admin" : "/account", req.nextUrl));
@@ -73,5 +71,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/admin/:path*", "/account/:path*", "/login"],
+  matcher: ["/admin/:path*", "/account/:path*", "/login", "/register"],
 };

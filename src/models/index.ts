@@ -3,7 +3,8 @@ import { Schema, model, models, type Model } from "mongoose";
 import type {
   ArticleDoc,
   ImageDoc,
-  MagicLinkTokenDoc,
+  ManuscriptFileDoc,
+  PasswordResetTokenDoc,
   OrderDoc,
   RateLimitDoc,
   AuthorDoc,
@@ -59,6 +60,7 @@ const userSchema = new Schema<UserDoc>(
     },
     image: { type: String, trim: true },
     googleId: { type: String, trim: true, index: true },
+    emailVerifiedAt: { type: Date },
   },
   { timestamps: true },
 );
@@ -297,22 +299,21 @@ const rateLimitSchema = new Schema<RateLimitDoc>(
 // the collection cannot grow without bound.
 rateLimitSchema.index({ createdAt: 1 }, { expireAfterSeconds: 3600 });
 
-// --- MagicLinkToken ---------------------------------------------------------
+// --- PasswordResetToken -----------------------------------------------------
 
-const magicLinkTokenSchema = new Schema<MagicLinkTokenDoc>(
+const passwordResetTokenSchema = new Schema<PasswordResetTokenDoc>(
   {
-    email: { type: String, required: true, lowercase: true, trim: true, index: true },
+    user: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     tokenHash: { type: String, required: true, unique: true },
     expiresAt: { type: Date, required: true },
     usedAt: { type: Date },
-    requestedIp: { type: String, trim: true },
   },
   { timestamps: true },
 );
 
 // Mongo removes the document once it expires, so spent and stale links do not
 // accumulate. This is cleanup, not security — expiry is still checked on use.
-magicLinkTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+passwordResetTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 // --- Image ------------------------------------------------------------------
 
@@ -324,6 +325,18 @@ const imageSchema = new Schema<ImageDoc>(
     filename: { type: String, required: true, trim: true },
     width: { type: Number },
     height: { type: Number },
+  },
+  { timestamps: true },
+);
+
+// --- ManuscriptFile ---------------------------------------------------------
+
+const manuscriptFileSchema = new Schema<ManuscriptFileDoc>(
+  {
+    data: { type: Buffer, required: true },
+    contentType: { type: String, required: true },
+    size: { type: Number, required: true, min: 1 },
+    filename: { type: String, required: true, trim: true },
   },
   { timestamps: true },
 );
@@ -377,9 +390,13 @@ export const ContactMessage = defineModel<ContactMessageDoc>(
 );
 export const Order = defineModel<OrderDoc>("Order", orderSchema);
 export const RateLimit = defineModel<RateLimitDoc>("RateLimit", rateLimitSchema);
-export const MagicLinkToken = defineModel<MagicLinkTokenDoc>(
-  "MagicLinkToken",
-  magicLinkTokenSchema,
-);
 export const Image = defineModel<ImageDoc>("Image", imageSchema);
+export const PasswordResetToken = defineModel<PasswordResetTokenDoc>(
+  "PasswordResetToken",
+  passwordResetTokenSchema,
+);
+export const ManuscriptFile = defineModel<ManuscriptFileDoc>(
+  "ManuscriptFile",
+  manuscriptFileSchema,
+);
 export const SiteSettings = defineModel<SiteSettingsDoc>("SiteSettings", siteSettingsSchema);

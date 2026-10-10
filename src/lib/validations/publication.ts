@@ -50,42 +50,43 @@ const priceMajorSchema = z.coerce
   )
   .default(0);
 
-export const publicationSchema = z.object({
-  title: z.string().trim().min(2, "A title is required.").max(200),
-  slug: slugSchema,
-  author: objectIdSchema,
-  category: objectIdSchema,
-  isbn: z.string().trim().min(5, "An ISBN is required.").max(40),
-  coverImage: imageRefSchema,
-  excerpt: z.string().trim().min(10, "Write a short excerpt.").max(300),
-  description: z.string().trim().min(30, "Write a fuller description.").max(5000),
-  publicationDate: z.coerce.date({ message: "Choose a publication date." }),
-  pages: z.coerce
-    .number({ message: "Enter the page count." })
-    .int("Whole numbers only.")
-    .min(1, "Must be at least 1.")
-    .max(20000),
-  currency: z.enum(CURRENCIES).default("GHS"),
+export const publicationSchema = z
+  .object({
+    title: z.string().trim().min(2, "A title is required.").max(200),
+    slug: slugSchema,
+    author: objectIdSchema,
+    category: objectIdSchema,
+    isbn: z.string().trim().min(5, "An ISBN is required.").max(40),
+    coverImage: imageRefSchema,
+    excerpt: z.string().trim().min(10, "Write a short excerpt.").max(300),
+    description: z.string().trim().min(30, "Write a fuller description.").max(5000),
+    publicationDate: z.coerce.date({ message: "Choose a publication date." }),
+    pages: z.coerce
+      .number({ message: "Enter the page count." })
+      .int("Whole numbers only.")
+      .min(1, "Must be at least 1.")
+      .max(20000),
+    currency: z.enum(CURRENCIES).default("GHS"),
 
-  /**
-   * Editions are entered in major units — what a person types — and converted
-   * to integer minor units before storage. Two decimal places only; a third
-   * would be silently rounded away at the currency boundary.
-   */
-  hardcopyAvailable: z.boolean().default(false),
-  hardcopyPriceMajor: priceMajorSchema,
-  hardcopyStock: z.coerce
-    .number({ message: "Enter a stock count." })
-    .int("Whole numbers only.")
-    .min(0)
-    .max(100000)
-    .default(0),
+    /**
+     * Editions are entered in major units — what a person types — and converted
+     * to integer minor units before storage. Two decimal places only; a third
+     * would be silently rounded away at the currency boundary.
+     */
+    hardcopyAvailable: z.boolean().default(false),
+    hardcopyPriceMajor: priceMajorSchema,
+    hardcopyStock: z.coerce
+      .number({ message: "Enter a stock count." })
+      .int("Whole numbers only.")
+      .min(0)
+      .max(100000)
+      .default(0),
 
-  softcopyAvailable: z.boolean().default(false),
-  softcopyPriceMajor: priceMajorSchema,
-  featured: z.boolean().default(false),
-  status: z.enum(PUBLICATION_STATUSES).default("draft"),
-})
+    softcopyAvailable: z.boolean().default(false),
+    softcopyPriceMajor: priceMajorSchema,
+    featured: z.boolean().default(false),
+    status: z.enum(PUBLICATION_STATUSES).default("draft"),
+  })
   .refine((v) => !v.hardcopyAvailable || v.hardcopyPriceMajor > 0, {
     message: "Set a hardcopy price, or turn the hardcopy off.",
     path: ["hardcopyPriceMajor"],

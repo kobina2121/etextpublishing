@@ -4,6 +4,7 @@ import { FadeIn } from "@/components/motion/fade-in";
 import { HeroBackdrop } from "@/components/public/hero-backdrop";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { HeadingText } from "@/components/ui/heading-text";
 
 type HeroAction = {
   label: string;
@@ -68,11 +69,13 @@ export function Hero({ title, titleAccent, subtitle, actions = [], images = [] }
       <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-32 sm:px-6">
         <FadeIn className="max-w-3xl">
           <h1 className="text-5xl leading-[1.05] text-white sm:text-6xl lg:text-7xl">
-            {title}
+            <HeadingText>{title}</HeadingText>
             {titleAccent ? (
               <>
                 <br />
-                <span className="font-light">{titleAccent}</span>
+                <span className="font-light">
+                  <HeadingText>{titleAccent}</HeadingText>
+                </span>
               </>
             ) : null}
           </h1>

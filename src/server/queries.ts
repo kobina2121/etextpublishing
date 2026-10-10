@@ -3,7 +3,16 @@ import "server-only";
 import { Types, type PipelineStage } from "mongoose";
 
 import { connectToDatabase } from "@/lib/db";
-import { Article, Author, Category, Order, Publication, Service, SiteSettings } from "@/models";
+import {
+  Article,
+  Author,
+  Category,
+  Order,
+  Publication,
+  Service,
+  SiteSettings,
+  User,
+} from "@/models";
 import type {
   ArticleDoc,
   AuthorDoc,
@@ -551,6 +560,18 @@ export type CustomerOrder = {
   items: CustomerOrderLine[];
 };
 
+/** Which ways in an account has, for the account page. Never the hash itself. */
+export async function getSignInMethods(
+  userId: string,
+): Promise<{ password: boolean; google: boolean }> {
+  if (!Types.ObjectId.isValid(userId)) return { password: false, google: false };
+  await connectToDatabase();
+  const user = await User.findById(userId)
+    .select("passwordHash googleId")
+    .lean<{ passwordHash?: string; googleId?: string } | null>();
+  return { password: Boolean(user?.passwordHash), google: Boolean(user?.googleId) };
+}
+
 /**
  * A reader's own orders.
  *
@@ -558,6 +579,11 @@ export type CustomerOrder = {
  * us an address it has verified, so an order placed as a guest with that same
  * address belongs to the person now signed in — and without this, signing up
  * after buying would show an empty history.
+ *
+ * The email match applies only once the address is verified — by a Google
+ * link or an emailed reset link. A password sign-up alone verifies nothing, so
+ * matching on it would let anyone register someone else's email and read
+ * their guest orders.
  *
  * Only paid orders are listed. A `pending` row is an abandoned payment
  * attempt, and showing those as "orders" reads as having been charged twice.
@@ -573,7 +599,12 @@ export async function getOrdersForCustomer(input: {
   if (Types.ObjectId.isValid(input.userId)) {
     or.push({ user: Types.ObjectId.createFromHexString(input.userId) });
   }
-  if (email) or.push({ email });
+  if (email && Types.ObjectId.isValid(input.userId)) {
+    const account = await User.findById(input.userId)
+      .select("googleId emailVerifiedAt")
+      .lean<{ googleId?: string; emailVerifiedAt?: Date } | null>();
+    if (account?.googleId || account?.emailVerifiedAt) or.push({ email });
+  }
   if (or.length === 0) return [];
 
   const docs = await Order.find({ $or: or, status: "paid" })

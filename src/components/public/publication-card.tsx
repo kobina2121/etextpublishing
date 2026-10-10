@@ -6,6 +6,7 @@ import { EditionChoice } from "@/components/shop/edition-choice";
 import { editionOptions } from "@/components/shop/edition-options";
 import { Badge } from "@/components/ui/badge";
 import type { PublicationWithRelations } from "@/types/content";
+import { HeadingText } from "@/components/ui/heading-text";
 
 export function PublicationCard({
   publication,
@@ -36,7 +37,7 @@ export function PublicationCard({
             {publication.category.name}
           </p>
           <h3 className="group-hover:text-primary text-xl leading-snug transition-colors">
-            {publication.title}
+            <HeadingText>{publication.title}</HeadingText>
           </h3>
           <p className="text-muted-foreground text-sm">{publication.author.name}</p>
           <p className="text-muted-foreground text-xs">

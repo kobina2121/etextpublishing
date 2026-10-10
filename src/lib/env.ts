@@ -34,7 +34,6 @@ const serverEnvSchema = z.object({
 
   // Seed (Phase 4)
   SEED_ADMIN_EMAIL: optionalString.pipe(z.string().email().optional()),
-  SEED_ADMIN_PASSWORD: optionalString,
   SEED_ADMIN_NAME: optionalString,
 
   // Storage (Phase 7)

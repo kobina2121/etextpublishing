@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { format } from "date-fns";
 
+import { PasswordSettings } from "@/components/auth/password-settings";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
@@ -19,8 +20,8 @@ import {
 import { requireUser } from "@/lib/auth/guards";
 import { formatMoney } from "@/lib/money";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { getOrdersForCustomer } from "@/server/queries";
-import { PackageIcon } from "lucide-react";
+import { getOrdersForCustomer, getSignInMethods } from "@/server/queries";
+import { CheckIcon, MinusIcon, PackageIcon } from "lucide-react";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({
@@ -48,7 +49,10 @@ const FULFILMENT_LABELS: Record<string, string> = {
  */
 export default async function AccountPage() {
   const user = await requireUser();
-  const orders = await getOrdersForCustomer({ userId: user.id, email: user.email });
+  const [orders, methods] = await Promise.all([
+    getOrdersForCustomer({ userId: user.id, email: user.email }),
+    getSignInMethods(user.id),
+  ]);
 
   const downloads = orders.flatMap((order) =>
     order.items.filter((item) => !item.requiresShipping).map((item) => ({ ...item, order })),
@@ -67,7 +71,11 @@ export default async function AccountPage() {
             </div>
             <div className="flex items-center gap-3">
               {user.role === "admin" ? (
-                <Button asChild variant="outline" className="font-semibold tracking-[0.08em] uppercase">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="font-semibold tracking-[0.08em] uppercase"
+                >
                   <Link href="/admin">Dashboard</Link>
                 </Button>
               ) : null}
@@ -79,9 +87,9 @@ export default async function AccountPage() {
             <Alert className="mt-8">
               <AlertDescription>
                 You have {downloads.length} purchased{" "}
-                {downloads.length === 1 ? "download" : "downloads"}. File delivery is not
-                switched on yet — email us and we will send {downloads.length === 1 ? "it" : "them"}{" "}
-                over directly.
+                {downloads.length === 1 ? "download" : "downloads"}. File delivery is not switched
+                on yet — email us and we will send {downloads.length === 1 ? "it" : "them"} over
+                directly.
               </AlertDescription>
             </Alert>
           ) : null}
@@ -131,10 +139,7 @@ export default async function AccountPage() {
                         className="flex justify-between gap-4 text-sm"
                       >
                         <span className="min-w-0">
-                          <Link
-                            href={`/publications/${item.slug}`}
-                            className="hover:text-primary"
-                          >
+                          <Link href={`/publications/${item.slug}`} className="hover:text-primary">
                             {item.title}
                           </Link>
                           <span className="text-muted-foreground">
@@ -153,6 +158,31 @@ export default async function AccountPage() {
               ))}
             </ul>
           )}
+
+          <h2 className="mt-12 text-sm font-semibold tracking-[0.14em] uppercase">
+            Sign-in methods
+          </h2>
+          <ul className="mt-4 space-y-2 text-sm">
+            {[
+              { label: "Google", on: methods.google },
+              { label: "Email and password", on: methods.password },
+            ].map((method) => (
+              <li key={method.label} className="flex items-center gap-2">
+                {method.on ? (
+                  <CheckIcon className="size-4 text-primary" aria-hidden />
+                ) : (
+                  <MinusIcon className="size-4 text-muted-foreground" aria-hidden />
+                )}
+                <span className={method.on ? undefined : "text-muted-foreground"}>
+                  {method.label}
+                  <span className="sr-only">{method.on ? " — on" : " — not set up"}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-6">
+            <PasswordSettings hasPassword={methods.password} hasGoogle={methods.google} />
+          </div>
         </Container>
       </Section>
     </>
