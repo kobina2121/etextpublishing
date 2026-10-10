@@ -27,7 +27,9 @@ export type EditionOption = {
  * a bespoke `role="radio"` widget would have to reimplement each of them.
  *
  * The picker disappears when only one edition is for sale — a choice of one is
- * not a choice, and showing it implies the other exists.
+ * not a choice, and showing it implies the other exists. The price must not go
+ * with it, though: it was only ever shown inside the picker, so a single-edition
+ * title used to offer "Add to basket" without saying what it cost.
  *
  * Nothing here is trusted. The chosen edition is a hint stored beside the id;
  * the server reprices the basket from the database and decides for itself what
@@ -109,7 +111,14 @@ export function EditionChoice({
             })}
           </div>
         </fieldset>
-      ) : null}
+      ) : (
+        <p className="flex items-baseline justify-between gap-4 border border-border px-3 py-2">
+          <span className="text-[0.7rem] font-semibold tracking-[0.08em] uppercase">
+            {chosen.label}
+          </span>
+          <span className="text-sm tabular-nums">{formatMoney(chosen.price, currency)}</span>
+        </p>
+      )}
 
       {lowStock ? (
         <p className="text-xs text-muted-foreground">Only {chosen.stockQuantity} left in print.</p>
