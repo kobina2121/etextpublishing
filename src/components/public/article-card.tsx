@@ -2,6 +2,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 
 import type { ArticleWithRelations } from "@/types/content";
+import { HeadingText } from "@/components/ui/heading-text";
 
 export function ArticleCard({ article }: { article: ArticleWithRelations }) {
   return (
@@ -11,7 +12,7 @@ export function ArticleCard({ article }: { article: ArticleWithRelations }) {
           {article.category.name} · {format(article.publishedAt, "d MMM yyyy")}
         </p>
         <h3 className="group-hover:text-primary mt-2 text-2xl leading-snug transition-colors">
-          {article.title}
+          <HeadingText>{article.title}</HeadingText>
         </h3>
         <p className="text-muted-foreground mt-2 leading-relaxed">{article.excerpt}</p>
         <span className="font-semibold text-foreground mt-4 inline-block text-sm tracking-[0.12em] uppercase">

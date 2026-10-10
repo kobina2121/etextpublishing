@@ -14,6 +14,8 @@ import type { UserRole } from "@/models/types";
 declare module "@auth/core/types" {
   interface User {
     role: UserRole;
+    /** The account's session version at sign-in. See UserDoc.sessionVersion. */
+    sessionVersion?: number;
   }
 
   interface Session {
@@ -31,6 +33,8 @@ declare module "@auth/core/jwt" {
   interface JWT {
     id?: string;
     role?: UserRole;
+    /** Session version this token was issued under. */
+    sv?: number;
   }
 }
 

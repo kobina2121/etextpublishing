@@ -6,11 +6,25 @@ import { LogoMark } from "@/components/layout/logo";
 import { AdminSidebarNav } from "@/components/admin/admin-sidebar-nav";
 import { AdminMobileNav } from "@/components/admin/admin-mobile-nav";
 import { SignOutButton } from "@/components/admin/sign-out-button";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { paystackMode } from "@/lib/payments/paystack";
 import { siteConfig } from "@/lib/site-config";
 import type { AdminSessionUser } from "@/lib/auth/guards";
 
+/**
+ * Payment mode, so nobody mistakes a test order for money in the bank, or
+ * launches without payments switched on. Nothing shows once live keys are set.
+ */
+const PAYMENT_BADGES = {
+  test: { label: "Payments: test mode", variant: "secondary" },
+  unconfigured: { label: "Payments: off", variant: "outline" },
+} as const;
+
 export function AdminShell({ admin, children }: { admin: AdminSessionUser; children: ReactNode }) {
+  const mode = paystackMode();
+  const paymentBadge = mode === "live" ? null : PAYMENT_BADGES[mode];
+
   return (
     <div className="flex min-h-dvh">
       <aside className="hidden w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
@@ -37,9 +51,18 @@ export function AdminShell({ admin, children }: { admin: AdminSessionUser; child
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-border bg-background px-4 sm:px-6">
           <AdminMobileNav />
           <div className="ml-auto flex items-center gap-3">
-            <span className="hidden truncate text-sm text-muted-foreground sm:inline">
+            {paymentBadge ? (
+              <Badge variant={paymentBadge.variant} className="tracking-wide uppercase">
+                {paymentBadge.label}
+              </Badge>
+            ) : null}
+            {/* The account page is where sign-in methods are managed. */}
+            <Link
+              href="/account"
+              className="hidden truncate text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline"
+            >
               {admin.name || admin.email}
-            </span>
+            </Link>
             <SignOutButton />
           </div>
         </header>

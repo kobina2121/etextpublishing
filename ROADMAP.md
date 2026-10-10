@@ -23,9 +23,10 @@ Build order and exit criteria. Tick items as they land.
 - [ ] Homepage "Become a published author" steps still describe a generic author journey rather than the capacity-building process
 - [ ] Higher-resolution photographs — the hero is 800x533 and the inner-page banner 1200x900. Both are upscaled full-bleed and soften above roughly 1280px wide
 - [ ] Paystack secret key, and the webhook registered at `<site>/api/webhooks/paystack` (Payments)
-- [ ] Google OAuth client id + secret, with `/api/auth/callback/google` added as
-      an authorised redirect URI for both localhost and the real domain. Until
-      both are set, Google sign-in is simply not offered
+- [ ] Google OAuth: the client id + secret are set for localhost. Still needed:
+      `https://<domain>/api/auth/callback/google` added as an authorised
+      redirect URI, and the same two values set in the production environment.
+      Until then production offers email + password only
 - [ ] S3 bucket + credentials (Phase 7)
 - [ ] Resend API key, sending domain, recipient addresses (Phase 7)
 - [ ] `NEXT_PUBLIC_SITE_URL` — still `http://localhost:3000`; every canonical, sitemap entry and payment callback points at localhost until it is set
@@ -108,6 +109,10 @@ Build order and exit criteria. Tick items as they land.
 
 Admin login only: no public accounts, no signup, no user-facing auth.
 
+> **Superseded.** The admin-only password form and the magic link below were
+> replaced by one sign-in page for everyone — see "Reader accounts". Kept as
+> history.
+
 - [x] Split Auth.js config: edge-safe `auth.config.ts` vs full `@/lib/auth`
 - [x] `src/proxy.ts` gating `/admin/*` by JWT role
 - [x] `requireAdmin()` guard, re-checked on the page and in every Server Action
@@ -179,7 +184,7 @@ Paystack, physical formats ship and digital formats download.
       price and (for print) stock; admin switches and prices each one
 - [x] Buyer chooses an edition before adding to the basket; the picker hides
       when only one is for sale
-- [x] Basket in localStorage via `useSyncExternalStore`, keyed by title *and*
+- [x] Basket in localStorage via `useSyncExternalStore`, keyed by title _and_
       edition, ids and quantities only
 - [x] Server-side repricing on every basket view and again at checkout
 - [x] Orders written `pending` before Paystack is contacted; only `settleOrder`
@@ -187,6 +192,18 @@ Paystack, physical formats ship and digital formats download.
 - [x] Admin order list, detail and fulfilment status
 - [ ] Digital download delivery — blocked on S3 (Phase 7). A paid ebook records
       the entitlement but there is nowhere to serve the file from yet
+- [x] Mobile money in flight ("ongoing", "pending" and the like) is shown as
+      "confirming your payment" and refreshes itself, instead of being marked
+      failed — which told buyers nothing was charged and invited a second payment
+- [x] The webhook answers 500 when Paystack could not be reached, so the event
+      is redelivered; final outcomes are still acknowledged with 200
+- [x] A paid order that finds its stock gone (the last copy sold twice) gets a
+      `stockShortfall` note, shown as a warning on the admin order page
+- [x] Admin header shows "Payments: test mode" or "Payments: off" until live
+      keys are set
+- [x] A single-edition title showed no price anywhere — the price lived only in
+      the edition picker, which hides when there is nothing to choose. Found by
+      the publication e2e test
 - [ ] End-to-end test against live Paystack — blocked on the secret key
 
 **Exit:** a real test transaction completes, the webhook marks the order paid
@@ -215,20 +232,42 @@ once, and stock moves. Not yet reachable.
 
 ## Reader accounts ✅
 
-Added after the original plan: Google sign-in for readers, and a third way in
-for staff.
+Added after the original plan: accounts for readers, with one sign-in page for
+readers and staff alike. Two ways in: email + password, or Google.
 
 - [x] Google provider, registered only when both credentials are present
 - [x] `customer` role, below editor and admin; the sign-in path can never
       create anything higher, and an existing account keeps the role it has
 - [x] Only Google-verified addresses accepted
-- [x] `/login` for readers and `/account` for their orders, gated separately
-      from `/admin` — a customer sent to the admin form would be asked for a
-      password they have never set
+- [x] One `/login` page for everyone; the role on the account decides whether
+      they land on `/admin` or `/account`. `/admin/login` only redirects to it
+- [x] `/register` sign-up with name, email and password (min 10 chars),
+      rate limited per IP; signs the new reader straight in
+- [x] Admin is granted on the server with
+      `npm run grant-admin -- <email> [--revoke]`, never from a screen; the
+      seed creates the first admin from `SEED_ADMIN_EMAIL` with no password
+- [x] Sign-up does not verify addresses, so: a password on an account Google
+      has never linked is dropped when Google first links it; guest orders are
+      matched by email only once Google has verified it; and `grant-admin`
+      refuses to promote an unverified password account without `--force`
+- [x] Forgot password: `/forgot-password` → emailed single-use link (SHA-256
+      hashed, 30 min, 3 per account per window) → `/reset-password`. Replies
+      identically for unknown addresses. Completing a reset sets
+      `emailVerifiedAt`, which the Google-link, guest-order and `grant-admin`
+      checks all accept as proof of ownership
+- [x] Show/hide toggle on every password field
+- [ ] Reset emails need Resend in production; until then development prints
+      the link to the dev-server console and production says reset is
+      unavailable
+- [x] Changing or resetting a password signs out every other device: each
+      account carries a `sessionVersion`, and a session issued under an older
+      one is refused. The same per-request check refreshes the role, so
+      `grant-admin --revoke` takes effect on the next request. The proxy runs
+      on Node.js in Next 16, so it makes this check too
 - [x] Orders attach to the account when signed in, and are matched back by
       verified email when bought as a guest
-- [ ] End-to-end Google round trip — blocked on an OAuth client only the site
-      owner can create
+- [ ] End-to-end Google round trip — credentials are now set locally; needs a
+      sign-in driven by hand through Google's consent screen
 
 **Exit:** a reader signs in, sees a past order, and signs out. Not yet
 reachable without the credentials.
@@ -240,9 +279,9 @@ reachable without the credentials.
 - The role lookup lives in the Node-only half of the auth config: the `jwt`
   callback in `auth.config.ts` must stay free of Mongoose, because `proxy.ts`
   loads it on the Edge.
-- `passwordHash` is optional now. The password form still compares against the
-  dummy hash when an account has none, so "no password set" is not measurably
-  faster than "wrong password".
+- Every password failure, including "no such account" and "Google-only
+  account", compares against a dummy hash so timing does not reveal which
+  addresses exist.
 - Verified without a live OAuth client: a new profile resolves to `customer`,
   an existing admin keeps `admin` and is matched by email rather than Google
   id, repeats and differently-cased addresses create no duplicates, and the
@@ -250,16 +289,23 @@ reachable without the credentials.
 
 ## Phase 7 — Uploads & email
 
-The only part blocked on credentials is the file storage and the email itself.
-Persisting a submission needs neither — see the first item.
+Forms save now; what remains is moving files to S3 and sending email, both
+blocked on credentials.
 
-- [ ] **Unblocked:** contact and manuscript forms actually save. Validation and
-      UX are complete and the models and admin screens exist, but there is no
-      public create action, so both forms currently discard what is typed into
-      them
+- [x] Contact form saves through a Server Action; manuscript form through
+      `POST /api/submissions/manuscript` (a Route Handler, because Server
+      Actions cap bodies at 1 MB)
+- [x] Both rate limited per IP (contact 5/hour, manuscript 3/hour) with a
+      honeypot that reports success to bots and saves nothing
+- [x] Manuscript files type-checked on the server from their bytes (PDF, OLE
+      .doc, zip only as .docx), stored privately in a `ManuscriptFile`
+      collection, and downloadable only by an admin, always as an attachment
+- [x] Deleting a submission deletes its file
 - [ ] Presign route with server-side MIME + size validation
-- [ ] Private manuscript prefix; admin download via short-lived presigned GET
-- [ ] Submission and contact forms end-to-end, rate limited, honeypot
+- [ ] Move manuscripts to a private S3 prefix; admin download via short-lived
+      presigned GET. Keys are prefixed `db:` today so both can coexist
+- [ ] Raise the manuscript limit from 4 MB back to 10 MB — Vercel refuses
+      request bodies over 4.5 MB, which only S3's direct upload avoids
 - [ ] Resend: submission receipt, staff notification, status-change notice
 
 **Exit:** a manuscript uploads, is unreachable unsigned, downloads from admin, and both emails land.
@@ -321,13 +367,28 @@ drafts absent from the sitemap. ✅
 
 ## Phase 10 — Testing, optimisation, ship
 
-- [ ] Vitest on Zod schemas and utils
-- [ ] Playwright smoke: homepage, publication detail, search, submission, admin login, admin CRUD
-- [ ] `typecheck` → `lint` → `build`, fix everything
+- [x] Vitest on Zod schemas and utils — `npm test`, 40 tests
+- [x] Playwright smoke: homepage, publication detail, search, submission, admin
+      login, admin CRUD — `npm run test:e2e`, 10 tests
+- [x] `typecheck` → `lint` → `format:check` → `build`, all clean
 - [ ] Manual pass over public + admin at 375 / 768 / 1440; Lighthouse
-- [ ] Drive the admin publication form logged in — the two edition switches are
-      type-checked, linted and building, but have never been clicked. Reading
-      the seeded admin password is blocked, so this one needs a human
+- [x] Drive the admin publication form — `e2e/publication.spec.ts` sets both
+      edition switches, checks the buyer's picker, the price rule, a
+      hardcopy-only title, and deletion
+- [x] GitHub Actions: typecheck, lint, formatting and unit tests on every pull
+      request and push to main. E2E and build need MongoDB and stay local
 - [ ] Final commit and push
 
 **Exit:** green gates, verified pages, shipped.
+
+### Notes
+
+- The e2e suite writes to the database in `MONGODB_URI`. Every record it makes
+  is named "E2E …" and deleted by the test that made it; still, point it at a
+  development database only.
+- Admin tests sign in by writing an Auth.js session cookie signed with
+  `AUTH_SECRET` (`e2e/support/admin-session.ts`), because a test cannot drive
+  Google's consent screen.
+- `next build` connects to Atlas from 11 workers at once. One build in three
+  failed with `ReplicaSetNoPrimary` and passed on retry — transient, but worth
+  knowing before blaming a code change.

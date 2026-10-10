@@ -2,25 +2,33 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
+import { Types } from "mongoose";
 
 import { authConfig } from "@/lib/auth/auth.config";
 import { googleCredentials, resolveGoogleUser } from "@/lib/auth/google";
-import { consumeMagicLink } from "@/lib/auth/magic-link";
 import { connectToDatabase } from "@/lib/db";
 import { checkRateLimit, clearRateLimit, rateLimitKey } from "@/lib/rate-limit";
 import { loginSchema } from "@/lib/validations/auth";
 import { User } from "@/models";
+import type { UserRole } from "@/models/types";
+
+/**
+ * Two ways in: an email and password, or Google.
+ *
+ * Signing in never grants more than a customer, and neither does signing up.
+ * What an account may do is decided by the role already on the record, set
+ * with `npm run grant-admin -- <email>` on the server.
+ */
+const google = googleCredentials();
 
 /**
  * A valid bcrypt hash of a value nobody knows.
  *
- * When no user matches, the password is still compared against this so a
- * missing account and a wrong password take the same time. Without it, response
- * timing tells an attacker which email addresses exist.
+ * When no account matches, or it has no password, the password is still
+ * compared against this so every failure takes the same time. Without it,
+ * response timing tells an attacker which email addresses exist.
  */
 const DUMMY_HASH = "$2b$12$C6UzMDM.H6dfI/f/IKcEe.Q0Q0Q0Q0Q0Q0Q0Q0Q0Q0Q0Q0Q0Q0Q0";
-
-const google = googleCredentials();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -45,23 +53,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const user = await User.findOne({ email: parsed.data.email.toLowerCase() });
 
-        if (!user) {
-          await bcrypt.compare(parsed.data.password, DUMMY_HASH);
-          return null;
-        }
-
-        // This form is the admin login. Any other role — including the
-        // customers that Google sign-in creates — is refused here as well as
-        // in the proxy, so a downgraded account cannot sign in.
-        if (user.role !== "admin") {
-          await bcrypt.compare(parsed.data.password, DUMMY_HASH);
-          return null;
-        }
-
-        // An account that only ever signs in through a provider has no hash.
-        // Compare against the dummy anyway: returning early would make
-        // "no password set" measurably faster than "wrong password".
-        if (!user.passwordHash) {
+        // An account that only ever signs in with Google has no hash.
+        if (!user?.passwordHash) {
           await bcrypt.compare(parsed.data.password, DUMMY_HASH);
           return null;
         }
@@ -78,33 +71,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           name: user.name,
           role: user.role,
+          ...(user.image ? { image: user.image } : {}),
+          sessionVersion: user.sessionVersion ?? 0,
         };
       },
     }),
     /**
-     * Magic-link sign-in.
-     *
-     * A second Credentials provider rather than Auth.js's Email provider,
-     * which requires a database adapter. Hand-rolling the token keeps JWT
-     * sessions, which the edge proxy depends on, and keeps the storage and
-     * expiry rules visible in one place.
-     */
-    Credentials({
-      id: "magic-link",
-      name: "Email link",
-      credentials: { token: { label: "Token", type: "text" } },
-      async authorize(raw) {
-        const token = typeof raw?.token === "string" ? raw.token : "";
-        const result = await consumeMagicLink(token);
-        if (!result.ok) return null;
-        return result.user;
-      },
-    }),
-    /**
-     * Google, registered only when both halves of the credential are present.
-     * An unconfigured provider would still publish a callback route that fails
-     * at the redirect, which reads as a broken site rather than a feature that
-     * is switched off.
+     * Registered only when both halves of the credential are present. An
+     * unconfigured provider would still publish a callback route that fails at
+     * the redirect, which reads as a broken site rather than one that has the
+     * feature switched off.
      */
     ...(google ? [Google(google)] : []),
   ],
@@ -112,13 +88,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig.callbacks,
 
     /**
-     * Google hands back a profile, not one of our accounts. The `jwt` callback
-     * in auth.config.ts has to stay free of Mongoose — the proxy loads it on
-     * the Edge — so the lookup happens here, in the Node-only half, and only
-     * on the sign-in pass where `user` is present.
+     * On sign-in, Google hands back a profile rather than one of our accounts,
+     * and it is resolved to one.
+     *
+     * On every later read — the proxy, pages and actions alike — the account is
+     * looked up again. A session ends if the account is gone or its password
+     * has changed since (the version no longer matches), and the role is
+     * refreshed, so revoking an admin takes effect on their next request rather
+     * than when a 30-day token expires.
      */
     async jwt({ token, user, account, profile }) {
-      if (!user) return token;
+      if (!user) {
+        if (!token.id || !Types.ObjectId.isValid(token.id)) return null;
+        await connectToDatabase();
+        const current = await User.findById(token.id)
+          .select("role sessionVersion")
+          .lean<{ role: UserRole; sessionVersion?: number } | null>();
+        if (!current) return null;
+        if ((current.sessionVersion ?? 0) !== (token.sv ?? 0)) return null;
+        token.role = current.role;
+        return token;
+      }
 
       if (account?.provider === "google") {
         // Auth.js has already validated the ID token; this checks the claim we
@@ -136,6 +126,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         token.id = resolved.id;
         token.role = resolved.role;
+        token.sv = resolved.sessionVersion;
         token.name = resolved.name;
         token.email = resolved.email;
         if (resolved.image) token.picture = resolved.image;
@@ -144,6 +135,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       token.id = user.id;
       token.role = user.role;
+      token.sv = user.sessionVersion ?? 0;
       return token;
     },
   },

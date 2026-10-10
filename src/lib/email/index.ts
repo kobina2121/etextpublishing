@@ -42,7 +42,7 @@ export async function sendMail(message: MailMessage): Promise<MailResult> {
       };
     }
 
-    // Development fallback. The body is printed so a magic link can be followed
+    // Development fallback. The body is printed so a message can be checked
     // without a mail provider; this branch is unreachable in production.
     console.info(
       [

@@ -7,19 +7,27 @@ import { siteConfig } from "@/lib/site-config";
  * and every message ships a text part, because some clients show it and spam
  * filters expect it.
  */
-export function magicLinkEmail({ url, expiresMinutes }: { url: string; expiresMinutes: number }) {
-  const subject = `Sign in to ${siteConfig.name}`;
+export function passwordResetEmail({
+  name,
+  url,
+  expiresMinutes,
+}: {
+  name: string;
+  url: string;
+  expiresMinutes: number;
+}) {
+  const subject = `Reset your ${siteConfig.name} password`;
+  const greeting = name ? `Hello ${name},` : "Hello,";
 
   const text = [
-    `Sign in to ${siteConfig.name}`,
+    greeting,
     "",
-    "Use the link below to sign in. It works once and expires in",
-    `${expiresMinutes} minutes.`,
+    `Someone asked to reset the password for your ${siteConfig.name} account.`,
+    `Use the link below to choose a new one. It works once and expires in ${expiresMinutes} minutes.`,
     "",
     url,
     "",
-    "If you did not request this, you can ignore this email — nobody can",
-    "sign in without the link.",
+    "If you did not ask for this, ignore this email — your password stays as it is.",
   ].join("\n");
 
   const html = `
@@ -32,20 +40,21 @@ export function magicLinkEmail({ url, expiresMinutes }: { url: string; expiresMi
           <p style="margin:0 0 4px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#6b7280;">
             ${escapeHtml(siteConfig.name)}
           </p>
-          <h1 style="margin:0 0 16px;font-size:22px;font-weight:600;">Sign in</h1>
+          <h1 style="margin:0 0 16px;font-size:22px;font-weight:600;">Reset your password</h1>
+          <p style="margin:0 0 12px;font-size:15px;line-height:1.6;">${escapeHtml(greeting)}</p>
           <p style="margin:0 0 24px;font-size:15px;line-height:1.6;">
-            Use the button below to sign in. It works once and expires in ${expiresMinutes} minutes.
+            Use the button below to choose a new password. It works once and expires in ${expiresMinutes} minutes.
           </p>
           <a href="${escapeHtml(url)}"
              style="display:inline-block;padding:12px 22px;background:#0a7e3a;color:#ffffff;font-size:14px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;">
-            Sign in
+            Choose a new password
           </a>
           <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">
             If the button does not work, paste this into your browser:<br />
             <span style="word-break:break-all;color:#0a7e3a;">${escapeHtml(url)}</span>
           </p>
           <p style="margin:24px 0 0;padding-top:16px;border-top:1px solid #e7e5e4;font-size:13px;line-height:1.6;color:#6b7280;">
-            If you did not request this, ignore this email. Nobody can sign in without the link.
+            If you did not ask for this, ignore this email. Your password stays as it is.
           </p>
         </td>
       </tr>
@@ -56,7 +65,7 @@ export function magicLinkEmail({ url, expiresMinutes }: { url: string; expiresMi
   return { subject, html, text };
 }
 
-/** The URL is ours, but it is still interpolated into HTML — escape regardless. */
+/** Everything interpolated into HTML is escaped, including our own URL and the account name. */
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")

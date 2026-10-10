@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import { getArticleBySlug, getArticleSlugs } from "@/server/queries";
+import { HeadingText } from "@/components/ui/heading-text";
 
 /**
  * Known slugs are prerendered at build time; anything else renders on demand.
@@ -96,7 +97,9 @@ export default async function ArticleDetailPage({ params }: PageProps<"/news/[sl
             </time>
           </p>
 
-          <h1 className="mt-4 text-4xl leading-tight sm:text-5xl">{article.title}</h1>
+          <h1 className="mt-4 text-4xl leading-tight sm:text-5xl">
+            <HeadingText>{article.title}</HeadingText>
+          </h1>
           <p className="mt-4 text-lg text-muted-foreground">{article.excerpt}</p>
           <p className="mt-6 text-sm text-muted-foreground">By {article.authorName}</p>
 

@@ -28,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   GENRES,
   MANUSCRIPT_EXTENSIONS,
+  MANUSCRIPT_MAX_MB,
   manuscriptSchema,
   validateManuscriptFile,
   type ManuscriptInput,
@@ -44,6 +45,8 @@ const FORMAT_LABELS: Record<string, string> = {
 export function ManuscriptForm() {
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  // Remounting is the only way to clear a file input; its value is read-only.
+  const [fileInputKey, setFileInputKey] = useState(0);
 
   const form = useForm<ManuscriptInput>({
     resolver: zodResolver(manuscriptSchema),
@@ -72,20 +75,38 @@ export function ManuscriptForm() {
 
   const onSubmit = async (values: ManuscriptInput) => {
     const problem = validateManuscriptFile(file);
-    if (problem) {
+    if (problem || !file) {
       setFileError(problem);
       return;
     }
 
-    // Phase 7 replaces this with a presigned upload plus a Server Action that
-    // records the submission and emails both the author and the editorial desk.
-    if (values.website) return; // honeypot tripped: fail silently
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    const body = new FormData();
+    for (const [name, value] of Object.entries(values)) {
+      if (value !== undefined && value !== null) body.set(name, String(value));
+    }
+    body.set("file", file);
+
+    let result: { ok: boolean; error?: string };
+    try {
+      const response = await fetch("/api/submissions/manuscript", { method: "POST", body });
+      result = await response.json();
+    } catch {
+      result = { ok: false, error: "We could not reach the server. Please try again." };
+    }
+
+    if (!result.ok) {
+      toast.error("Your manuscript was not submitted.", {
+        description: result.error ?? "Please try again.",
+      });
+      return;
+    }
+
     toast.success("Manuscript received.", {
-      description: "Upload and email delivery are wired up in a later phase.",
+      description: "Our editorial team will review it and be in touch.",
     });
     reset();
     setFile(null);
+    setFileInputKey((key) => key + 1);
   };
 
   return (
@@ -199,6 +220,7 @@ export function ManuscriptForm() {
           <Field data-invalid={!!fileError}>
             <FieldLabel htmlFor="ms-file">Manuscript file</FieldLabel>
             <Input
+              key={fileInputKey}
               id="ms-file"
               type="file"
               accept={MANUSCRIPT_EXTENSIONS.join(",")}
@@ -206,7 +228,7 @@ export function ManuscriptForm() {
               className="h-auto py-2"
             />
             <FieldDescription>
-              PDF, DOC or DOCX, up to 10 MB.{" "}
+              PDF, DOC or DOCX, up to {MANUSCRIPT_MAX_MB} MB.{" "}
               {file ? `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)` : null}
             </FieldDescription>
             {fileError ? <FieldError errors={[{ message: fileError }]} /> : null}

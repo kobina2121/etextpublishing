@@ -25,6 +25,7 @@ export type ResolvedUser = {
   name: string;
   role: UserRole;
   image?: string;
+  sessionVersion: number;
 };
 
 /** Both halves must be present, or the provider is not registered at all. */
@@ -42,8 +43,8 @@ export function isGoogleSignInEnabled(): boolean {
 /**
  * Finds or creates the account behind a verified Google profile.
  *
- * Matching is by email, not by Google's subject id: an admin seeded with a
- * password should be recognised the first time they choose Google, rather than
+ * Matching is by email, not by Google's subject id: an admin created by the
+ * seed or `grant-admin` should be recognised the first time they choose Google, rather than
  * ending up with a second, powerless account at the same address. The subject
  * id is recorded afterwards.
  */
@@ -63,7 +64,20 @@ export async function resolveGoogleUser(input: {
   if (existing) {
     // Role is deliberately not touched. A name or picture may change; what the
     // account is allowed to do may not, and certainly not from here.
+
+    // Sign-up does not verify email addresses, so a password on an account
+    // Google has never vouched for may have been set by someone else: anyone
+    // can register an address before its owner does. Google has just proved
+    // who owns it, so that password is dropped on first link rather than left
+    // as a way into the real owner's account. They can carry on with Google.
+    // A password set through an emailed reset link is the owner's: that link
+    // proved they read the mailbox, so it stays.
+    if (!existing.googleId && !existing.emailVerifiedAt && existing.passwordHash) {
+      existing.passwordHash = undefined;
+    }
+
     existing.googleId = input.googleId;
+    existing.emailVerifiedAt ??= new Date();
     if (input.image) existing.image = input.image;
     if (!existing.name && input.name) existing.name = input.name;
     await existing.save();
@@ -74,6 +88,7 @@ export async function resolveGoogleUser(input: {
       name: existing.name,
       role: existing.role,
       ...(existing.image ? { image: existing.image } : {}),
+      sessionVersion: existing.sessionVersion ?? 0,
     };
   }
 
@@ -91,5 +106,6 @@ export async function resolveGoogleUser(input: {
     name: created.name,
     role: created.role,
     ...(created.image ? { image: created.image } : {}),
+    sessionVersion: created.sessionVersion ?? 0,
   };
 }

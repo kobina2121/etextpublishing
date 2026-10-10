@@ -34,6 +34,16 @@ export type UserDoc = WithTimestamps & {
   image?: string;
   /** Provider account ids, so a returning user matches even if they change name. */
   googleId?: string;
+  /**
+   * When the owner proved they read this mailbox by following an emailed link.
+   * Google linking proves the same thing; either one makes the address trusted.
+   */
+  emailVerifiedAt?: Date;
+  /**
+   * Bumped when the password changes or is reset. Every session carries the
+   * version it was issued under; one that no longer matches is signed out.
+   */
+  sessionVersion?: number;
 };
 
 export type CategoryDoc = WithTimestamps & {
@@ -106,6 +116,12 @@ export type OrderDoc = WithTimestamps & {
   /** Guards against a replayed or duplicated webhook fulfilling twice. */
   fulfilledAt?: Date;
   adminNotes?: string;
+  /**
+   * Set when a paid order could not take stock because it had run out — the
+   * last copy sold twice while both buyers were paying. Shown to admins as a
+   * warning until it is dealt with.
+   */
+  stockShortfall?: string;
 };
 
 export type PublicationDoc = WithTimestamps & {
@@ -221,13 +237,19 @@ export type RateLimitDoc = {
   createdAt: Date;
 };
 
-export type MagicLinkTokenDoc = WithTimestamps & {
+/**
+ * A single-use password reset link.
+ *
+ * Only the SHA-256 hash of the token is stored: a leak of this collection must
+ * not hand anyone a working reset link, for the same reason passwords are
+ * hashed.
+ */
+export type PasswordResetTokenDoc = WithTimestamps & {
   _id: Types.ObjectId;
-  email: string;
+  user: Types.ObjectId;
   tokenHash: string;
   expiresAt: Date;
   usedAt?: Date;
-  requestedIp?: string;
 };
 
 export type ImageDoc = WithTimestamps & {
@@ -240,6 +262,23 @@ export type ImageDoc = WithTimestamps & {
   filename: string;
   width?: number;
   height?: number;
+};
+
+/**
+ * An uploaded manuscript.
+ *
+ * Kept apart from `ImageDoc` because it is private: images are served to
+ * anyone, manuscripts only to an admin. Separate collections mean no route can
+ * serve one by mistaking it for the other.
+ */
+export type ManuscriptFileDoc = WithTimestamps & {
+  _id: Types.ObjectId;
+  data: Buffer;
+  /** Sniffed from the bytes on upload, never taken from the browser. */
+  contentType: string;
+  size: number;
+  /** Original filename, retained for display only — never used as a path. */
+  filename: string;
 };
 
 export type SiteSettingsDoc = WithTimestamps & {

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
@@ -10,12 +11,18 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Spinner } from "@/components/ui/spinner";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 
-export function PasswordForm() {
+/**
+ * Email and password sign-in.
+ *
+ * `callbackUrl` has already been checked by the page to be a same-site path,
+ * so a crafted link cannot bounce someone to another site after signing in.
+ */
+export function PasswordForm({ callbackUrl }: { callbackUrl: string }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -38,17 +45,13 @@ export function PasswordForm() {
 
     if (!result || result.error) {
       // Deliberately generic: saying which of the two was wrong would confirm
-      // whether an account exists.
-      setFormError("Those credentials were not recognised.");
+      // whether an account exists. It also covers the rate limit, which
+      // should not announce itself either.
+      setFormError("That email and password were not recognised.");
       return;
     }
 
-    // Only same-origin paths are honoured, so a crafted callbackUrl cannot
-    // bounce a freshly authenticated admin to another site.
-    const requested = searchParams.get("callbackUrl");
-    const target = requested?.startsWith("/") && !requested.startsWith("//") ? requested : "/admin";
-
-    router.replace(target);
+    router.replace(callbackUrl);
     router.refresh();
   };
 
@@ -64,21 +67,22 @@ export function PasswordForm() {
 
           <Field data-invalid={!!errors.email}>
             <FieldLabel htmlFor="login-email">Email</FieldLabel>
-            <Input
-              id="login-email"
-              type="email"
-              autoComplete="username"
-              autoFocus
-              {...register("email")}
-            />
+            <Input id="login-email" type="email" autoComplete="email" {...register("email")} />
             <FieldError errors={[errors.email]} />
           </Field>
 
           <Field data-invalid={!!errors.password}>
-            <FieldLabel htmlFor="login-password">Password</FieldLabel>
-            <Input
+            <div className="flex items-baseline justify-between gap-4">
+              <FieldLabel htmlFor="login-password">Password</FieldLabel>
+              <Link
+                href="/forgot-password"
+                className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
+            <PasswordInput
               id="login-password"
-              type="password"
               autoComplete="current-password"
               {...register("password")}
             />
