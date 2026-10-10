@@ -166,7 +166,7 @@ export default async function PublicationDetailPage({ params }: PageProps<"/publ
               {options.length > 0 ? (
                 <>
                   <p className="mb-4 text-sm font-semibold tracking-[0.12em] uppercase">
-                    Choose an edition
+                    {options.length > 1 ? "Choose an edition" : "Price"}
                   </p>
                   <div className="max-w-sm">
                     <EditionChoice

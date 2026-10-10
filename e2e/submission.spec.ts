@@ -57,6 +57,7 @@ test("an admin downloads it, then deletes it", async ({ page, context }) => {
 
   await page.getByRole("button", { name: "Delete" }).click();
   await page.getByRole("alertdialog").getByRole("button", { name: "Delete" }).click();
+  await expect(page.getByText("Submission deleted.")).toBeVisible();
 
   await expect(page).toHaveURL(/\/admin\/manuscripts$/);
   await expect(page.getByRole("link", { name: title })).toHaveCount(0);
