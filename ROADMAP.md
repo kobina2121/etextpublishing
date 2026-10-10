@@ -192,6 +192,18 @@ Paystack, physical formats ship and digital formats download.
 - [x] Admin order list, detail and fulfilment status
 - [ ] Digital download delivery — blocked on S3 (Phase 7). A paid ebook records
       the entitlement but there is nowhere to serve the file from yet
+- [x] Mobile money in flight ("ongoing", "pending" and the like) is shown as
+      "confirming your payment" and refreshes itself, instead of being marked
+      failed — which told buyers nothing was charged and invited a second payment
+- [x] The webhook answers 500 when Paystack could not be reached, so the event
+      is redelivered; final outcomes are still acknowledged with 200
+- [x] A paid order that finds its stock gone (the last copy sold twice) gets a
+      `stockShortfall` note, shown as a warning on the admin order page
+- [x] Admin header shows "Payments: test mode" or "Payments: off" until live
+      keys are set
+- [x] A single-edition title showed no price anywhere — the price lived only in
+      the edition picker, which hides when there is nothing to choose. Found by
+      the publication e2e test
 - [ ] End-to-end test against live Paystack — blocked on the secret key
 
 **Exit:** a real test transaction completes, the webhook marks the order paid
@@ -247,8 +259,11 @@ readers and staff alike. Two ways in: email + password, or Google.
 - [ ] Reset emails need Resend in production; until then development prints
       the link to the dev-server console and production says reset is
       unavailable
-- [ ] Changing or resetting a password does not end other sessions (JWTs last
-      30 days). Needs a session version on the user to revoke them
+- [x] Changing or resetting a password signs out every other device: each
+      account carries a `sessionVersion`, and a session issued under an older
+      one is refused. The same per-request check refreshes the role, so
+      `grant-admin --revoke` takes effect on the next request. The proxy runs
+      on Node.js in Next 16, so it makes this check too
 - [x] Orders attach to the account when signed in, and are matched back by
       verified email when bought as a guest
 - [ ] End-to-end Google round trip — credentials are now set locally; needs a
@@ -357,9 +372,11 @@ drafts absent from the sitemap. ✅
       login, admin CRUD — `npm run test:e2e`, 10 tests
 - [x] `typecheck` → `lint` → `format:check` → `build`, all clean
 - [ ] Manual pass over public + admin at 375 / 768 / 1440; Lighthouse
-- [ ] Drive the admin publication form logged in — the two edition switches are
-      type-checked, linted and building, but have never been clicked. Now
-      reachable: sign in with Google as an admin, or extend `e2e/admin.spec.ts`
+- [x] Drive the admin publication form — `e2e/publication.spec.ts` sets both
+      edition switches, checks the buyer's picker, the price rule, a
+      hardcopy-only title, and deletion
+- [x] GitHub Actions: typecheck, lint, formatting and unit tests on every pull
+      request and push to main. E2E and build need MongoDB and stay local
 - [ ] Final commit and push
 
 **Exit:** green gates, verified pages, shipped.
