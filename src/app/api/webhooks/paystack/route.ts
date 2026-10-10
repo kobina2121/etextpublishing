@@ -35,11 +35,15 @@ export async function POST(request: Request) {
 
   const settled = await settleOrder(reference);
 
-  // A 200 either way, except for genuine server faults: a non-2xx makes
-  // Paystack retry, and retrying will not fix a mismatched amount.
   if (!settled.ok) {
     console.error("[paystack] settle failed", reference, settled.error);
+    // A fault on our side or Paystack's (unreachable, timed out) gets a 500 so
+    // Paystack redelivers the event. Acknowledging it would leave a paid order
+    // pending forever if the buyer also never came back to the callback page.
+    if (settled.retryable) return new Response("Try again", { status: 500 });
   }
 
+  // Everything else is a final answer — a mismatched amount, an unknown order
+  // — and retrying will not change it, so it is acknowledged.
   return new Response("OK", { status: 200 });
 }

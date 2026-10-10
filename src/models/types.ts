@@ -39,6 +39,11 @@ export type UserDoc = WithTimestamps & {
    * Google linking proves the same thing; either one makes the address trusted.
    */
   emailVerifiedAt?: Date;
+  /**
+   * Bumped when the password changes or is reset. Every session carries the
+   * version it was issued under; one that no longer matches is signed out.
+   */
+  sessionVersion?: number;
 };
 
 export type CategoryDoc = WithTimestamps & {
@@ -111,6 +116,12 @@ export type OrderDoc = WithTimestamps & {
   /** Guards against a replayed or duplicated webhook fulfilling twice. */
   fulfilledAt?: Date;
   adminNotes?: string;
+  /**
+   * Set when a paid order could not take stock because it had run out — the
+   * last copy sold twice while both buyers were paying. Shown to admins as a
+   * warning until it is dealt with.
+   */
+  stockShortfall?: string;
 };
 
 export type PublicationDoc = WithTimestamps & {

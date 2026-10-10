@@ -2,12 +2,12 @@
 
 import { randomBytes } from "node:crypto";
 import { Types } from "mongoose";
-import { headers } from "next/headers";
 
 import { connectToDatabase } from "@/lib/db";
 import { publicEnv } from "@/lib/env";
 import { initializeTransaction, isPaystackConfigured } from "@/lib/payments/paystack";
 import { checkRateLimit, rateLimitKey } from "@/lib/rate-limit";
+import { clientIp } from "@/lib/request-ip";
 import { cartPayloadSchema, checkoutSchema } from "@/lib/validations/checkout";
 import { Order } from "@/models";
 import type { OrderItemDoc } from "@/models/types";
@@ -55,14 +55,8 @@ export async function startCheckout(raw: {
 
   await connectToDatabase();
 
-  const headerList = await headers();
-  const ip =
-    headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    headerList.get("x-real-ip") ||
-    "unknown";
-
   const limit = await checkRateLimit({
-    key: rateLimitKey("checkout", ip),
+    key: rateLimitKey("checkout", await clientIp()),
     limit: 10,
     windowSeconds: 600,
   });
