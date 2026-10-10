@@ -212,6 +212,27 @@
     letter-spacing: -0.01em;
   }
 
+  /* House style: every word of a heading starts with a capital letter.
+   * Done here rather than in the copy so database content — titles, names,
+   * article headlines — follows it too, whatever case it was typed in.
+   * Display only: the underlying text, which screen readers and search
+   * engines read, is unchanged. Headings styled `uppercase` stay uppercase,
+   * because utilities outrank this base layer. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  [data-slot="card-title"],
+  [data-slot="alert-title"],
+  [data-slot="alert-dialog-title"],
+  [data-slot="dialog-title"],
+  [data-slot="sheet-title"],
+  [data-slot="empty-title"] {
+    text-transform: capitalize;
+  }
+
   p {
     text-wrap: pretty;
   }

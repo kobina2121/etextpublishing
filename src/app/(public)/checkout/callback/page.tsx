@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2Icon, ClockIcon, TriangleAlertIcon } from "lucide-react";
+import { CheckCircle2Icon, ClockIcon, LoaderCircleIcon, TriangleAlertIcon } from "lucide-react";
 
 import { buildMetadata } from "@/lib/seo/metadata";
 import { Container } from "@/components/layout/container";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { settleOrder } from "@/server/payments/fulfil";
 
 import { ClearCart } from "./clear-cart";
+import { RefreshWhileProcessing } from "./refresh-while-processing";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({ title: "Order", path: "/checkout/callback", noIndex: true });
@@ -36,6 +37,7 @@ export default async function CheckoutCallbackPage({
   const paid =
     settled?.ok === true && (settled.status === "paid" || settled.status === "already-paid");
   const unpaid = settled?.ok === true && settled.status === "unpaid";
+  const processing = settled?.ok === true && settled.status === "processing";
 
   return (
     <Section className="pt-36">
@@ -53,6 +55,20 @@ export default async function CheckoutCallbackPage({
             <Button asChild size="xl" className="font-semibold tracking-[0.1em] uppercase">
               <Link href="/publications">Continue browsing</Link>
             </Button>
+          </div>
+        ) : processing ? (
+          <div className="flex flex-col items-start gap-5" role="status">
+            <RefreshWhileProcessing />
+            <LoaderCircleIcon className="size-12 animate-spin text-primary" aria-hidden />
+            <h1 className="text-4xl">We are confirming your payment</h1>
+            <p className="text-lg text-muted-foreground">
+              If you paid with mobile money, approve the prompt on your phone. This page updates by
+              itself as soon as the payment goes through.
+            </p>
+            <p className="text-sm font-medium">
+              Please do not pay again — your order is saved, and you will not be charged twice.
+            </p>
+            <p className="font-mono text-xs text-muted-foreground">Reference: {reference}</p>
           </div>
         ) : unpaid ? (
           <div className="flex flex-col items-start gap-5">

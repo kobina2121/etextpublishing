@@ -574,6 +574,8 @@ export type SubmissionDetail = AdminSubmissionRow & {
   synopsis: string;
   fileName: string;
   fileSize: number;
+  /** Whether a stored file exists to download. */
+  hasFile: boolean;
   adminNotes: string;
 };
 
@@ -593,6 +595,7 @@ export async function getSubmission(id: string): Promise<SubmissionDetail | null
     synopsis: doc.synopsis,
     fileName: doc.fileName ?? "",
     fileSize: doc.fileSize ?? 0,
+    hasFile: Boolean(doc.fileKey),
     status: doc.status,
     adminNotes: doc.adminNotes ?? "",
     submittedAt: new Date(doc.submittedAt),
@@ -779,6 +782,7 @@ export type AdminOrderDetail = AdminOrderRow & {
   paystackReference: string;
   paidAt: Date | null;
   adminNotes: string;
+  stockShortfall: string;
 };
 
 export async function getOrder(id: string): Promise<AdminOrderDetail | null> {
@@ -823,6 +827,7 @@ export async function getOrder(id: string): Promise<AdminOrderDetail | null> {
     paystackReference: doc.paystackReference ?? "",
     paidAt: doc.paidAt ? new Date(doc.paidAt) : null,
     adminNotes: doc.adminNotes ?? "",
+    stockShortfall: doc.stockShortfall ?? "",
   };
 }
 

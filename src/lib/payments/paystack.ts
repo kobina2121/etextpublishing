@@ -86,13 +86,20 @@ export type VerifyResult =
   | {
       ok: true;
       paid: boolean;
+      /**
+       * Paystack's own status. Besides "success" and the final failures, a
+       * payment can be in flight — mobile money waits for the buyer to approve
+       * it on their phone — and that is not the same as failed.
+       */
+      status: string;
       /** Integer subunits, as Paystack recorded it. */
       amount: number;
       currency: string;
       reference: string;
       paidAt: Date | null;
     }
-  | { ok: false; error: string };
+  /** `retryable`: a network or server fault, worth asking again later. */
+  | { ok: false; error: string; retryable: boolean };
 
 /**
  * Asks Paystack what actually happened.
@@ -121,19 +128,31 @@ export async function verifyTransaction(reference: string): Promise<VerifyResult
     };
 
     if (!response.ok || !payload.status || !payload.data) {
-      return { ok: false, error: payload.message ?? "Could not verify the transaction." };
+      return {
+        ok: false,
+        error: payload.message ?? "Could not verify the transaction.",
+        // A 4xx is Paystack saying no (an unknown reference, say); asking again
+        // will not change that. A 5xx or 429 might.
+        retryable: response.status >= 500 || response.status === 429,
+      };
     }
 
     return {
       ok: true,
       paid: payload.data.status === "success",
+      status: payload.data.status ?? "unknown",
       amount: payload.data.amount ?? 0,
       currency: (payload.data.currency ?? "").toUpperCase(),
       reference: payload.data.reference ?? reference,
       paidAt: payload.data.paid_at ? new Date(payload.data.paid_at) : null,
     };
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "Verification failed." };
+    // Never reached Paystack, or the reply was unreadable: try again later.
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Verification failed.",
+      retryable: true,
+    };
   }
 }
 

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { deleteManuscript } from "@/lib/storage/manuscripts";
 import { siteSettingsSchema, submissionUpdateSchema } from "@/lib/validations/content";
 import { ContactMessage, ManuscriptSubmission, SiteSettings } from "@/models";
 import { toFieldErrors, withAdmin, type ActionResult } from "@/server/actions/shared";
@@ -45,6 +46,7 @@ export async function deleteSubmission(id: string): Promise<ActionResult> {
   return withAdmin(async () => {
     const deleted = await ManuscriptSubmission.findByIdAndDelete(id);
     if (!deleted) return { ok: false, error: "That submission no longer exists." };
+    await deleteManuscript(deleted.fileKey);
     revalidatePath("/admin");
     revalidatePath("/admin/manuscripts");
     return { ok: true, message: "Submission deleted." };

@@ -33,7 +33,10 @@ export async function buildMetadata({
   const resolvedDescription = description ?? site.description;
 
   return {
-    title,
+    // With no title of its own (the home page), use the full site title as-is.
+    // Passing `title: undefined` would not fall back to the layout's default —
+    // it replaces it, and the page ships with no <title> at all.
+    title: title ?? { absolute: resolvedTitle },
     description: resolvedDescription,
     alternates: { canonical },
     ...(noIndex ? { robots: { index: false, follow: false } } : {}),

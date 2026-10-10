@@ -17,24 +17,47 @@ import { Order, Publication } from "@/models";
  * tampered callback URL or a replayed webhook body cannot mark an order paid.
  */
 
+/**
+ * Paystack statuses that are final and mean no money moved. Anything else that
+ * is not "success" — "ongoing", "pending", "processing", "queued" and the like —
+ * is still in flight. Mobile money sits there until the buyer approves the
+ * charge on their phone, which can be after they are back on our site.
+ */
+const FAILED_STATUSES = new Set(["failed", "abandoned", "reversed"]);
+
 export type SettleResult =
-  | { ok: true; status: "paid" | "already-paid" | "unpaid"; orderReference: string }
-  | { ok: false; error: string };
+  | {
+      ok: true;
+      /** `processing`: not decided yet. The order stays pending; do not ask them to pay again. */
+      status: "paid" | "already-paid" | "unpaid" | "processing";
+      orderReference: string;
+    }
+  /**
+   * `retryable`: we could not reach a decision this time (Paystack unreachable,
+   * say) and asking again later may succeed. A webhook should then fail, so
+   * Paystack redelivers it, rather than acknowledge an event we never acted on.
+   */
+  | { ok: false; error: string; retryable: boolean };
 
 export async function settleOrder(reference: string): Promise<SettleResult> {
   await connectToDatabase();
 
   const order = await Order.findOne({ reference });
-  if (!order) return { ok: false, error: "No such order." };
+  if (!order) return { ok: false, error: "No such order.", retryable: false };
 
   if (order.status === "paid" && order.fulfilledAt) {
     return { ok: true, status: "already-paid", orderReference: order.reference };
   }
 
   const verified = await verifyTransaction(reference);
-  if (!verified.ok) return { ok: false, error: verified.error };
+  if (!verified.ok) {
+    return { ok: false, error: verified.error, retryable: verified.retryable };
+  }
 
   if (!verified.paid) {
+    if (!FAILED_STATUSES.has(verified.status)) {
+      return { ok: true, status: "processing", orderReference: order.reference };
+    }
     if (order.status === "pending") {
       await Order.updateOne({ _id: order._id, status: "pending" }, { $set: { status: "failed" } });
     }
@@ -53,7 +76,7 @@ export async function settleOrder(reference: string): Promise<SettleResult> {
         },
       },
     );
-    return { ok: false, error: "The payment did not match the order total." };
+    return { ok: false, error: "The payment did not match the order total.", retryable: false };
   }
 
   // The conditional update is the idempotency guard: only the first caller
@@ -79,15 +102,29 @@ export async function settleOrder(reference: string): Promise<SettleResult> {
   // Stock comes down only for shipped editions, and only once, guarded by that
   // single claim. The decrement targets the hardcopy's own stock, so buying a
   // download can never reduce the printed count.
+  //
+  // Stock is not held while the buyer pays, so the last copy can sell twice.
+  // The money has moved by now and cannot be refused, so a shortfall is
+  // recorded on the order for an admin to act on — never silently skipped.
+  const shortfalls: string[] = [];
   for (const item of claimed.items) {
     if (!item.requiresShipping) continue;
-    await Publication.updateOne(
+    const updated = await Publication.updateOne(
       {
         _id: item.publication,
         [`editions.${item.edition}.stockQuantity`]: { $gte: item.quantity },
       },
       { $inc: { [`editions.${item.edition}.stockQuantity`]: -item.quantity } },
     );
+    if (updated.modifiedCount === 0) {
+      shortfalls.push(`${item.title} (${item.edition}) × ${item.quantity}`);
+    }
+  }
+
+  if (shortfalls.length > 0) {
+    const shortfall = `Paid, but not enough stock for: ${shortfalls.join("; ")}. Restock or refund.`;
+    await Order.updateOne({ _id: claimed._id }, { $set: { stockShortfall: shortfall } });
+    console.error("[paystack] stock shortfall", claimed.reference, shortfall);
   }
 
   return { ok: true, status: "paid", orderReference: claimed.reference };

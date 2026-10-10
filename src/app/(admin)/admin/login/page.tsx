@@ -7,9 +7,7 @@ import { redirect } from "next/navigation";
  * routed by role afterwards, so a separate admin form was one more thing to
  * keep in step for no benefit.
  */
-export default async function AdminLoginRedirect({
-  searchParams,
-}: PageProps<"/admin/login">) {
+export default async function AdminLoginRedirect({ searchParams }: PageProps<"/admin/login">) {
   const params = await searchParams;
   const raw = typeof params.callbackUrl === "string" ? params.callbackUrl : "";
   const callbackUrl = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/admin";

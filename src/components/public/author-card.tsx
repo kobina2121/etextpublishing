@@ -3,6 +3,7 @@ import Image from "next/image";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Author } from "@/types/content";
+import { HeadingText } from "@/components/ui/heading-text";
 
 function initials(name: string): string {
   return name
@@ -34,7 +35,7 @@ export function AuthorCard({ author }: { author: Author }) {
             </Avatar>
           )}
         </div>
-        <h3 className="group-hover:text-primary mt-5 text-xl transition-colors">{author.name}</h3>
+        <h3 className="group-hover:text-primary mt-5 text-xl transition-colors"><HeadingText>{author.name}</HeadingText></h3>
         {author.role ? (
           <p className="text-primary font-semibold mt-1 text-xs tracking-[0.14em] uppercase">
             {author.role}
