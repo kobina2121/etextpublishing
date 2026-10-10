@@ -59,6 +59,29 @@ export async function deleteTestUser(email: string) {
   }
 }
 
+/** The admin that admin tests sign in as. Created once, reused within a run. */
+export async function ensureTestAdmin(
+  email: string,
+): Promise<{ id: string; sessionVersion: number }> {
+  const database = await db();
+  const now = new Date();
+  const doc = await database.collection("users").findOneAndUpdate(
+    { email },
+    {
+      $setOnInsert: { email, name: "E2E Admin", sessionVersion: 0, createdAt: now },
+      $set: { role: "admin", updatedAt: now },
+    },
+    { upsert: true, returnDocument: "after" },
+  );
+  if (!doc) throw new Error("Could not create the test admin.");
+  return { id: doc._id.toString(), sessionVersion: Number(doc.sessionVersion ?? 0) };
+}
+
+export async function setRole(email: string, role: "admin" | "customer") {
+  const database = await db();
+  await database.collection("users").updateOne({ email }, { $set: { role } });
+}
+
 export async function disconnect() {
   await mongoose.disconnect();
 }

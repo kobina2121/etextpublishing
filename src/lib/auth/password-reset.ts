@@ -104,6 +104,9 @@ export async function consumePasswordReset(
   user.passwordHash = await bcrypt.hash(newPassword, 12);
   // Following the link proved they read this mailbox.
   user.emailVerifiedAt ??= new Date();
+  // Ends every existing session. Someone resetting may be locking out a
+  // person who knew the old password.
+  user.sessionVersion = (user.sessionVersion ?? 0) + 1;
   await user.save();
 
   // Any other outstanding link for this account is void once one is used.

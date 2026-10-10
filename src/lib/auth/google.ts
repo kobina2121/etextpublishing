@@ -25,6 +25,7 @@ export type ResolvedUser = {
   name: string;
   role: UserRole;
   image?: string;
+  sessionVersion: number;
 };
 
 /** Both halves must be present, or the provider is not registered at all. */
@@ -87,6 +88,7 @@ export async function resolveGoogleUser(input: {
       name: existing.name,
       role: existing.role,
       ...(existing.image ? { image: existing.image } : {}),
+      sessionVersion: existing.sessionVersion ?? 0,
     };
   }
 
@@ -104,5 +106,6 @@ export async function resolveGoogleUser(input: {
     name: created.name,
     role: created.role,
     ...(created.image ? { image: created.image } : {}),
+    sessionVersion: created.sessionVersion ?? 0,
   };
 }
