@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { getAuthorBySlug, getAuthorSlugs, getPublicationsByAuthor } from "@/server/queries";
+import { HeadingText } from "@/components/ui/heading-text";
 
 /**
  * Known slugs are prerendered at build time; anything else renders on demand.
@@ -125,7 +126,9 @@ export default async function AuthorDetailPage({ params }: PageProps<"/authors/[
                 {author.role}
               </p>
             ) : null}
-            <h1 className="mt-3 text-4xl leading-tight sm:text-5xl">{author.name}</h1>
+            <h1 className="mt-3 text-4xl leading-tight sm:text-5xl">
+              <HeadingText>{author.name}</HeadingText>
+            </h1>
             <p className="mt-6 text-lg leading-relaxed">{author.bio}</p>
 
             {author.socials && author.socials.length > 0 ? (

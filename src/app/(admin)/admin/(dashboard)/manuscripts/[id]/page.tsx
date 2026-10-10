@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, DownloadIcon } from "lucide-react";
 
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -76,14 +76,30 @@ export default async function SubmissionDetailPage({
             </CardContent>
           </Card>
 
-          <Alert>
-            <AlertTitle>Manuscript file</AlertTitle>
-            <AlertDescription>
-              {submission.fileName
-                ? `${submission.fileName} (${(submission.fileSize / 1024 / 1024).toFixed(1)} MB). Secure download arrives with file storage in the next phase.`
-                : "No file is attached. Uploads are wired up with secure storage in the next phase."}
-            </AlertDescription>
-          </Alert>
+          {submission.hasFile ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Manuscript file</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-wrap items-center justify-between gap-4 text-sm">
+                <span className="break-all">
+                  {submission.fileName} ({(submission.fileSize / 1024 / 1024).toFixed(1)} MB)
+                </span>
+                {/* A plain link, not next/link: this is a file download, not a page. */}
+                <Button asChild variant="outline">
+                  <a href={`/api/admin/manuscripts/${submission.id}/file`} download>
+                    <DownloadIcon aria-hidden />
+                    Download
+                  </a>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Alert>
+              <AlertTitle>Manuscript file</AlertTitle>
+              <AlertDescription>No file is attached to this submission.</AlertDescription>
+            </Alert>
+          )}
         </div>
 
         <SubmissionWorkflow

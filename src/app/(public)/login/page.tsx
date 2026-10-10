@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { DownloadIcon, LayoutDashboardIcon, PackageIcon } from "lucide-react";
 
+import { AuthDivider, AuthLayout, AuthSwitch, type AuthPoint } from "@/components/auth/auth-layout";
 import { GoogleButton } from "@/components/auth/google-button";
-import { MagicLinkForm } from "@/components/auth/magic-link-form";
 import { PasswordForm } from "@/components/auth/password-form";
-import { Container } from "@/components/layout/container";
-import { Section } from "@/components/layout/section";
-import { PageHero } from "@/components/public/page-hero";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isGoogleSignInEnabled } from "@/lib/auth/google";
 import { buildMetadata } from "@/lib/seo/metadata";
 
@@ -23,18 +18,35 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
+/** What is waiting on the other side. Staff are told too: there is no separate staff page. */
+const WAITING: readonly AuthPoint[] = [
+  {
+    icon: PackageIcon,
+    title: "Your orders",
+    body: "Everything you have bought, and where each delivery has got to.",
+  },
+  {
+    icon: DownloadIcon,
+    title: "Your softcopies",
+    body: "Every digital edition you have bought, listed in one place.",
+  },
+  {
+    icon: LayoutDashboardIcon,
+    title: "Staff sign in here too",
+    body: "An admin account goes straight to the dashboard.",
+  },
+];
+
 /**
- * The one sign-in page.
+ * The sign-in page. There is exactly one, for readers and staff alike.
  *
- * Readers and staff use the same form and are routed by role afterwards:
- * there is nothing an admin does here that a reader must be kept away from,
- * and a second page only meant two places to keep in step. /admin/login now
- * redirects here.
+ * Two ways in: an email and password, or Google. What you get afterwards is
+ * decided by the account behind the address: an email carrying the admin role
+ * lands on the dashboard, anything else lands on its own orders. Nobody picks
+ * "staff" at sign-in, because that is not a choice a visitor should be making.
  *
- * Google is first because it is what almost everyone will use. The email and
- * password methods are staff ones — both providers refuse any role below
- * admin — so they sit behind a heading that says so rather than being offered
- * as equal choices to a reader.
+ * Admin is granted on the server with `npm run grant-admin -- <email>`, never
+ * from a screen. Neither sign-in nor sign-up can create more than a customer.
  *
  * Signing in is never required to buy. Guest checkout stays, and this page
  * says so, because a sign-in wall in front of a basket loses sales.
@@ -43,8 +55,10 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const params = await searchParams;
   const raw = typeof params.callbackUrl === "string" ? params.callbackUrl : "";
   // Only same-site paths: an absolute URL here would make this an open
-  // redirect, handing an attacker a link that looks like ours.
-  const callbackUrl = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/account";
+  // redirect, handing an attacker a link that looks like ours. With nothing
+  // requested, come back here: the proxy sends a signed-in visitor on to
+  // /admin or /account by role, which this page cannot know in advance.
+  const callbackUrl = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/login";
 
   const googleEnabled = isGoogleSignInEnabled();
 
@@ -55,69 +69,36 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const errorMessage = errorCode ? describeAuthError(errorCode) : null;
 
   return (
-    <>
-      <PageHero
-        title="Sign in"
-        description="See your orders and downloads. You do not need an account to buy."
+    <AuthLayout
+      title="Sign in"
+      description="Welcome back. You do not need an account to buy."
+      cardTitle="Enter your details"
+      cardDescription={
+        googleEnabled ? "Use your email and password, or Google." : "Use your email and password."
+      }
+      aside={{ title: "Welcome back", points: WAITING }}
+    >
+      {errorMessage ? (
+        <Alert variant="destructive" className="mb-6">
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      <PasswordForm callbackUrl={callbackUrl} />
+
+      {googleEnabled ? (
+        <>
+          <AuthDivider />
+          <GoogleButton callbackUrl={callbackUrl} />
+        </>
+      ) : null}
+
+      <AuthSwitch
+        prompt="New here?"
+        href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+        label="Create an account"
       />
-
-      <Section>
-        <Container width="prose">
-          <div className="mx-auto max-w-md">
-            {errorMessage ? (
-              <Alert variant="destructive" className="mb-6">
-                <AlertDescription>{errorMessage}</AlertDescription>
-              </Alert>
-            ) : null}
-
-            {googleEnabled ? (
-              <>
-                <GoogleButton callbackUrl={callbackUrl} />
-                <p className="mt-4 text-center text-sm text-muted-foreground">
-                  Signing in creates a reader account the first time. We only ever see your
-                  name, email address and profile picture.
-                </p>
-              </>
-            ) : (
-              <Alert>
-                <AlertDescription>
-                  Google sign-in is not configured yet. You can still buy any title as a guest.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <div className="mt-10 border-t border-border pt-8">
-              <h2 className="text-sm font-semibold tracking-[0.14em] uppercase">Staff sign-in</h2>
-              <p className="mt-1 mb-5 text-sm text-muted-foreground">
-                For the publishing team. Reader accounts use Google above.
-              </p>
-
-              <Tabs defaultValue="link">
-                <TabsList className="w-full">
-                  <TabsTrigger value="link" className="flex-1">
-                    Email link
-                  </TabsTrigger>
-                  <TabsTrigger value="password" className="flex-1">
-                    Password
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="link" className="pt-5">
-                  <MagicLinkForm />
-                </TabsContent>
-
-                <TabsContent value="password" className="pt-5">
-                  {/* useSearchParams needs a Suspense boundary to keep this page static. */}
-                  <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-                    <PasswordForm />
-                  </Suspense>
-                </TabsContent>
-              </Tabs>
-            </div>
-          </div>
-        </Container>
-      </Section>
-    </>
+    </AuthLayout>
   );
 }
 
@@ -136,8 +117,6 @@ function describeAuthError(code: string): string {
       return "Sign-in is not set up correctly on our side. Please let us know, and buy as a guest in the meantime.";
     case "OAuthAccountNotLinked":
       return "An account already exists for that email address using a different sign-in method.";
-    case "Verification":
-      return "That link has expired or has already been used. Please start again.";
     default:
       return "Something went wrong signing you in. Please try again.";
   }

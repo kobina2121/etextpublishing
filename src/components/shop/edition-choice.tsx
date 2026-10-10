@@ -79,7 +79,7 @@ export function EditionChoice({
                   key={option.kind}
                   className={cn(
                     "flex-1 cursor-pointer border px-3 py-2 text-left transition-colors",
-                    "has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-offset-2",
+                    "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2",
                     isSelected
                       ? "border-primary bg-primary/10 text-foreground"
                       : "border-border text-muted-foreground hover:border-foreground/40",
@@ -112,9 +112,7 @@ export function EditionChoice({
       ) : null}
 
       {lowStock ? (
-        <p className="text-xs text-muted-foreground">
-          Only {chosen.stockQuantity} left in print.
-        </p>
+        <p className="text-xs text-muted-foreground">Only {chosen.stockQuantity} left in print.</p>
       ) : null}
 
       <Button

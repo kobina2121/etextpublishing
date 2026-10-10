@@ -12,8 +12,11 @@ import { publicEnv } from "@/lib/env";
  * company data. Replace via the admin Settings screen or the seed script.
  */
 export const siteConfig = {
-  /** Taken from the supplied logo artwork, which reads "etext PUBLISHING NETWORK". */
-  name: "eText Publishing Network",
+  /**
+   * Taken from the supplied logo artwork, which reads "etext PUBLISHING NETWORK".
+   * "etext" is always lowercase, headings included — see HeadingText.
+   */
+  name: "etext Publishing Network",
   /**
    * The mandate as stated by the client, used verbatim. The previous line
    * ("Publishing that puts authors first") described an author-services house,

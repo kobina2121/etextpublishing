@@ -1,5 +1,6 @@
 import { Ornament } from "@/components/public/ornament";
 import { cn } from "@/lib/utils";
+import { HeadingText } from "@/components/ui/heading-text";
 
 type SectionHeadingProps = {
   title: string;
@@ -23,7 +24,7 @@ export function SectionHeading({
       )}
     >
       <Ornament />
-      <h2 className="text-3xl leading-tight sm:text-4xl md:text-[2.75rem]">{title}</h2>
+      <h2 className="text-3xl leading-tight sm:text-4xl md:text-[2.75rem]"><HeadingText>{title}</HeadingText></h2>
       {subtitle ? <p className="text-muted-foreground text-lg">{subtitle}</p> : null}
     </div>
   );

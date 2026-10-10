@@ -8,10 +8,10 @@
  *   npm run seed            # upsert content, leave existing admin alone
  *   npm run seed -- --reset # drop the content collections first
  *
- * The admin password is only ever read from SEED_ADMIN_PASSWORD and is stored
- * as a bcrypt hash. It is never logged.
+ * The admin is created without a password: the first Google sign-in from
+ * SEED_ADMIN_EMAIL is matched to it by address. To add or remove staff later,
+ * use `npm run grant-admin`.
  */
-import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 
 import { connectToDatabase, disconnectFromDatabase } from "@/lib/db";
@@ -29,25 +29,15 @@ function requireEnv(key: string): string {
 
 async function seedAdmin() {
   const email = requireEnv("SEED_ADMIN_EMAIL").toLowerCase();
-  const password = requireEnv("SEED_ADMIN_PASSWORD");
   const name = process.env.SEED_ADMIN_NAME?.trim() || "Site Administrator";
-
-  if (password.length < 12) {
-    throw new Error("SEED_ADMIN_PASSWORD must be at least 12 characters.");
-  }
 
   const existing = await User.findOne({ email });
   if (existing) {
-    console.log(`  admin           already exists (${email}) — password left unchanged`);
+    console.log(`  admin           already exists (${email}) — role left unchanged`);
     return;
   }
 
-  await User.create({
-    email,
-    name,
-    role: "admin",
-    passwordHash: await bcrypt.hash(password, 12),
-  });
+  await User.create({ email, name, role: "admin" });
   console.log(`  admin           created (${email})`);
 }
 

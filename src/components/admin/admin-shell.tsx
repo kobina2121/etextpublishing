@@ -37,9 +37,13 @@ export function AdminShell({ admin, children }: { admin: AdminSessionUser; child
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-border bg-background px-4 sm:px-6">
           <AdminMobileNav />
           <div className="ml-auto flex items-center gap-3">
-            <span className="hidden truncate text-sm text-muted-foreground sm:inline">
+            {/* The account page is where sign-in methods are managed. */}
+            <Link
+              href="/account"
+              className="hidden truncate text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline"
+            >
               {admin.name || admin.email}
-            </span>
+            </Link>
             <SignOutButton />
           </div>
         </header>

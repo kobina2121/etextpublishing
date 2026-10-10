@@ -16,11 +16,7 @@ export default async function PublicLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <Navbar
-        account={
-          user ? { name: user.name, isAdmin: user.role === "admin" } : null
-        }
-      />
+      <Navbar account={user ? { name: user.name, isAdmin: user.role === "admin" } : null} />
       <main className="flex-1">{children}</main>
       <Footer />
     </div>

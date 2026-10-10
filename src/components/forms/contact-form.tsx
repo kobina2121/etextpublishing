@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { contactSchema, type ContactInput } from "@/lib/validations/contact";
+import { submitContactMessage } from "@/server/actions/forms";
 
 export function ContactForm() {
   const form = useForm<ContactInput>({
@@ -32,13 +33,13 @@ export function ContactForm() {
   } = form;
 
   const onSubmit = async (values: ContactInput) => {
-    // Phase 7 replaces this with a Server Action that persists the message and
-    // sends the notification email. Validation and UX are wired now so the
-    // remaining work is the transport, not the form.
-    if (values.website) return; // honeypot tripped: fail silently
-    await new Promise((resolve) => setTimeout(resolve, 600));
+    const result = await submitContactMessage(values);
+    if (!result.ok) {
+      toast.error("Your message was not sent.", { description: result.error });
+      return;
+    }
     toast.success("Thanks — we'll be in touch.", {
-      description: "Message delivery is wired up in a later phase.",
+      description: "Your message has reached our team.",
     });
     reset();
   };

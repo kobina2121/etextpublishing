@@ -1,6 +1,7 @@
 import Image from "next/image";
 
 import { Ornament } from "@/components/public/ornament";
+import { HeadingText } from "@/components/ui/heading-text";
 
 /** Shared banner photograph. Sits behind a brand-coloured scrim on every inner page. */
 const DEFAULT_IMAGE = "/shelf.webp";
@@ -53,7 +54,7 @@ export function PageHero({
       )}
       <div className="relative mx-auto w-full max-w-7xl px-4 pt-36 pb-16 sm:px-6 sm:pt-40 sm:pb-20">
         <Ornament className="text-primary-on-dark mb-5 w-40" />
-        <h1 className="text-4xl leading-tight sm:text-5xl">{title}</h1>
+        <h1 className="text-4xl leading-tight sm:text-5xl"><HeadingText>{title}</HeadingText></h1>
         {description ? <p className="mt-4 max-w-2xl text-lg text-white/80">{description}</p> : null}
       </div>
     </section>
