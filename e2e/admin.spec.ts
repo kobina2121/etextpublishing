@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-import { signInAsAdmin } from "./support/admin-session";
+import { signInAsAdmin, TEST_ADMIN_EMAIL } from "./support/admin-session";
+import { setRole } from "./support/db";
 
 test.beforeEach(async ({ context }) => {
   await signInAsAdmin(context);
@@ -40,5 +41,23 @@ test("a category round-trips create → edit → delete", async ({ page }) => {
   await row.getByRole("button", { name: "Delete" }).click();
   await page.getByRole("alertdialog").getByRole("button", { name: "Delete" }).click();
 
+  // Wait for the server to confirm. Checking only that the row has gone let
+  // the test end — and close the browser — before the delete had finished,
+  // which left test categories behind.
+  await expect(page.getByText("Category deleted.")).toBeVisible();
   await expect(page.getByRole("row").filter({ hasText: renamed })).toHaveCount(0);
+});
+
+test("revoking admin takes effect on the next request", async ({ page }) => {
+  await page.goto("/admin");
+  await expect(page).toHaveURL(/\/admin$/);
+
+  // The same session cookie, but the account is no longer an admin.
+  await setRole(TEST_ADMIN_EMAIL, "customer");
+  try {
+    await page.goto("/admin");
+    await expect(page).toHaveURL(/\/account$/);
+  } finally {
+    await setRole(TEST_ADMIN_EMAIL, "admin");
+  }
 });

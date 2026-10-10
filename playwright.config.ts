@@ -27,6 +27,8 @@ const runIp = `198.51.100.${Math.floor(Math.random() * 254) + 1}`;
 
 export default defineConfig({
   testDir: "./e2e",
+  // Deletes the test admin the admin specs sign in as.
+  globalTeardown: "./e2e/global-teardown.ts",
   // One worker: the tests share a database and some read what others wrote.
   workers: 1,
   fullyParallel: false,

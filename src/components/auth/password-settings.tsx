@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { signIn } from "next-auth/react";
 import { toast } from "sonner";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -64,6 +65,13 @@ export function PasswordSettings({
       setFormError(result.message);
       return;
     }
+    // Changing the password ended every session, this one included. Sign back
+    // in with the new one so the person who made the change stays signed in.
+    await signIn("credentials", {
+      email: result.email,
+      password: values.password,
+      redirect: false,
+    });
     toast.success(result.message);
     reset();
     router.refresh();

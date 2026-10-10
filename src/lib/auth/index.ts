@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
+import { Types } from "mongoose";
 
 import { authConfig } from "@/lib/auth/auth.config";
 import { googleCredentials, resolveGoogleUser } from "@/lib/auth/google";
@@ -9,6 +10,7 @@ import { connectToDatabase } from "@/lib/db";
 import { checkRateLimit, clearRateLimit, rateLimitKey } from "@/lib/rate-limit";
 import { loginSchema } from "@/lib/validations/auth";
 import { User } from "@/models";
+import type { UserRole } from "@/models/types";
 
 /**
  * Two ways in: an email and password, or Google.
@@ -70,6 +72,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           role: user.role,
           ...(user.image ? { image: user.image } : {}),
+          sessionVersion: user.sessionVersion ?? 0,
         };
       },
     }),
@@ -85,13 +88,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ...authConfig.callbacks,
 
     /**
-     * Google hands back a profile, not one of our accounts. The `jwt` callback
-     * in auth.config.ts has to stay free of Mongoose — the proxy loads it on
-     * the Edge — so the lookup happens here, in the Node-only half, and only
-     * on the sign-in pass where `user` is present.
+     * On sign-in, Google hands back a profile rather than one of our accounts,
+     * and it is resolved to one.
+     *
+     * On every later read — the proxy, pages and actions alike — the account is
+     * looked up again. A session ends if the account is gone or its password
+     * has changed since (the version no longer matches), and the role is
+     * refreshed, so revoking an admin takes effect on their next request rather
+     * than when a 30-day token expires.
      */
     async jwt({ token, user, account, profile }) {
-      if (!user) return token;
+      if (!user) {
+        if (!token.id || !Types.ObjectId.isValid(token.id)) return null;
+        await connectToDatabase();
+        const current = await User.findById(token.id)
+          .select("role sessionVersion")
+          .lean<{ role: UserRole; sessionVersion?: number } | null>();
+        if (!current) return null;
+        if ((current.sessionVersion ?? 0) !== (token.sv ?? 0)) return null;
+        token.role = current.role;
+        return token;
+      }
 
       if (account?.provider === "google") {
         // Auth.js has already validated the ID token; this checks the claim we
@@ -109,6 +126,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         token.id = resolved.id;
         token.role = resolved.role;
+        token.sv = resolved.sessionVersion;
         token.name = resolved.name;
         token.email = resolved.email;
         if (resolved.image) token.picture = resolved.image;
@@ -117,6 +135,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       token.id = user.id;
       token.role = user.role;
+      token.sv = user.sessionVersion ?? 0;
       return token;
     },
   },

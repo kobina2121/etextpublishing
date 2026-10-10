@@ -72,7 +72,16 @@ test("a dead link is refused before any form is shown", async ({ page }) => {
   await expect(page.getByLabel("New password")).toHaveCount(0);
 });
 
-test("a reset link sets a new password, once", async ({ page }) => {
+test("a reset link sets a new password, once, and signs out other devices", async ({
+  page,
+  browser,
+}) => {
+  // Another device, signed in with the old password before the reset.
+  const elsewhere = await browser.newContext();
+  const other = await elsewhere.newPage();
+  await signIn(other, oldPassword);
+  await expect(other).toHaveURL(/\/account$/);
+
   const token = await createResetToken(userId);
 
   await page.goto(`/reset-password?token=${token}`);
@@ -86,6 +95,11 @@ test("a reset link sets a new password, once", async ({ page }) => {
   // The same link cannot be used twice.
   await page.goto(`/reset-password?token=${token}`);
   await expect(page.getByText("That reset link has already been used.")).toBeVisible();
+
+  // The other device's session ended with the reset.
+  await other.goto("/account");
+  await expect(other).toHaveURL(/\/login/);
+  await elsewhere.close();
 });
 
 test("the old password stops working and the new one works", async ({ browser }) => {

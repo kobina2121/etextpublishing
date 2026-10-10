@@ -84,7 +84,9 @@ export async function registerAccount(raw: unknown): Promise<RegisterResult> {
   return { ok: true };
 }
 
-export type SetPasswordResult = { ok: true; message: string } | { ok: false; message: string };
+export type SetPasswordResult =
+  /** `email`: the form signs straight back in with it, since this session just ended. */
+  { ok: true; message: string; email: string } | { ok: false; message: string };
 
 /**
  * Adds a password to the signed-in account, or changes the one it has.
@@ -100,6 +102,9 @@ export type SetPasswordResult = { ok: true; message: string } | { ok: false; mes
  *
  * Keyed on the account, not the IP, so guessing the current password is capped
  * however many addresses it is tried from.
+ *
+ * Every session on the account ends, this one included; the form signs back in
+ * with the new password straight away.
  */
 export async function setAccountPassword(raw: unknown): Promise<SetPasswordResult> {
   const sessionUser = await requireUser();
@@ -140,11 +145,15 @@ export async function setAccountPassword(raw: unknown): Promise<SetPasswordResul
   }
 
   user.passwordHash = await bcrypt.hash(parsed.data.password, 12);
+  // Signs out every other device. A changed password is often a response to
+  // someone else knowing the old one; their session should not outlive it.
+  user.sessionVersion = (user.sessionVersion ?? 0) + 1;
   await user.save();
 
   revalidatePath("/account");
   return {
     ok: true,
+    email: user.email,
     message: hadPassword
       ? "Password changed."
       : "Password set. You can now sign in with your email and password, or with Google.",
