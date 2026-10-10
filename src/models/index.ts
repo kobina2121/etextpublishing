@@ -61,6 +61,7 @@ const userSchema = new Schema<UserDoc>(
     image: { type: String, trim: true },
     googleId: { type: String, trim: true, index: true },
     emailVerifiedAt: { type: Date },
+    sessionVersion: { type: Number, default: 0, min: 0 },
   },
   { timestamps: true },
 );
@@ -277,6 +278,7 @@ const orderSchema = new Schema<OrderDoc>(
     // fulfil the same order twice.
     fulfilledAt: { type: Date },
     adminNotes: { type: String },
+    stockShortfall: { type: String },
   },
   { timestamps: true },
 );

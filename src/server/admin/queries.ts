@@ -782,6 +782,7 @@ export type AdminOrderDetail = AdminOrderRow & {
   paystackReference: string;
   paidAt: Date | null;
   adminNotes: string;
+  stockShortfall: string;
 };
 
 export async function getOrder(id: string): Promise<AdminOrderDetail | null> {
@@ -826,6 +827,7 @@ export async function getOrder(id: string): Promise<AdminOrderDetail | null> {
     paystackReference: doc.paystackReference ?? "",
     paidAt: doc.paidAt ? new Date(doc.paidAt) : null,
     adminNotes: doc.adminNotes ?? "",
+    stockShortfall: doc.stockShortfall ?? "",
   };
 }
 

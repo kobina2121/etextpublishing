@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, TriangleAlertIcon } from "lucide-react";
 
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatMoney } from "@/lib/money";
@@ -34,6 +35,14 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
         description={`${order.customerName} · ${format(order.createdAt, "d MMMM yyyy, HH:mm")}`}
         actions={<StatusBadge status={order.status === "paid" ? "accepted" : order.status} />}
       />
+
+      {order.stockShortfall ? (
+        <Alert variant="destructive" className="mb-6">
+          <TriangleAlertIcon aria-hidden />
+          <AlertTitle>Not enough stock</AlertTitle>
+          <AlertDescription>{order.stockShortfall}</AlertDescription>
+        </Alert>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="space-y-6">
