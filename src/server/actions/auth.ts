@@ -8,6 +8,7 @@ import {
   consumePasswordReset,
   issuePasswordReset,
   RESET_TTL_MINUTES,
+  withdrawPasswordReset,
 } from "@/lib/auth/password-reset";
 import { connectToDatabase } from "@/lib/db";
 import { isEmailConfigured, sendMail } from "@/lib/email";
@@ -205,6 +206,8 @@ export async function requestPasswordReset(raw: unknown): Promise<RequestResetRe
   });
   if (!sent.ok) {
     console.error("[password-reset] email failed", sent.error);
+    // Nobody received it, so it must not use up one of their three tries.
+    await withdrawPasswordReset(issued.token);
     return { ok: false, message: "The reset email could not be sent. Please try again later." };
   }
 
