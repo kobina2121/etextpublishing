@@ -20,11 +20,30 @@ export type MailMessage = {
 
 export type MailResult = { ok: true; delivered: boolean } | { ok: false; error: string };
 
-function transport(): { resend: Resend; from: string } | null {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from = process.env.EMAIL_FROM?.trim();
+/**
+ * Reads a setting, dropping one pair of surrounding quotes.
+ *
+ * `.env.local` needs quotes around a value with spaces, and dotenv removes
+ * them; Vercel's dashboard keeps them as typed. A value copied from one into
+ * the other then reaches Resend as `"Name <address>"`, quotes and all, and it
+ * refuses to send.
+ */
+function setting(key: string): string | undefined {
+  const value = process.env[key]
+    ?.trim()
+    .replace(/^(["'])(.*)\1$/, "$2")
+    .trim();
+  return value || undefined;
+}
+
+function transport(): { resend: Resend; from: string; replyTo?: string } | null {
+  const apiKey = setting("RESEND_API_KEY");
+  const from = setting("EMAIL_FROM");
   if (!apiKey || !from) return null;
-  return { resend: new Resend(apiKey), from };
+  // Mail is sent from an address on our domain, which has no inbox, so a reply
+  // would bounce. Reply-To sends it somewhere a person reads instead.
+  const replyTo = setting("EMAIL_REPLY_TO");
+  return { resend: new Resend(apiKey), from, ...(replyTo ? { replyTo } : {}) };
 }
 
 export function isEmailConfigured(): boolean {
@@ -63,6 +82,7 @@ export async function sendMail(message: MailMessage): Promise<MailResult> {
   try {
     const { error } = await configured.resend.emails.send({
       from: configured.from,
+      ...(configured.replyTo ? { replyTo: configured.replyTo } : {}),
       to: message.to,
       subject: message.subject,
       html: message.html,

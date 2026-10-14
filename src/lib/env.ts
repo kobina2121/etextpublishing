@@ -18,6 +18,21 @@ const optionalString = z
   .optional()
   .or(z.literal("").transform(() => undefined));
 
+/**
+ * A sending address: either a bare `you@domain` or `Display Name <you@domain>`,
+ * the form mail clients show as the sender's name.
+ */
+export const emailSenderSchema = z
+  .string()
+  .trim()
+  .refine((value) => {
+    const bracketed = /^[^<>]+<([^<>\s]+)>$/.exec(value);
+    return z
+      .string()
+      .email()
+      .safeParse(bracketed ? bracketed[1] : value).success;
+  }, "Use you@domain or Display Name <you@domain>.");
+
 const serverEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 
@@ -49,7 +64,9 @@ const serverEnvSchema = z.object({
 
   // Email (Phase 7)
   RESEND_API_KEY: optionalString,
-  EMAIL_FROM: optionalString.pipe(z.string().email().optional()),
+  EMAIL_FROM: optionalString.pipe(emailSenderSchema.optional()),
+  /** Where replies to our emails go. The sending domain has no inbox. */
+  EMAIL_REPLY_TO: optionalString.pipe(z.string().email().optional()),
   EMAIL_TO_SUBMISSIONS: optionalString.pipe(z.string().email().optional()),
   EMAIL_TO_CONTACT: optionalString.pipe(z.string().email().optional()),
 });
