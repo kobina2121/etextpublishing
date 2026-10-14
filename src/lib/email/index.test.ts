@@ -47,6 +47,18 @@ describe("sendMail", () => {
     expect(send.mock.calls[0]?.[0]).not.toHaveProperty("replyTo");
   });
 
+  it("strips quotes pasted into a hosting dashboard along with the value", async () => {
+    vi.stubEnv("EMAIL_FROM", '"etext Publishing Network <no-reply@etextpublishingnetwork.com>"');
+    vi.stubEnv("EMAIL_REPLY_TO", "'etextpublishingnetwork@gmail.com'");
+    await sendMail(message);
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: "etext Publishing Network <no-reply@etextpublishingnetwork.com>",
+        replyTo: "etextpublishingnetwork@gmail.com",
+      }),
+    );
+  });
+
   it("reports Resend's refusal instead of claiming success", async () => {
     send.mockResolvedValue({ data: null, error: { message: "domain not verified" } });
     expect(await sendMail(message)).toEqual({ ok: false, error: "domain not verified" });
