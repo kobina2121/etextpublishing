@@ -59,6 +59,18 @@ export async function issuePasswordReset(email: string): Promise<IssueResult> {
   return { ok: true, token, name: user.name };
 }
 
+/**
+ * Withdraws a link that was issued but could not be emailed.
+ *
+ * Without this, every failed send still counted towards the per-account limit,
+ * so a mail outage could lock someone out of resetting for half an hour after
+ * it was fixed — and the link was useless anyway, since nobody received it.
+ */
+export async function withdrawPasswordReset(token: string): Promise<void> {
+  await connectToDatabase();
+  await PasswordResetToken.deleteOne({ tokenHash: hashToken(token), usedAt: { $exists: false } });
+}
+
 export type TokenState = "valid" | "invalid" | "expired" | "used";
 
 /** For the reset page: is this link worth showing a form for? Spends nothing. */
