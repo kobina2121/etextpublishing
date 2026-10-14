@@ -106,7 +106,37 @@ export function requireEnv(key: keyof ServerEnv): string {
  * NEXT_PUBLIC_* values are inlined at build time, so they are read directly
  * rather than through the schema above.
  */
+/**
+ * The site's own address, for links that leave the page: password-reset
+ * emails, Paystack's return address, the sitemap and canonical URLs.
+ *
+ * NEXT_PUBLIC_SITE_URL wins when it is a real address. On a Vercel production
+ * deployment where it is missing — or still says localhost, copied from a
+ * local .env — the project's production domain is used instead, which Vercel
+ * sets on every deployment. A live site must never send people to localhost.
+ *
+ * The visitor's Host header is deliberately not consulted: building reset
+ * links from it lets an attacker request a reset for someone else with their
+ * own domain in the header, and receive the token.
+ */
+export function resolveSiteUrl(env: Record<string, string | undefined>): string {
+  const configured = env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
+  const isLocal = !configured || /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(configured);
+  if (configured && !isLocal) return configured;
+
+  const productionDomain = env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  if (env.VERCEL_ENV === "production" && productionDomain) {
+    return `https://${productionDomain.replace(/^https?:\/\//, "").replace(/\/$/, "")}`;
+  }
+
+  return configured || "http://localhost:3000";
+}
+
 export const publicEnv = {
-  siteUrl: (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, ""),
+  siteUrl: resolveSiteUrl({
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    VERCEL_ENV: process.env.VERCEL_ENV,
+    VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+  }),
   assetHost: process.env.NEXT_PUBLIC_ASSET_HOST?.trim() || undefined,
 } as const;
