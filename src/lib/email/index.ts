@@ -31,15 +31,50 @@ export type MailResult = { ok: true; delivered: boolean } | { ok: false; error: 
 function setting(key: string): string | undefined {
   const value = process.env[key]
     ?.trim()
-    .replace(/^(["'])(.*)\1$/, "$2")
+    // Pasted with its own name, as in `EMAIL_FROM=…`.
+    .replace(new RegExp(`^${key}\\s*=\\s*`), "")
+    // Straight or curly quotes around the whole value.
+    .replace(/^["'\u201C\u201D\u2018\u2019]+|["'\u201C\u201D\u2018\u2019]+$/g, "")
     .trim();
   return value || undefined;
 }
 
+const ADDRESS =
+  /[^\s<>"'\u201C\u201D\u2018\u2019,;]+@[^\s<>"'\u201C\u201D\u2018\u2019,;]+\.[a-z]{2,}/i;
+
+/**
+ * Rebuilds a sender as `Name <address>` or a bare `address`, the only two
+ * forms Resend accepts.
+ *
+ * A dashboard value can arrive damaged — angle brackets lost, quotes doubled
+ * or curly, stray spacing — and Resend then refuses every email with "Invalid
+ * `from` field", which is how password reset broke on the live site. Rather
+ * than pass on whatever was typed, find the address in it and rebuild the
+ * rest. Returns undefined when there is no address at all.
+ */
+export function normaliseSender(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const address = ADDRESS.exec(raw)?.[0];
+  if (!address) return undefined;
+
+  const name = raw
+    .replace(address, "")
+    .replace(/[<>"'\u201C\u201D\u2018\u2019]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return name ? `${name} <${address}>` : address;
+}
+
 function transport(): { resend: Resend; from: string; replyTo?: string } | null {
   const apiKey = setting("RESEND_API_KEY");
-  const from = setting("EMAIL_FROM");
-  if (!apiKey || !from) return null;
+  const from = normaliseSender(setting("EMAIL_FROM"));
+  if (!apiKey || !from) {
+    if (apiKey && setting("EMAIL_FROM")) {
+      console.error("[email] EMAIL_FROM has no email address in it; nothing can be sent");
+    }
+    return null;
+  }
   // Mail is sent from an address on our domain, which has no inbox, so a reply
   // would bounce. Reply-To sends it somewhere a person reads instead.
   const replyTo = setting("EMAIL_REPLY_TO");

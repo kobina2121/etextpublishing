@@ -14,7 +14,7 @@ vi.mock("resend", () => ({
   },
 }));
 
-const { sendMail } = await import("@/lib/email");
+const { normaliseSender, sendMail } = await import("@/lib/email");
 
 const message = { to: "reader@example.com", subject: "Hi", html: "<p>Hi</p>", text: "Hi" };
 
@@ -62,5 +62,43 @@ describe("sendMail", () => {
   it("reports Resend's refusal instead of claiming success", async () => {
     send.mockResolvedValue({ data: null, error: { message: "domain not verified" } });
     expect(await sendMail(message)).toEqual({ ok: false, error: "domain not verified" });
+  });
+});
+
+describe("normaliseSender", () => {
+  const clean = "etext Publishing Network <no-reply@etextpublishingnetwork.com>";
+
+  it.each([
+    [clean, clean],
+    ['"etext Publishing Network <no-reply@etextpublishingnetwork.com>"', clean],
+    ["\u201Cetext Publishing Network <no-reply@etextpublishingnetwork.com>\u201D", clean],
+    ["etext Publishing Network no-reply@etextpublishingnetwork.com", clean],
+    ["etext Publishing Network<no-reply@etextpublishingnetwork.com>", clean],
+    ['"etext Publishing Network" <no-reply@etextpublishingnetwork.com>', clean],
+    ["  etext   Publishing Network   <no-reply@etextpublishingnetwork.com>  ", clean],
+    ["no-reply@etextpublishingnetwork.com", "no-reply@etextpublishingnetwork.com"],
+    ["<no-reply@etextpublishingnetwork.com>", "no-reply@etextpublishingnetwork.com"],
+  ])("turns %j into a form Resend accepts", (raw, expected) => {
+    expect(normaliseSender(raw)).toBe(expected);
+  });
+
+  it("gives up when there is no address at all", () => {
+    expect(normaliseSender("etext Publishing Network")).toBeUndefined();
+    expect(normaliseSender(undefined)).toBeUndefined();
+  });
+});
+
+describe("sendMail with a damaged EMAIL_FROM", () => {
+  it("sends from a cleaned-up sender instead of failing", async () => {
+    vi.stubEnv(
+      "EMAIL_FROM",
+      "EMAIL_FROM=\u201Cetext Publishing Network no-reply@etextpublishingnetwork.com\u201D",
+    );
+    expect(await sendMail(message)).toEqual({ ok: true, delivered: true });
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: "etext Publishing Network <no-reply@etextpublishingnetwork.com>",
+      }),
+    );
   });
 });
