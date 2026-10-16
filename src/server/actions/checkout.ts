@@ -138,6 +138,8 @@ export async function startCheckout(raw: {
           region: details.data.address.region ?? "",
           postalCode: details.data.address.postalCode || undefined,
           country: details.data.address.country ?? "",
+          digitalAddress: details.data.address.digitalAddress || undefined,
+          instructions: details.data.address.instructions || undefined,
         }
       : undefined,
     status: "pending" as const,

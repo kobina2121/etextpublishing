@@ -96,6 +96,39 @@ describe("checkoutSchema", () => {
   });
 });
 
+describe("checkoutSchema delivery details", () => {
+  const shipped = {
+    customerName: "Yaw",
+    email: "yaw@example.com",
+    phone: "0241234567",
+    requiresShipping: true,
+    address: { line1: "12 Ring Road", city: "Accra", region: "Greater Accra", country: "Ghana" },
+  };
+  const gps = (digitalAddress: string) =>
+    checkoutSchema.safeParse({ ...shipped, address: { ...shipped.address, digitalAddress } });
+
+  it("tidies a GhanaPost GPS address into the standard form", () => {
+    expect(gps("ga-123-4567").data?.address.digitalAddress).toBe("GA-123-4567");
+    expect(gps("GA1234567").data?.address.digitalAddress).toBe("GA-123-4567");
+    expect(gps("AK 0397 1234").data?.address.digitalAddress).toBe("AK-0397-1234");
+  });
+
+  it("allows the GPS address to be left blank", () => {
+    expect(gps("").success).toBe(true);
+    expect(checkoutSchema.safeParse(shipped).success).toBe(true);
+  });
+
+  it("rejects something that is not a GPS address", () => {
+    expect(gps("12 Ring Road").success).toBe(false);
+    expect(gps("GA-12").success).toBe(false);
+  });
+
+  it("caps delivery instructions", () => {
+    const long = { ...shipped, address: { ...shipped.address, instructions: "x".repeat(301) } };
+    expect(checkoutSchema.safeParse(long).success).toBe(false);
+  });
+});
+
 describe("cartPayloadSchema", () => {
   const line = { publicationId: "a".repeat(24), edition: "hardcopy", quantity: 1 };
 

@@ -4,25 +4,55 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LockIcon } from "lucide-react";
+import { DownloadIcon, LockIcon, TruckIcon } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Field, FieldError, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/lib/cart-store";
 import { formatMoney } from "@/lib/money";
 import { checkoutSchema, type CheckoutInput } from "@/lib/validations/checkout";
 import { startCheckout } from "@/server/actions/checkout";
 import type { PricedCart } from "@/server/cart";
 
+/** Suggested in the Region box. Free text is still allowed, for orders from abroad. */
+const GHANA_REGIONS = [
+  "Ahafo",
+  "Ashanti",
+  "Bono",
+  "Bono East",
+  "Central",
+  "Eastern",
+  "Greater Accra",
+  "North East",
+  "Northern",
+  "Oti",
+  "Savannah",
+  "Upper East",
+  "Upper West",
+  "Volta",
+  "Western",
+  "Western North",
+] as const;
+
 /**
  * Checkout.
  *
- * The form collects an address only when the basket contains something that
- * has to be posted, and that decision is made from the server-priced basket,
+ * The form always has a Delivery details section, so buyers know where the
+ * address goes, but it asks for one only when the basket contains something
+ * that has to be posted, and that decision is made from the server-priced basket,
  * not from anything the browser decided. The server re-derives it again before
  * charging.
  */
@@ -68,6 +98,7 @@ export function CheckoutClient() {
   const {
     register,
     handleSubmit,
+    setValue,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<CheckoutInput>({
@@ -77,10 +108,27 @@ export function CheckoutClient() {
       email: "",
       phone: "",
       requiresShipping: false,
-      address: { line1: "", line2: "", city: "", region: "", postalCode: "", country: "Ghana" },
+      address: {
+        line1: "",
+        line2: "",
+        city: "",
+        region: "",
+        postalCode: "",
+        country: "Ghana",
+        digitalAddress: "",
+        instructions: "",
+      },
       website: "",
     },
   });
+
+  // The form's own validation needs to know whether an address is required.
+  // It started as false and was never told, so a hardcopy order with no
+  // address passed in the browser and was only refused after a round trip.
+  const needsShipping = priced?.requiresShipping ?? false;
+  useEffect(() => {
+    setValue("requiresShipping", needsShipping);
+  }, [needsShipping, setValue]);
 
   if (cart.length === 0) {
     return (
@@ -157,6 +205,9 @@ export function CheckoutClient() {
         ) : null}
 
         <FieldSet>
+          <FieldLegend className="text-sm font-semibold tracking-[0.14em] uppercase">
+            Your details
+          </FieldLegend>
           <FieldGroup>
             <input
               type="text"
@@ -177,6 +228,7 @@ export function CheckoutClient() {
               <Field data-invalid={!!errors.email}>
                 <FieldLabel htmlFor="co-email">Email</FieldLabel>
                 <Input id="co-email" type="email" autoComplete="email" {...register("email")} />
+                <FieldDescription>Your receipt and order updates go here.</FieldDescription>
                 <FieldError errors={[errors.email]} />
               </Field>
             </div>
@@ -186,73 +238,120 @@ export function CheckoutClient() {
                 Phone {requiresShipping ? "" : "(optional)"}
               </FieldLabel>
               <Input id="co-phone" type="tel" autoComplete="tel" {...register("phone")} />
+              {requiresShipping ? (
+                <FieldDescription>
+                  The courier calls this number to arrange delivery.
+                </FieldDescription>
+              ) : null}
               <FieldError errors={[errors.phone]} />
             </Field>
+          </FieldGroup>
+        </FieldSet>
 
-            {requiresShipping ? (
-              <>
-                <Field data-invalid={!!errors.address?.line1}>
-                  <FieldLabel htmlFor="co-line1">Address</FieldLabel>
+        <FieldSet className="border-t border-border pt-8">
+          <FieldLegend className="text-sm font-semibold tracking-[0.14em] uppercase">
+            Delivery details
+          </FieldLegend>
+
+          {requiresShipping ? (
+            <FieldGroup>
+              <p className="flex items-start gap-3 text-sm text-muted-foreground">
+                <TruckIcon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+                Your hardcopy is printed and posted to this address.
+              </p>
+
+              <Field data-invalid={!!errors.address?.line1}>
+                <FieldLabel htmlFor="co-line1">Street address</FieldLabel>
+                <Input
+                  id="co-line1"
+                  autoComplete="address-line1"
+                  placeholder="House number and street"
+                  {...register("address.line1")}
+                />
+                <FieldError errors={[errors.address?.line1]} />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="co-line2">Apartment, area or suburb (optional)</FieldLabel>
+                <Input id="co-line2" autoComplete="address-line2" {...register("address.line2")} />
+              </Field>
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field data-invalid={!!errors.address?.city}>
+                  <FieldLabel htmlFor="co-city">Town or city</FieldLabel>
+                  <Input id="co-city" autoComplete="address-level2" {...register("address.city")} />
+                  <FieldError errors={[errors.address?.city]} />
+                </Field>
+
+                <Field data-invalid={!!errors.address?.region}>
+                  <FieldLabel htmlFor="co-region">Region</FieldLabel>
                   <Input
-                    id="co-line1"
-                    autoComplete="address-line1"
-                    {...register("address.line1")}
+                    id="co-region"
+                    autoComplete="address-level1"
+                    list="co-region-options"
+                    {...register("address.region")}
                   />
-                  <FieldError errors={[errors.address?.line1]} />
+                  <datalist id="co-region-options">
+                    {GHANA_REGIONS.map((region) => (
+                      <option key={region} value={region} />
+                    ))}
+                  </datalist>
+                  <FieldError errors={[errors.address?.region]} />
+                </Field>
+
+                <Field data-invalid={!!errors.address?.digitalAddress}>
+                  <FieldLabel htmlFor="co-gps">GhanaPost GPS address (optional)</FieldLabel>
+                  <Input
+                    id="co-gps"
+                    autoComplete="off"
+                    placeholder="GA-123-4567"
+                    className="uppercase placeholder:normal-case"
+                    {...register("address.digitalAddress")}
+                  />
+                  <FieldDescription>Helps the courier find you.</FieldDescription>
+                  <FieldError errors={[errors.address?.digitalAddress]} />
                 </Field>
 
                 <Field>
-                  <FieldLabel htmlFor="co-line2">Address line 2 (optional)</FieldLabel>
+                  <FieldLabel htmlFor="co-postal">Postal code (optional)</FieldLabel>
                   <Input
-                    id="co-line2"
-                    autoComplete="address-line2"
-                    {...register("address.line2")}
+                    id="co-postal"
+                    autoComplete="postal-code"
+                    {...register("address.postalCode")}
                   />
                 </Field>
+              </div>
 
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <Field data-invalid={!!errors.address?.city}>
-                    <FieldLabel htmlFor="co-city">City</FieldLabel>
-                    <Input
-                      id="co-city"
-                      autoComplete="address-level2"
-                      {...register("address.city")}
-                    />
-                    <FieldError errors={[errors.address?.city]} />
-                  </Field>
+              <Field data-invalid={!!errors.address?.country}>
+                <FieldLabel htmlFor="co-country">Country</FieldLabel>
+                <Input
+                  id="co-country"
+                  autoComplete="country-name"
+                  {...register("address.country")}
+                />
+                <FieldError errors={[errors.address?.country]} />
+              </Field>
 
-                  <Field data-invalid={!!errors.address?.region}>
-                    <FieldLabel htmlFor="co-region">Region</FieldLabel>
-                    <Input
-                      id="co-region"
-                      autoComplete="address-level1"
-                      {...register("address.region")}
-                    />
-                    <FieldError errors={[errors.address?.region]} />
-                  </Field>
-
-                  <Field>
-                    <FieldLabel htmlFor="co-postal">Postal code (optional)</FieldLabel>
-                    <Input
-                      id="co-postal"
-                      autoComplete="postal-code"
-                      {...register("address.postalCode")}
-                    />
-                  </Field>
-
-                  <Field data-invalid={!!errors.address?.country}>
-                    <FieldLabel htmlFor="co-country">Country</FieldLabel>
-                    <Input
-                      id="co-country"
-                      autoComplete="country-name"
-                      {...register("address.country")}
-                    />
-                    <FieldError errors={[errors.address?.country]} />
-                  </Field>
-                </div>
-              </>
-            ) : null}
-          </FieldGroup>
+              <Field data-invalid={!!errors.address?.instructions}>
+                <FieldLabel htmlFor="co-instructions">Delivery instructions (optional)</FieldLabel>
+                <Textarea
+                  id="co-instructions"
+                  rows={3}
+                  placeholder="A landmark, directions, or the best time to deliver"
+                  {...register("address.instructions")}
+                />
+                <FieldError errors={[errors.address?.instructions]} />
+              </Field>
+            </FieldGroup>
+          ) : (
+            <p className="flex items-start gap-3 border-l-2 border-primary bg-muted/50 p-4 text-sm">
+              <DownloadIcon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+              <span>
+                Nothing to post — your basket only has softcopies, which you download after paying.
+                Add a hardcopy and this is where you will give your delivery address.
+              </span>
+            </p>
+          )}
         </FieldSet>
       </div>
 

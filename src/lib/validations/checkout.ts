@@ -14,6 +14,27 @@ const addressSchema = z.object({
   region: z.string().trim().max(80).optional().or(z.literal("")),
   postalCode: z.string().trim().max(20).optional().or(z.literal("")),
   country: z.string().trim().max(80).optional().or(z.literal("")),
+  /**
+   * GhanaPost GPS: two letters for the region and district, an area code of
+   * three or four digits, then a four-digit unique code. Spaces and missing hyphens are forgiven, then it is
+   * stored in the standard GA-123-4567 form.
+   */
+  digitalAddress: z
+    .string()
+    .trim()
+    .transform((value) => value.toUpperCase().replace(/\s+/g, "-"))
+    .refine(
+      (value) => value === "" || /^[A-Z]{2}-?\d{3,4}-?\d{4}$/.test(value),
+      "Enter a GhanaPost GPS address like GA-123-4567, or leave it blank.",
+    )
+    .transform((value) => value.replace(/^([A-Z]{2})-?(\d{3,4})-?(\d{4})$/, "$1-$2-$3"))
+    .optional(),
+  instructions: z
+    .string()
+    .trim()
+    .max(300, "Keep delivery instructions under 300 characters.")
+    .optional()
+    .or(z.literal("")),
 });
 
 export const checkoutSchema = z

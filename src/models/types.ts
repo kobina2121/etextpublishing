@@ -108,6 +108,10 @@ export type OrderDoc = WithTimestamps & {
     region: string;
     postalCode?: string;
     country: string;
+    /** GhanaPost GPS digital address, e.g. GA-123-4567. Often more reliable than a street. */
+    digitalAddress?: string;
+    /** Landmarks, directions or a time to deliver — for the courier. */
+    instructions?: string;
   };
   status: OrderStatusValue;
   fulfilment: FulfilmentStatusValue;
