@@ -196,12 +196,12 @@ export default async function HomePage() {
         </Container>
       </Section>
 
-      <Section size="lg" className="bg-brand-dark text-background">
+      <Section size="lg" className="bg-brand-dark text-white">
         <Container>
           <div className="flex flex-col items-start gap-6 text-left sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-3xl sm:text-4xl">Ready to send us your manuscript?</h2>
-              <p className="mt-3 text-lg text-background/75">
+              <p className="mt-3 text-lg text-white/75">
                 Submissions are read by a publishing consultant, not a queue.
               </p>
             </div>

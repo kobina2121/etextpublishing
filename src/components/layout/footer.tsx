@@ -14,8 +14,11 @@ export function Footer() {
     contact.address.country,
   ].filter(Boolean);
 
+  // White, not text-background: bg-brand-dark is a deep green in both colour
+  // schemes, but "background" flips to near-black in dark mode, which put dark
+  // text on dark green. Same fix as PageHero.
   return (
-    <footer className="mt-auto bg-brand-dark text-background/85">
+    <footer className="mt-auto bg-brand-dark text-white/85">
       <div className="mx-auto grid w-full max-w-7xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-3">
         <div className="space-y-4">
           <Logo inverted />
@@ -23,9 +26,7 @@ export function Footer() {
         </div>
 
         <nav aria-label="Footer" className="space-y-4">
-          <h2 className="text-sm font-semibold tracking-[0.14em] text-background uppercase">
-            Explore
-          </h2>
+          <h2 className="text-sm font-semibold tracking-[0.14em] text-white uppercase">Explore</h2>
           <ul className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
             {siteConfig.nav.map((item) => (
               <li key={item.href}>
@@ -38,9 +39,7 @@ export function Footer() {
         </nav>
 
         <div className="space-y-4">
-          <h2 className="text-sm font-semibold tracking-[0.14em] text-background uppercase">
-            Contact
-          </h2>
+          <h2 className="text-sm font-semibold tracking-[0.14em] text-white uppercase">Contact</h2>
           <ul className="space-y-3 text-sm">
             <li className="flex items-start gap-3">
               <MapPinIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
@@ -68,7 +67,7 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-background/15">
+      <div className="border-t border-white/15">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-4 py-6 text-xs sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p>
             &copy; {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
