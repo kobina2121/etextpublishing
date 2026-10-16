@@ -98,3 +98,50 @@ export type ArticleValues = z.output<typeof articleSchema>;
 export type ServiceInput = z.input<typeof serviceSchema>;
 export type SubmissionUpdateInput = z.input<typeof submissionUpdateSchema>;
 export type SiteSettingsInput = z.input<typeof siteSettingsSchema>;
+
+/**
+ * The About page, edited from /admin/about.
+ *
+ * Limits keep the layout intact: the banner title has to fit the banner, and
+ * "What we do" is laid out as a row of cards, which stops reading as a row
+ * past six.
+ */
+export const aboutPageSchema = z.object({
+  heroTitle: z.string().trim().min(2, "Give the page a title.").max(120),
+  heroDescription: z
+    .string()
+    .trim()
+    .min(10, "Write a sentence for under the title.")
+    .max(300, "Keep this under 300 characters — it sits in the banner."),
+  // Uploads only. An external URL would be refused by the CSP (img-src 'self')
+  // and by next/image, which only optimises configured hosts — the banner
+  // would break rather than show it.
+  heroImage: z
+    .string()
+    .trim()
+    .refine(
+      (value) => value === "" || /^\/api\/images\/[a-f\d]{24}$/i.test(value),
+      "Upload the banner image here rather than linking to one.",
+    )
+    .optional()
+    .default(""),
+  intro: z
+    .string()
+    .trim()
+    .min(20, "Write at least a sentence about the company.")
+    .max(6000, "That is too long for this section."),
+  sectionTitle: z.string().trim().min(2, "Give the section a heading.").max(80),
+  sectionSubtitle: z.string().trim().max(120).optional().or(z.literal("")),
+  pillars: z
+    .array(
+      z.object({
+        title: z.string().trim().min(2, "Give this card a title.").max(80),
+        body: z.string().trim().min(10, "Write a sentence for this card.").max(400),
+      }),
+    )
+    .min(1, "Add at least one card.")
+    .max(6, "Six cards at most."),
+});
+
+export type AboutPageInput = z.input<typeof aboutPageSchema>;
+export type AboutPageValues = z.output<typeof aboutPageSchema>;

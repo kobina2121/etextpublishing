@@ -1,6 +1,7 @@
 import { Schema, model, models, type Model } from "mongoose";
 
 import type {
+  AboutPageDoc,
   ArticleDoc,
   ImageDoc,
   ManuscriptFileDoc,
@@ -343,6 +344,34 @@ const manuscriptFileSchema = new Schema<ManuscriptFileDoc>(
   { timestamps: true },
 );
 
+// --- AboutPage --------------------------------------------------------------
+
+const aboutPageSchema = new Schema<AboutPageDoc>(
+  {
+    // Fixed key, unique: a singleton enforced by the index, as with settings.
+    key: { type: String, enum: ["about"], default: "about", unique: true, required: true },
+    heroTitle: { type: String, required: true, trim: true },
+    heroDescription: { type: String, required: true, trim: true },
+    heroImage: { type: String, trim: true },
+    intro: { type: String, required: true },
+    sectionTitle: { type: String, required: true, trim: true },
+    sectionSubtitle: { type: String, trim: true },
+    pillars: {
+      type: [
+        new Schema(
+          {
+            title: { type: String, required: true, trim: true },
+            body: { type: String, required: true, trim: true },
+          },
+          { _id: false },
+        ),
+      ],
+      default: [],
+    },
+  },
+  { timestamps: true },
+);
+
 // --- SiteSettings -----------------------------------------------------------
 
 const siteSettingsSchema = new Schema<SiteSettingsDoc>(
@@ -402,3 +431,4 @@ export const ManuscriptFile = defineModel<ManuscriptFileDoc>(
   manuscriptFileSchema,
 );
 export const SiteSettings = defineModel<SiteSettingsDoc>("SiteSettings", siteSettingsSchema);
+export const AboutPage = defineModel<AboutPageDoc>("AboutPage", aboutPageSchema);
