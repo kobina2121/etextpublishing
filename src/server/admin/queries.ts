@@ -778,6 +778,8 @@ export type AdminOrderDetail = AdminOrderRow & {
     region: string;
     postalCode?: string;
     country: string;
+    digitalAddress?: string;
+    instructions?: string;
   };
   paystackReference: string;
   paidAt: Date | null;
@@ -821,6 +823,8 @@ export async function getOrder(id: string): Promise<AdminOrderDetail | null> {
             region: doc.shippingAddress.region,
             postalCode: doc.shippingAddress.postalCode ?? undefined,
             country: doc.shippingAddress.country,
+            digitalAddress: doc.shippingAddress.digitalAddress ?? undefined,
+            instructions: doc.shippingAddress.instructions ?? undefined,
           },
         }
       : {}),

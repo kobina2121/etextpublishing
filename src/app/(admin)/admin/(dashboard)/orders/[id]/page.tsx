@@ -116,6 +116,17 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
                         .filter(Boolean)
                         .join(", ")}
                     </dd>
+                    {order.shippingAddress.digitalAddress ? (
+                      <dd className="mt-1 text-sm">
+                        GhanaPost GPS:{" "}
+                        <span className="font-mono">{order.shippingAddress.digitalAddress}</span>
+                      </dd>
+                    ) : null}
+                    {order.shippingAddress.instructions ? (
+                      <dd className="mt-2 border-l-2 border-border pl-3 text-sm whitespace-pre-wrap text-muted-foreground">
+                        {order.shippingAddress.instructions}
+                      </dd>
+                    ) : null}
                   </div>
                 ) : null}
                 <div className="sm:col-span-2">
