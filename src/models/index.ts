@@ -1,4 +1,4 @@
-import { Schema, model, models, type Model } from "mongoose";
+import { Schema, deleteModel, model, models, type Model } from "mongoose";
 
 import type {
   AboutPageDoc,
@@ -23,12 +23,20 @@ import type {
 /**
  * Mongoose models.
  *
- * Each is registered through `defineModel`, which reuses an existing
- * compilation if one is present. Without that, a hot reload re-evaluates this
- * module and Mongoose throws OverwriteModelError on the second pass.
+ * Each is registered through `defineModel`. A hot reload re-evaluates this
+ * module, and registering a name twice throws OverwriteModelError.
+ *
+ * In production a model is registered once per process, so an existing one is
+ * reused. In development the old one is replaced instead: reusing it kept the
+ * schema from before the edit, and Mongoose's strict mode then silently
+ * dropped any newly added field on save — a field change appeared to do
+ * nothing until the dev server was restarted.
  */
 function defineModel<T>(name: string, schema: Schema<T>): Model<T> {
-  return (models[name] as Model<T> | undefined) ?? model<T>(name, schema);
+  const existing = models[name] as Model<T> | undefined;
+  if (existing && process.env.NODE_ENV === "production") return existing;
+  if (existing) deleteModel(name);
+  return model<T>(name, schema);
 }
 
 const STATUSES = ["draft", "published", "archived"] as const;
