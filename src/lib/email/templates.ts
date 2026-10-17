@@ -151,6 +151,64 @@ export function orderConfirmationEmail({
   return { subject, html, text };
 }
 
+/**
+ * Sent to the team when someone writes through the contact form. Replying to
+ * it answers the visitor directly — sendMail sets Reply-To to their address.
+ */
+export function contactNotificationEmail({
+  name,
+  email,
+  phone,
+  subject,
+  message,
+  adminUrl,
+}: {
+  name: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  message: string;
+  adminUrl: string;
+}) {
+  const heading = `New message: ${subject}`;
+  const text = [
+    `New message from the website contact form.`,
+    "",
+    `From:    ${name} <${email}>`,
+    ...(phone ? [`Phone:   ${phone}`] : []),
+    `Subject: ${subject}`,
+    "",
+    message,
+    "",
+    `Reply to this email to answer ${name} directly.`,
+    `In the dashboard: ${adminUrl}`,
+  ].join("\n");
+
+  const html = `
+<!doctype html>
+<html lang="en">
+  <body style="margin:0;padding:24px;background:#f5f5f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#2f2f2f;">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e7e5e4;">
+      <tr>
+        <td style="padding:32px;">
+          <p style="margin:0 0 4px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#6b7280;">
+            Website contact form
+          </p>
+          <h1 style="margin:0 0 16px;font-size:20px;font-weight:600;">${escapeHtml(subject)}</h1>
+          <p style="margin:0 0 4px;font-size:14px;"><strong>${escapeHtml(name)}</strong> &lt;${escapeHtml(email)}&gt;</p>
+          ${phone ? `<p style="margin:0 0 4px;font-size:14px;">${escapeHtml(phone)}</p>` : ""}
+          <div style="margin:20px 0;padding:16px;background:#f5f5f4;font-size:15px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(message)}</div>
+          <p style="margin:0 0 16px;font-size:14px;line-height:1.6;">Reply to this email to answer ${escapeHtml(name)} directly.</p>
+          <a href="${escapeHtml(adminUrl)}" style="font-size:14px;color:#0a7e3a;">Open it in the dashboard</a>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`.trim();
+
+  return { subject: heading, html, text };
+}
+
 /** Everything interpolated into HTML is escaped, including our own URL and the account name. */
 function escapeHtml(value: string): string {
   return value

@@ -16,6 +16,11 @@ export type MailMessage = {
   subject: string;
   html: string;
   text: string;
+  /**
+   * Overrides EMAIL_REPLY_TO for this message — a contact notification replies
+   * to the visitor who wrote, not to us.
+   */
+  replyTo?: string;
 };
 
 export type MailResult = { ok: true; delivered: boolean } | { ok: false; error: string };
@@ -139,7 +144,9 @@ export async function sendMail(message: MailMessage): Promise<MailResult> {
   try {
     const { error } = await configured.resend.emails.send({
       from: configured.from,
-      ...(configured.replyTo ? { replyTo: configured.replyTo } : {}),
+      ...((message.replyTo ?? configured.replyTo)
+        ? { replyTo: message.replyTo ?? configured.replyTo }
+        : {}),
       to: message.to,
       subject: message.subject,
       html: message.html,

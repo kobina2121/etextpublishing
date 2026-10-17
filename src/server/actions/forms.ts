@@ -3,10 +3,13 @@
 import { revalidatePath } from "next/cache";
 
 import { connectToDatabase } from "@/lib/db";
+import { sendMail } from "@/lib/email";
+import { contactNotificationEmail } from "@/lib/email/templates";
+import { publicEnv } from "@/lib/env";
 import { checkRateLimit, rateLimitKey } from "@/lib/rate-limit";
 import { clientIp } from "@/lib/request-ip";
 import { contactSchema } from "@/lib/validations/contact";
-import { ContactMessage } from "@/models";
+import { ContactMessage, SiteSettings } from "@/models";
 import { toFieldErrors, type ActionResult } from "@/server/actions/shared";
 
 /**
@@ -46,10 +49,58 @@ export async function submitContactMessage(raw: unknown): Promise<ActionResult> 
   const { website: _honeypot, ...fields } = parsed.data;
 
   await connectToDatabase();
-  await ContactMessage.create({ ...fields, phone: fields.phone || undefined });
+  const saved = await ContactMessage.create({ ...fields, phone: fields.phone || undefined });
 
   revalidatePath("/admin");
   revalidatePath("/admin/messages");
 
+  await notifyTeam({
+    ...fields,
+    phone: fields.phone || undefined,
+    adminUrl: `${publicEnv.siteUrl}/admin/messages/${saved._id.toString()}`,
+  });
+
   return { ok: true };
+}
+
+/**
+ * Emails a new message to the team, with Reply-To set to the visitor.
+ *
+ * Goes to EMAIL_TO_CONTACT, or failing that to the contact email saved at
+ * /admin/settings. Best effort: the message is already saved and visible in
+ * the dashboard, so a mail failure is logged and the visitor still sees
+ * success.
+ */
+async function notifyTeam(message: {
+  name: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  message: string;
+  adminUrl: string;
+}): Promise<void> {
+  try {
+    const recipient = await contactRecipient();
+    if (!recipient) {
+      console.error("[contact] no recipient: set EMAIL_TO_CONTACT");
+      return;
+    }
+    const sent = await sendMail({
+      to: recipient,
+      replyTo: message.email,
+      ...contactNotificationEmail(message),
+    });
+    if (!sent.ok) console.error("[contact] notification not sent", sent.error);
+  } catch (error) {
+    console.error("[contact] notification failed", error);
+  }
+}
+
+async function contactRecipient(): Promise<string | undefined> {
+  const configured = process.env.EMAIL_TO_CONTACT?.trim();
+  if (configured) return configured;
+  const settings = await SiteSettings.findOne({ key: "site" })
+    .select("contact.email")
+    .lean<{ contact?: { email?: string } } | null>();
+  return settings?.contact?.email || undefined;
 }
