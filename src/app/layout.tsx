@@ -44,6 +44,11 @@ export async function generateMetadata(): Promise<Metadata> {
     description: site.description,
     applicationName: site.name,
     formatDetection: { telephone: false },
+    // Google Search Console's HTML-tag verification, if that method is used.
+    // (Verifying the domain with a DNS record instead needs nothing here.)
+    ...(process.env.GOOGLE_SITE_VERIFICATION?.trim()
+      ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION.trim() } }
+      : {}),
   };
 }
 

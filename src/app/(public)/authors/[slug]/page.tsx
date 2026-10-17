@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/seo/json-ld";
 import { breadcrumbJsonLd, personJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { isPlaceholderText } from "@/lib/seo/placeholder";
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
 import { PublicationCard } from "@/components/public/publication-card";
@@ -55,6 +56,8 @@ export async function generateMetadata({
     title: author.name,
     description: author.bio.slice(0, 160),
     path: `/authors/${author.slug}`,
+    // Sample biographies stay out of search until real ones replace them.
+    noIndex: isPlaceholderText(author.bio),
     type: "profile",
     ...(author.photo ? { image: author.photo } : {}),
   });

@@ -1,8 +1,7 @@
-import { getJournalSlugs } from "@/server/journals";
 import type { MetadataRoute } from "next";
 
 import { absoluteUrl } from "@/lib/seo/site-meta";
-import { getArticleSlugs, getAuthorSlugs, getPublicationSlugs } from "@/server/queries";
+import { getSitemapEntries, type SitemapEntry } from "@/server/sitemap";
 
 /**
  * Sitemap, built from what is actually published.
@@ -11,7 +10,12 @@ import { getArticleSlugs, getAuthorSlugs, getPublicationSlugs } from "@/server/q
  * in here — which matters, because a sitemap entry is an explicit invitation to
  * crawl. If the database is unreachable the static pages are still emitted
  * rather than failing the whole route.
+ *
+ * Rebuilt at most hourly. It was built once per deploy, so a title or journal
+ * published from the dashboard did not reach it until the next deploy.
  */
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     { url: absoluteUrl("/"), changeFrequency: "weekly", priority: 1 },
@@ -26,35 +30,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    const [publications, authors, articles, journals] = await Promise.all([
-      getPublicationSlugs(),
-      getAuthorSlugs(),
-      getArticleSlugs(),
-      getJournalSlugs(),
-    ]);
+    const { publications, authors, articles, journals } = await getSitemapEntries();
+    const entries = (
+      list: SitemapEntry[],
+      base: string,
+      changeFrequency: "monthly" | "yearly",
+      priority: number,
+    ): MetadataRoute.Sitemap =>
+      list.map((item) => ({
+        url: absoluteUrl(`${base}/${item.slug}`),
+        ...(item.updatedAt ? { lastModified: new Date(item.updatedAt) } : {}),
+        changeFrequency,
+        priority,
+      }));
 
     return [
       ...staticPages,
-      ...publications.map((slug) => ({
-        url: absoluteUrl(`/publications/${slug}`),
-        changeFrequency: "monthly" as const,
-        priority: 0.8,
-      })),
-      ...authors.map((slug) => ({
-        url: absoluteUrl(`/authors/${slug}`),
-        changeFrequency: "monthly" as const,
-        priority: 0.6,
-      })),
-      ...articles.map((slug) => ({
-        url: absoluteUrl(`/news/${slug}`),
-        changeFrequency: "yearly" as const,
-        priority: 0.5,
-      })),
-      ...journals.map((slug) => ({
-        url: absoluteUrl(`/journals/${slug}`),
-        changeFrequency: "yearly" as const,
-        priority: 0.6,
-      })),
+      ...entries(publications, "/publications", "monthly", 0.8),
+      ...entries(journals, "/journals", "yearly", 0.7),
+      ...entries(authors, "/authors", "monthly", 0.6),
+      ...entries(articles, "/news", "yearly", 0.5),
     ];
   } catch {
     return staticPages;
