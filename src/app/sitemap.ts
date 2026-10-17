@@ -1,3 +1,4 @@
+import { getJournalSlugs } from "@/server/journals";
 import type { MetadataRoute } from "next";
 
 import { absoluteUrl } from "@/lib/seo/site-meta";
@@ -16,6 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: absoluteUrl("/"), changeFrequency: "weekly", priority: 1 },
     { url: absoluteUrl("/about"), changeFrequency: "monthly", priority: 0.6 },
     { url: absoluteUrl("/publications"), changeFrequency: "weekly", priority: 0.9 },
+    { url: absoluteUrl("/journals"), changeFrequency: "weekly", priority: 0.8 },
     { url: absoluteUrl("/authors"), changeFrequency: "monthly", priority: 0.7 },
     { url: absoluteUrl("/services"), changeFrequency: "monthly", priority: 0.8 },
     { url: absoluteUrl("/news"), changeFrequency: "weekly", priority: 0.7 },
@@ -24,10 +26,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    const [publications, authors, articles] = await Promise.all([
+    const [publications, authors, articles, journals] = await Promise.all([
       getPublicationSlugs(),
       getAuthorSlugs(),
       getArticleSlugs(),
+      getJournalSlugs(),
     ]);
 
     return [
@@ -46,6 +49,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: absoluteUrl(`/news/${slug}`),
         changeFrequency: "yearly" as const,
         priority: 0.5,
+      })),
+      ...journals.map((slug) => ({
+        url: absoluteUrl(`/journals/${slug}`),
+        changeFrequency: "yearly" as const,
+        priority: 0.6,
       })),
     ];
   } catch {

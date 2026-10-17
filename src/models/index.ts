@@ -4,6 +4,8 @@ import type {
   AboutPageDoc,
   ArticleDoc,
   ImageDoc,
+  JournalDoc,
+  JournalFileDoc,
   ManuscriptFileDoc,
   PasswordResetTokenDoc,
   OrderDoc,
@@ -346,6 +348,38 @@ const manuscriptFileSchema = new Schema<ManuscriptFileDoc>(
   { timestamps: true },
 );
 
+// --- Journal ----------------------------------------------------------------
+
+const journalSchema = new Schema<JournalDoc>(
+  {
+    title: { type: String, required: true, trim: true },
+    slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    authors: { type: [String], default: [] },
+    volume: { type: String, trim: true },
+    issue: { type: String, trim: true },
+    publishedAt: { type: Date, required: true },
+    abstract: { type: String, required: true },
+    keywords: { type: [String], default: [] },
+    coverImage: { type: String, trim: true },
+    pdfKey: { type: String, trim: true },
+    pdfName: { type: String, trim: true },
+    pdfSize: { type: Number, min: 0 },
+    status: { type: String, enum: ["draft", "published"], default: "draft", required: true },
+  },
+  { timestamps: true },
+);
+
+journalSchema.index({ status: 1, publishedAt: -1 });
+
+const journalFileSchema = new Schema<JournalFileDoc>(
+  {
+    data: { type: Buffer, required: true },
+    size: { type: Number, required: true, min: 1 },
+    filename: { type: String, required: true, trim: true },
+  },
+  { timestamps: true },
+);
+
 // --- AboutPage --------------------------------------------------------------
 
 const aboutPageSchema = new Schema<AboutPageDoc>(
@@ -434,3 +468,5 @@ export const ManuscriptFile = defineModel<ManuscriptFileDoc>(
 );
 export const SiteSettings = defineModel<SiteSettingsDoc>("SiteSettings", siteSettingsSchema);
 export const AboutPage = defineModel<AboutPageDoc>("AboutPage", aboutPageSchema);
+export const Journal = defineModel<JournalDoc>("Journal", journalSchema);
+export const JournalFile = defineModel<JournalFileDoc>("JournalFile", journalFileSchema);

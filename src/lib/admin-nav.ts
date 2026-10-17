@@ -7,6 +7,7 @@
 export const adminNav = [
   { label: "Dashboard", href: "/admin", icon: "LayoutDashboard", exact: true },
   { label: "Publications", href: "/admin/publications", icon: "BookOpen" },
+  { label: "Journals", href: "/admin/journals", icon: "Library" },
   { label: "Authors", href: "/admin/authors", icon: "Users" },
   { label: "Categories", href: "/admin/categories", icon: "Tags" },
   { label: "Articles", href: "/admin/articles", icon: "Newspaper" },
