@@ -39,10 +39,10 @@ export default async function ServicesPage() {
             ))}
           </Stagger>
 
-          <div className="mt-20 flex flex-col items-start gap-6 bg-brand-dark p-10 text-background sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-20 flex flex-col items-start gap-6 bg-brand-dark p-10 text-white sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-2xl">Have a manuscript ready?</h2>
-              <p className="mt-2 text-background/75">
+              <p className="mt-2 text-white/75">
                 Send it to us and a publishing consultant will read it.
               </p>
             </div>
