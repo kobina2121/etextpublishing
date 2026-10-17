@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { format } from "date-fns";
-import { PlusIcon } from "lucide-react";
+import { FileWarningIcon, PlusIcon } from "lucide-react";
 
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSearch } from "@/components/admin/admin-search";
@@ -99,6 +99,12 @@ export default async function AdminPublicationsPage({
                       </Badge>
                     ) : null}
                     <p className="mt-0.5 font-mono text-xs text-muted-foreground">/{row.slug}</p>
+                    {row.softcopyMissingFile ? (
+                      <p className="mt-1 flex items-center gap-1 text-xs text-destructive">
+                        <FileWarningIcon className="size-3.5" aria-hidden />
+                        Softcopy on sale with no file — upload it or turn it off
+                      </p>
+                    ) : null}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">{row.authorName}</TableCell>
                   <TableCell className="hidden lg:table-cell">{row.categoryName}</TableCell>

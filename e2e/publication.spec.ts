@@ -62,6 +62,13 @@ test("an admin creates a title sold in both editions", async ({ page }) => {
   await page.getByLabel("Printed stock").fill("5");
   await setSwitch(page, "Sell a softcopy", true);
   await page.getByLabel("Softcopy price").fill("45");
+  // A softcopy cannot go on sale without the file buyers will download.
+  await page.getByLabel("Softcopy file").setInputFiles({
+    name: "e2e-softcopy.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4\n%%EOF\n"),
+  });
+  await expect(page.getByText("e2e-softcopy.pdf")).toBeVisible();
 
   await page.getByRole("button", { name: "Create publication" }).click();
   await expect(page).toHaveURL(/\/admin\/publications$/);

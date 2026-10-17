@@ -82,6 +82,58 @@ export async function setRole(email: string, role: "admin" | "customer") {
   await database.collection("users").updateOne({ email }, { $set: { role } });
 }
 
+/** A paid order, as Paystack's settlement would leave it. Returns its reference. */
+export async function createPaidOrder(input: {
+  publicationId: string;
+  title: string;
+  slug: string;
+  edition: "softcopy" | "hardcopy";
+  status?: "paid" | "pending";
+}): Promise<string> {
+  const database = await db();
+  const reference = `etx_e2e_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const now = new Date();
+  await database.collection("orders").insertOne({
+    reference,
+    email: "e2e-buyer@example.com",
+    customerName: "E2E Buyer",
+    items: [
+      {
+        publication: new mongoose.Types.ObjectId(input.publicationId),
+        title: input.title,
+        slug: input.slug,
+        edition: input.edition,
+        unitPrice: 4500,
+        quantity: 1,
+        requiresShipping: input.edition === "hardcopy",
+      },
+    ],
+    total: 4500,
+    currency: "GHS",
+    requiresShipping: input.edition === "hardcopy",
+    status: input.status ?? "paid",
+    fulfilment: input.edition === "hardcopy" ? "pending" : "not_required",
+    ...(input.status === "pending" ? {} : { paidAt: now, fulfilledAt: now }),
+    createdAt: now,
+    updatedAt: now,
+  });
+  return reference;
+}
+
+export async function publicationIdBySlug(slug: string): Promise<string> {
+  const database = await db();
+  const doc = await database
+    .collection("publications")
+    .findOne({ slug }, { projection: { _id: 1 } });
+  if (!doc) throw new Error(`No publication ${slug}`);
+  return doc._id.toString();
+}
+
+export async function deleteOrders(references: string[]) {
+  const database = await db();
+  await database.collection("orders").deleteMany({ reference: { $in: references } });
+}
+
 export async function disconnect() {
   await mongoose.disconnect();
 }

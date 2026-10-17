@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import slugify from "slugify";
@@ -20,6 +20,7 @@ import {
   FieldLabel,
   FieldSet,
 } from "@/components/ui/field";
+import { DocumentUploadField } from "@/components/admin/document-upload-field";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { Input } from "@/components/ui/input";
 import {
@@ -51,10 +52,15 @@ export function PublicationForm({
   initial,
   authors,
   categories,
+  storage,
+  maxBytes,
 }: {
   initial?: PublicationFormValues;
   authors: Option[];
   categories: Option[];
+  /** Where softcopy files go; decided on the server. */
+  storage: "blob" | "server";
+  maxBytes: number;
 }) {
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
@@ -85,6 +91,9 @@ export function PublicationForm({
           hardcopyStock: 0,
           softcopyAvailable: true,
           softcopyPriceMajor: 0,
+          softcopyFileKey: "",
+          softcopyFileName: "",
+          softcopyFileSize: 0,
           featured: false,
           status: "draft",
         },
@@ -99,6 +108,18 @@ export function PublicationForm({
     setError,
     formState: { errors, isSubmitting },
   } = form;
+
+  const [softcopyFileKey, softcopyFileName, softcopyFileSize] = useWatch({
+    control,
+    name: ["softcopyFileKey", "softcopyFileName", "softcopyFileSize"],
+  });
+  const softcopyFile = softcopyFileKey
+    ? {
+        key: softcopyFileKey,
+        fileName: softcopyFileName || "softcopy",
+        size: Number(softcopyFileSize ?? 0),
+      }
+    : null;
 
   const fillSlug = () => {
     const title = getValues("title");
@@ -363,6 +384,34 @@ export function PublicationForm({
                         A download has no stock — it cannot run out.
                       </FieldDescription>
                       <FieldError errors={[errors.softcopyPriceMajor]} />
+                    </Field>
+
+                    <Field data-invalid={!!errors.softcopyFileKey}>
+                      <FieldLabel>Softcopy file</FieldLabel>
+                      <DocumentUploadField
+                        value={softcopyFile}
+                        storage={storage}
+                        maxBytes={maxBytes}
+                        invalid={!!errors.softcopyFileKey}
+                        folder="softcopies"
+                        extensions={[".pdf", ".epub"]}
+                        noun="PDF or EPUB"
+                        label="Softcopy file"
+                        endpoint="/api/admin/softcopies"
+                        onChange={(next) => {
+                          setValue("softcopyFileKey", next?.key ?? "", {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
+                          setValue("softcopyFileName", next?.fileName ?? "", { shouldDirty: true });
+                          setValue("softcopyFileSize", next?.size ?? 0, { shouldDirty: true });
+                        }}
+                      />
+                      <FieldDescription>
+                        What buyers download after paying. Kept private — only paid orders can reach
+                        it.
+                      </FieldDescription>
+                      <FieldError errors={[errors.softcopyFileKey]} />
                     </Field>
                   </div>
                 </FieldGroup>

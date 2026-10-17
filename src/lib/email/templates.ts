@@ -65,6 +65,92 @@ export function passwordResetEmail({
   return { subject, html, text };
 }
 
+/**
+ * Sent once, when a payment is confirmed. Softcopy orders get their download
+ * link here — a guest who closed the tab can still reach their files.
+ */
+export function orderConfirmationEmail({
+  name,
+  reference,
+  lines,
+  total,
+  requiresShipping,
+  downloadsUrl,
+}: {
+  name: string;
+  reference: string;
+  /** Already formatted: "Salt Roads — Softcopy × 1 — GH₵54.00". */
+  lines: string[];
+  total: string;
+  requiresShipping: boolean;
+  downloadsUrl?: string;
+}) {
+  const subject = `Your ${siteConfig.name} order ${reference}`;
+  const greeting = name ? `Hello ${name},` : "Hello,";
+
+  const text = [
+    greeting,
+    "",
+    "Thank you — your payment has gone through. Your order:",
+    "",
+    ...lines.map((line) => `  • ${line}`),
+    `  Total: ${total}`,
+    "",
+    ...(downloadsUrl
+      ? [
+          "Download your softcopies here (keep this link to download them again later):",
+          downloadsUrl,
+          "",
+        ]
+      : []),
+    ...(requiresShipping ? ["Anything printed will be posted to the address you gave.", ""] : []),
+    `Order reference: ${reference}`,
+  ].join("\n");
+
+  const html = `
+<!doctype html>
+<html lang="en">
+  <body style="margin:0;padding:24px;background:#f5f5f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#2f2f2f;">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #e7e5e4;">
+      <tr>
+        <td style="padding:32px;">
+          <p style="margin:0 0 4px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#6b7280;">
+            ${escapeHtml(siteConfig.name)}
+          </p>
+          <h1 style="margin:0 0 16px;font-size:22px;font-weight:600;">Thank you for your order</h1>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">${escapeHtml(greeting)} Your payment has gone through.</p>
+          <ul style="margin:0 0 8px;padding-left:18px;font-size:14px;line-height:1.7;">
+            ${lines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}
+          </ul>
+          <p style="margin:0 0 24px;font-size:15px;font-weight:600;">Total: ${escapeHtml(total)}</p>
+          ${
+            downloadsUrl
+              ? `<a href="${escapeHtml(downloadsUrl)}"
+             style="display:inline-block;padding:12px 22px;background:#0a7e3a;color:#ffffff;font-size:14px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;">
+            Download your softcopies
+          </a>
+          <p style="margin:12px 0 24px;font-size:13px;line-height:1.6;color:#6b7280;">
+            Keep this email: the button works whenever you want to download them again.
+          </p>`
+              : ""
+          }
+          ${
+            requiresShipping
+              ? `<p style="margin:0 0 16px;font-size:14px;line-height:1.6;">Anything printed will be posted to the address you gave.</p>`
+              : ""
+          }
+          <p style="margin:24px 0 0;padding-top:16px;border-top:1px solid #e7e5e4;font-size:13px;color:#6b7280;">
+            Order reference: <span style="font-family:monospace;">${escapeHtml(reference)}</span>
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`.trim();
+
+  return { subject, html, text };
+}
+
 /** Everything interpolated into HTML is escaped, including our own URL and the account name. */
 function escapeHtml(value: string): string {
   return value

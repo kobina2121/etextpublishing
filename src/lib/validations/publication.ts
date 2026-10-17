@@ -33,6 +33,14 @@ export const imageRefSchema = z
   .optional()
   .default("");
 
+/**
+ * Softcopy files: 50 MB through Vercel Blob, where the browser uploads straight
+ * to storage; 4 MB without it, when the file passes through our server and
+ * Vercel's 4.5 MB request limit applies.
+ */
+export const SOFTCOPY_BLOB_MAX_BYTES = 50 * 1024 * 1024;
+export const SOFTCOPY_DB_MAX_BYTES = 4 * 1024 * 1024;
+
 export const CURRENCIES = ["GHS", "NGN", "USD", "ZAR", "KES"] as const;
 export type Currency = (typeof CURRENCIES)[number];
 
@@ -84,6 +92,15 @@ export const publicationSchema = z
 
     softcopyAvailable: z.boolean().default(false),
     softcopyPriceMajor: priceMajorSchema,
+    /** The downloadable file, as a storage key from the upload routes. */
+    softcopyFileKey: z
+      .string()
+      .trim()
+      .refine((v) => v === "" || /^(blob|db):\S+$/.test(v), "Upload the file again.")
+      .optional()
+      .default(""),
+    softcopyFileName: z.string().trim().max(200).optional().default(""),
+    softcopyFileSize: z.coerce.number().int().min(0).optional().default(0),
     featured: z.boolean().default(false),
     status: z.enum(PUBLICATION_STATUSES).default("draft"),
   })
@@ -94,6 +111,11 @@ export const publicationSchema = z
   .refine((v) => !v.softcopyAvailable || v.softcopyPriceMajor > 0, {
     message: "Set a softcopy price, or turn the softcopy off.",
     path: ["softcopyPriceMajor"],
+  })
+  // Selling a download that does not exist would take money for nothing.
+  .refine((v) => !v.softcopyAvailable || Boolean(v.softcopyFileKey), {
+    message: "Upload the softcopy file, or turn the softcopy off.",
+    path: ["softcopyFileKey"],
   });
 
 export type PublicationInput = z.input<typeof publicationSchema>;
