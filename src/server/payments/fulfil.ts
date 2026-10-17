@@ -1,6 +1,10 @@
 import "server-only";
 
 import { connectToDatabase } from "@/lib/db";
+import { downloadsPageUrl } from "@/lib/downloads";
+import { sendMail } from "@/lib/email";
+import { orderConfirmationEmail } from "@/lib/email/templates";
+import { formatMoney } from "@/lib/money";
 import { verifyTransaction } from "@/lib/payments/paystack";
 import { Order, Publication } from "@/models";
 
@@ -127,5 +131,42 @@ export async function settleOrder(reference: string): Promise<SettleResult> {
     console.error("[paystack] stock shortfall", claimed.reference, shortfall);
   }
 
+  // Once only: this runs for the single caller that claimed the order.
+  await sendConfirmation(claimed);
+
   return { ok: true, status: "paid", orderReference: claimed.reference };
+}
+
+/**
+ * The buyer's confirmation, with their download link when they bought a
+ * softcopy. Best effort: the payment is settled whatever happens here, so a
+ * mail failure is logged, never thrown.
+ */
+async function sendConfirmation(order: {
+  reference: string;
+  email: string;
+  customerName: string;
+  currency: string;
+  total: number;
+  requiresShipping: boolean;
+  items: { title: string; edition: string; quantity: number; unitPrice: number }[];
+}): Promise<void> {
+  try {
+    const hasSoftcopy = order.items.some((item) => item.edition === "softcopy");
+    const message = orderConfirmationEmail({
+      name: order.customerName,
+      reference: order.reference,
+      lines: order.items.map(
+        (item) =>
+          `${item.title} — ${item.edition === "softcopy" ? "Softcopy" : "Hardcopy"} × ${item.quantity} — ${formatMoney(item.unitPrice * item.quantity, order.currency)}`,
+      ),
+      total: formatMoney(order.total, order.currency),
+      requiresShipping: order.requiresShipping,
+      ...(hasSoftcopy ? { downloadsUrl: downloadsPageUrl(order.reference, true) } : {}),
+    });
+    const sent = await sendMail({ to: order.email, ...message });
+    if (!sent.ok) console.error("[order-confirmation] not sent", order.reference, sent.error);
+  } catch (error) {
+    console.error("[order-confirmation] failed", order.reference, error);
+  }
 }

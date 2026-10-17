@@ -71,3 +71,32 @@ describe("publicationSchema", () => {
     ).toBe(true);
   });
 });
+
+describe("softcopy file", () => {
+  const softcopy = {
+    ...valid,
+    softcopyAvailable: true,
+    softcopyPriceMajor: "45",
+  };
+
+  it("cannot be on sale without its file", () => {
+    const result = publicationSchema.safeParse(softcopy);
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map((issue) => issue.path[0])).toContain("softcopyFileKey");
+  });
+
+  it("can be on sale once the file is uploaded", () => {
+    expect(
+      publicationSchema.safeParse({ ...softcopy, softcopyFileKey: `db:${"c".repeat(24)}` }).success,
+    ).toBe(true);
+  });
+
+  it("refuses a file reference it did not issue", () => {
+    expect(
+      publicationSchema.safeParse({
+        ...softcopy,
+        softcopyFileKey: "https://elsewhere.com/book.pdf",
+      }).success,
+    ).toBe(false);
+  });
+});

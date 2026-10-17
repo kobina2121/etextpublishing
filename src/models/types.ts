@@ -153,8 +153,13 @@ export type PublicationDoc = WithTimestamps & {
    */
   editions: Record<EditionKindValue, EditionDoc>;
   currency: string;
-  /** Softcopy only: object key for the purchasable file. Phase 7. */
+  /**
+   * The softcopy file buyers download: a storage key (`blob:` or `db:`), never
+   * a URL. Required while the softcopy is on sale.
+   */
   digitalFileKey?: string;
+  digitalFileName?: string;
+  digitalFileSize?: number;
 };
 
 export type EditionDoc = {
@@ -317,6 +322,9 @@ export type JournalFileDoc = WithTimestamps & {
   filename: string;
   contentType?: string;
 };
+
+/** A softcopy (PDF or EPUB) kept in MongoDB, when Vercel Blob is not connected. */
+export type SoftcopyFileDoc = JournalFileDoc;
 
 /**
  * The About page's words, edited from /admin/about.

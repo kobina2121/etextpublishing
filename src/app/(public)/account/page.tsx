@@ -18,10 +18,11 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { requireUser } from "@/lib/auth/guards";
+import { downloadsPageUrl } from "@/lib/downloads";
 import { formatMoney } from "@/lib/money";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getOrdersForCustomer, getSignInMethods } from "@/server/queries";
-import { CheckIcon, MinusIcon, PackageIcon } from "lucide-react";
+import { CheckIcon, DownloadIcon, MinusIcon, PackageIcon } from "lucide-react";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({
@@ -85,11 +86,11 @@ export default async function AccountPage() {
 
           {downloads.length > 0 ? (
             <Alert className="mt-8">
+              <DownloadIcon aria-hidden />
               <AlertDescription>
                 You have {downloads.length} purchased{" "}
-                {downloads.length === 1 ? "download" : "downloads"}. File delivery is not switched
-                on yet — email us and we will send {downloads.length === 1 ? "it" : "them"} over
-                directly.
+                {downloads.length === 1 ? "softcopy" : "softcopies"}. Use{" "}
+                <span className="font-medium">Download</span> on the order below.
               </AlertDescription>
             </Alert>
           ) : null}
@@ -122,7 +123,15 @@ export default async function AccountPage() {
                         {format(order.placedAt, "d MMMM yyyy")}
                       </p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      {order.items.some((item) => !item.requiresShipping) ? (
+                        <Button asChild size="sm" variant="outline">
+                          <Link href={downloadsPageUrl(order.reference)}>
+                            <DownloadIcon aria-hidden />
+                            Download
+                          </Link>
+                        </Button>
+                      ) : null}
                       <Badge variant="secondary" className="tracking-wide uppercase">
                         {FULFILMENT_LABELS[order.fulfilment] ?? order.fulfilment}
                       </Badge>

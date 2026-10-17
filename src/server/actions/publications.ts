@@ -36,6 +36,7 @@ function toEditions(values: {
 }
 
 import { deleteImageByUrl } from "@/lib/storage/images";
+import { softcopyStore } from "@/lib/storage/softcopy-files";
 import { publicationSchema } from "@/lib/validations/publication";
 import { Author, Publication } from "@/models";
 import {
@@ -79,12 +80,21 @@ export async function createPublication(raw: unknown): Promise<ActionResult> {
       hardcopyStock,
       softcopyAvailable,
       softcopyPriceMajor,
+      softcopyFileKey,
+      softcopyFileName,
+      softcopyFileSize,
       ...rest
     } = parsed.data;
+    const digitalFile = {
+      digitalFileKey: softcopyFileKey || undefined,
+      digitalFileName: softcopyFileName || undefined,
+      digitalFileSize: softcopyFileSize || undefined,
+    };
 
     try {
       const created = await Publication.create({
         ...rest,
+        ...digitalFile,
         currency,
         editions: toEditions({
           currency,
@@ -128,10 +138,12 @@ export async function updatePublication(id: string, raw: unknown): Promise<Actio
       slug: 1,
       author: 1,
       coverImage: 1,
+      digitalFileKey: 1,
     }).lean<{
       slug: string;
       author: { toString(): string };
       coverImage?: string;
+      digitalFileKey?: string;
     } | null>();
     if (!previous) return { ok: false, error: "That publication no longer exists." };
 
@@ -143,8 +155,16 @@ export async function updatePublication(id: string, raw: unknown): Promise<Actio
       hardcopyStock,
       softcopyAvailable,
       softcopyPriceMajor,
+      softcopyFileKey,
+      softcopyFileName,
+      softcopyFileSize,
       ...rest
     } = parsed.data;
+    const digitalFile = {
+      digitalFileKey: softcopyFileKey || undefined,
+      digitalFileName: softcopyFileName || undefined,
+      digitalFileSize: softcopyFileSize || undefined,
+    };
 
     try {
       const updated = await Publication.findByIdAndUpdate(
@@ -152,6 +172,7 @@ export async function updatePublication(id: string, raw: unknown): Promise<Actio
         {
           $set: {
             ...rest,
+            ...digitalFile,
             currency,
             editions: toEditions({
               currency,
@@ -172,6 +193,10 @@ export async function updatePublication(id: string, raw: unknown): Promise<Actio
       // replaced cover does not linger in the database forever.
       if (previous.coverImage && previous.coverImage !== updated.coverImage) {
         await deleteImageByUrl(previous.coverImage);
+      }
+      // A replaced or removed softcopy file is no longer sold or downloadable.
+      if (previous.digitalFileKey && previous.digitalFileKey !== softcopyFileKey) {
+        await softcopyStore.remove(previous.digitalFileKey);
       }
 
       await refresh(updated.slug, updated.author.toString());
@@ -217,6 +242,7 @@ export async function deletePublication(id: string): Promise<ActionResult> {
     if (!deleted) return { ok: false, error: "That publication no longer exists." };
 
     await deleteImageByUrl(deleted.coverImage);
+    await softcopyStore.remove(deleted.digitalFileKey);
     await refresh(deleted.slug, deleted.author.toString());
     return { ok: true, message: "Publication deleted." };
   });

@@ -6,6 +6,8 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
 import { Button } from "@/components/ui/button";
+import { DownloadList } from "@/components/shop/download-list";
+import { getOrderDownloads } from "@/server/downloads";
 import { settleOrder } from "@/server/payments/fulfil";
 
 import { ClearCart } from "./clear-cart";
@@ -38,6 +40,9 @@ export default async function CheckoutCallbackPage({
     settled?.ok === true && (settled.status === "paid" || settled.status === "already-paid");
   const unpaid = settled?.ok === true && settled.status === "unpaid";
   const processing = settled?.ok === true && settled.status === "processing";
+  // The reference came back from Paystack and the order is now confirmed paid,
+  // so its softcopies can be offered straight away.
+  const downloads = paid ? await getOrderDownloads(reference) : null;
 
   return (
     <Section className="pt-36">
@@ -48,10 +53,21 @@ export default async function CheckoutCallbackPage({
             <CheckCircle2Icon className="size-12 text-primary" aria-hidden />
             <h1 className="text-4xl">Thank you — your order is confirmed</h1>
             <p className="text-lg text-muted-foreground">
-              We have your payment. A confirmation will follow by email, and anything printed will
+              We have your payment and a confirmation is on its way by email. Anything printed will
               be posted to the address you gave.
             </p>
             <p className="font-mono text-xs text-muted-foreground">Reference: {reference}</p>
+            {downloads && downloads.length > 0 ? (
+              <div className="w-full">
+                <h2 className="mb-3 text-sm font-semibold tracking-[0.14em] uppercase">
+                  Your downloads
+                </h2>
+                <DownloadList items={downloads} />
+                <p className="mt-3 text-sm text-muted-foreground">
+                  We have also emailed you a link, so you can download them again later.
+                </p>
+              </div>
+            ) : null}
             <Button asChild size="xl" className="font-semibold tracking-[0.1em] uppercase">
               <Link href="/publications">Continue browsing</Link>
             </Button>

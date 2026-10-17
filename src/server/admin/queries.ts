@@ -154,6 +154,8 @@ export type AdminPublicationRow = {
   categoryName: string;
   /** Short human summary of what is on sale, e.g. "Hardcopy + Softcopy". */
   editions: string;
+  /** On sale as a softcopy but has no file — buyers would pay for nothing. */
+  softcopyMissingFile: boolean;
   status: string;
   featured: boolean;
   publicationDate: Date;
@@ -195,6 +197,7 @@ export async function listPublicationsAdmin(
       authorName: row.author?.name ?? "—",
       categoryName: row.category?.name ?? "—",
       editions: editionSummary(row.editions),
+      softcopyMissingFile: Boolean(row.editions?.softcopy?.available) && !row.digitalFileKey,
       status: row.status,
       featured: row.featured,
       publicationDate: new Date(row.publicationDate),
@@ -214,6 +217,9 @@ export type PublicationFormValues = {
   hardcopyStock: number;
   softcopyAvailable: boolean;
   softcopyPriceMajor: number;
+  softcopyFileKey: string;
+  softcopyFileName: string;
+  softcopyFileSize: number;
   title: string;
   slug: string;
   author: string;
@@ -244,6 +250,9 @@ export async function getPublicationForEdit(id: string): Promise<PublicationForm
     hardcopyStock: doc.editions?.hardcopy?.stockQuantity ?? 0,
     softcopyAvailable: doc.editions?.softcopy?.available ?? false,
     softcopyPriceMajor: toMajorUnits(doc.editions?.softcopy?.price ?? 0, currency),
+    softcopyFileKey: doc.digitalFileKey ?? "",
+    softcopyFileName: doc.digitalFileName ?? "",
+    softcopyFileSize: doc.digitalFileSize ?? 0,
     title: doc.title,
     slug: doc.slug,
     author: doc.author.toString(),

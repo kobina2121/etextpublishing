@@ -4,6 +4,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { getFormOptions } from "@/server/admin/queries";
 
 import { PublicationForm } from "../publication-form";
+import { softcopyStorage } from "../storage";
 
 export const metadata: Metadata = { title: "New publication" };
 
@@ -16,7 +17,7 @@ export default async function NewPublicationPage() {
         title="New publication"
         description="Titles start as drafts and stay off the website until published."
       />
-      <PublicationForm authors={authors} categories={categories} />
+      <PublicationForm authors={authors} categories={categories} {...softcopyStorage()} />
     </div>
   );
 }

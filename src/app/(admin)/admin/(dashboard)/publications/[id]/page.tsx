@@ -10,6 +10,7 @@ import { deletePublication } from "@/server/actions/publications";
 import { getFormOptions, getPublicationForEdit } from "@/server/admin/queries";
 
 import { PublicationForm } from "../publication-form";
+import { softcopyStorage } from "../storage";
 
 export const metadata: Metadata = { title: "Edit publication" };
 
@@ -55,6 +56,7 @@ export default async function EditPublicationPage({
         initial={publication}
         authors={options.authors}
         categories={options.categories}
+        {...softcopyStorage()}
       />
     </div>
   );
