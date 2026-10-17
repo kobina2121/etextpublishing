@@ -259,6 +259,8 @@ const orderSchema = new Schema<OrderDoc>(
       region: { type: String, trim: true },
       postalCode: { type: String, trim: true },
       country: { type: String, trim: true },
+      digitalAddress: { type: String, trim: true, uppercase: true },
+      instructions: { type: String, trim: true },
     },
     status: {
       type: String,
