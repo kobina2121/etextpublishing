@@ -315,6 +315,7 @@ export type JournalFileDoc = WithTimestamps & {
   data: Buffer;
   size: number;
   filename: string;
+  contentType?: string;
 };
 
 /**

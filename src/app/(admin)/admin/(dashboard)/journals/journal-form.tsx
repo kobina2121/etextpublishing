@@ -6,6 +6,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 
+import { DocumentUploadField } from "@/components/admin/document-upload-field";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { SlugField } from "@/components/admin/slug-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -25,8 +26,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { journalSchema, type JournalInput, type JournalValues } from "@/lib/validations/journal";
 import { createJournal, updateJournal } from "@/server/actions/journals";
-
-import { JournalPdfField } from "./journal-pdf-field";
 
 const EMPTY: JournalInput = {
   title: "",
@@ -162,8 +161,13 @@ export function JournalForm({
             </CardHeader>
             <CardContent>
               <Field data-invalid={!!errors.pdfKey}>
-                <JournalPdfField
+                <DocumentUploadField
                   value={pdf}
+                  folder="journals"
+                  extensions={[".pdf"]}
+                  noun="PDF"
+                  label="Journal PDF"
+                  endpoint="/api/admin/journals"
                   storage={storage}
                   maxBytes={maxBytes}
                   invalid={!!errors.pdfKey}

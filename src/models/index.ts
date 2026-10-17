@@ -384,6 +384,7 @@ const journalFileSchema = new Schema<JournalFileDoc>(
     data: { type: Buffer, required: true },
     size: { type: Number, required: true, min: 1 },
     filename: { type: String, required: true, trim: true },
+    contentType: { type: String, trim: true },
   },
   { timestamps: true },
 );
