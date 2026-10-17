@@ -84,7 +84,8 @@ test("a reset link sets a new password, once, and signs out other devices", asyn
 
   const token = await createResetToken(userId);
 
-  await page.goto(`/reset-password?token=${token}`);
+  // Wait for the form to be interactive; a click before then does nothing.
+  await page.goto(`/reset-password?token=${token}`, { waitUntil: "networkidle" });
   await page.getByLabel("New password", { exact: true }).fill(newPassword);
   await page.getByLabel("Confirm new password").fill(newPassword);
   await page.getByRole("button", { name: "Save new password" }).click();
