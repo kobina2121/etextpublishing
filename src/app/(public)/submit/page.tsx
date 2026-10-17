@@ -6,6 +6,8 @@ import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
 import { PageHero } from "@/components/public/page-hero";
 import { ManuscriptForm } from "@/components/forms/manuscript-form";
+import { isBlobConfigured } from "@/lib/storage/manuscript-blob";
+import { MANUSCRIPT_BLOB_MAX_BYTES, MANUSCRIPT_MAX_BYTES } from "@/lib/validations/manuscript";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -34,7 +36,11 @@ export default function SubmitPage() {
             </AlertDescription>
           </Alert>
 
-          <ManuscriptForm />
+          {/* Decided here, on the server, where the storage key is visible. */}
+          <ManuscriptForm
+            storage={isBlobConfigured() ? "blob" : "server"}
+            maxBytes={isBlobConfigured() ? MANUSCRIPT_BLOB_MAX_BYTES : MANUSCRIPT_MAX_BYTES}
+          />
         </Container>
       </Section>
     </>

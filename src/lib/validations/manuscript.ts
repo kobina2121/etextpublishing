@@ -3,15 +3,21 @@ import { z } from "zod";
 import { PUBLICATION_FORMATS } from "@/types/content";
 
 /**
- * 4 MB while manuscripts are stored in MongoDB.
+ * Size limits, by where the file is stored.
  *
- * The upload goes through our own server, and Vercel refuses any request body
- * over 4.5 MB before it reaches the code. Raise this to 10 MB when uploads move
- * to presigned S3, where the file goes straight to the bucket.
+ * With Vercel Blob the browser uploads straight to storage, so the limit is
+ * ours to choose: 10 MB. Without it (local development, or before a Blob store
+ * is connected) the file travels through our own server, and Vercel refuses
+ * request bodies over 4.5 MB before the code ever sees them — hence 4 MB.
  */
 export const MANUSCRIPT_MAX_BYTES = 4 * 1024 * 1024;
+export const MANUSCRIPT_BLOB_MAX_BYTES = 10 * 1024 * 1024;
 
 export const MANUSCRIPT_MAX_MB = MANUSCRIPT_MAX_BYTES / 1024 / 1024;
+
+export function megabytes(bytes: number): number {
+  return bytes / 1024 / 1024;
+}
 
 export const MANUSCRIPT_MIME_TYPES = [
   "application/pdf",
@@ -61,9 +67,12 @@ export const manuscriptSchema = z.object({
 
 export type ManuscriptInput = z.infer<typeof manuscriptSchema>;
 
-export function validateManuscriptFile(file: File | undefined | null): string | null {
+export function validateManuscriptFile(
+  file: File | undefined | null,
+  maxBytes: number = MANUSCRIPT_MAX_BYTES,
+): string | null {
   if (!file) return "Please attach your manuscript.";
-  if (file.size > MANUSCRIPT_MAX_BYTES) return `That file is larger than ${MANUSCRIPT_MAX_MB} MB.`;
+  if (file.size > maxBytes) return `That file is larger than ${megabytes(maxBytes)} MB.`;
 
   const hasAllowedType = (MANUSCRIPT_MIME_TYPES as readonly string[]).includes(file.type);
   const hasAllowedExtension = MANUSCRIPT_EXTENSIONS.some((extension) =>

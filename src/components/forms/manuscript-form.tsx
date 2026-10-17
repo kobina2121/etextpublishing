@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { upload } from "@vercel/blob/client";
 import { UploadIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -28,8 +29,8 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   GENRES,
   MANUSCRIPT_EXTENSIONS,
-  MANUSCRIPT_MAX_MB,
   manuscriptSchema,
+  megabytes,
   validateManuscriptFile,
   type ManuscriptInput,
 } from "@/lib/validations/manuscript";
@@ -42,8 +43,32 @@ const FORMAT_LABELS: Record<string, string> = {
   audiobook: "Audiobook",
 };
 
-export function ManuscriptForm() {
+/** Lowercase, hyphenated, no path parts — the name the file gets in storage. */
+function storageName(fileName: string): string {
+  const dot = fileName.lastIndexOf(".");
+  const ext = dot > 0 ? fileName.slice(dot).toLowerCase() : "";
+  const base = (dot > 0 ? fileName.slice(0, dot) : fileName)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+  return `manuscripts/${base || "manuscript"}${ext}`;
+}
+
+/**
+ * `storage` is decided on the server. With Vercel Blob the file goes straight
+ * from the browser to storage, which is what allows 10 MB; otherwise it is
+ * sent with the form and capped lower.
+ */
+export function ManuscriptForm({
+  storage = "server",
+  maxBytes,
+}: {
+  storage?: "blob" | "server";
+  maxBytes: number;
+}) {
   const [file, setFile] = useState<File | null>(null);
+  const [uploadPercent, setUploadPercent] = useState<number | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   // Remounting is the only way to clear a file input; its value is read-only.
   const [fileInputKey, setFileInputKey] = useState(0);
@@ -70,11 +95,11 @@ export function ManuscriptForm() {
 
   const onFileChange = (selected: File | null) => {
     setFile(selected);
-    setFileError(validateManuscriptFile(selected));
+    setFileError(validateManuscriptFile(selected, maxBytes));
   };
 
   const onSubmit = async (values: ManuscriptInput) => {
-    const problem = validateManuscriptFile(file);
+    const problem = validateManuscriptFile(file, maxBytes);
     if (problem || !file) {
       setFileError(problem);
       return;
@@ -84,7 +109,33 @@ export function ManuscriptForm() {
     for (const [name, value] of Object.entries(values)) {
       if (value !== undefined && value !== null) body.set(name, String(value));
     }
-    body.set("file", file);
+
+    if (storage === "blob") {
+      // Straight to storage first; the form then says where the file went.
+      try {
+        setUploadPercent(0);
+        const blob = await upload(storageName(file.name), file, {
+          access: "private",
+          handleUploadUrl: "/api/submissions/manuscript/upload",
+          multipart: file.size > 5 * 1024 * 1024,
+          onUploadProgress: ({ percentage }) => setUploadPercent(Math.round(percentage)),
+        });
+        body.set("blobPathname", blob.pathname);
+        body.set("fileName", file.name);
+      } catch (error) {
+        setUploadPercent(null);
+        toast.error("Your manuscript could not be uploaded.", {
+          description:
+            error instanceof Error && error.message
+              ? error.message.replace(/^Vercel Blob: /, "")
+              : "Please try again.",
+        });
+        return;
+      }
+      setUploadPercent(null);
+    } else {
+      body.set("file", file);
+    }
 
     let result: { ok: boolean; error?: string };
     try {
@@ -228,7 +279,7 @@ export function ManuscriptForm() {
               className="h-auto py-2"
             />
             <FieldDescription>
-              PDF, DOC or DOCX, up to {MANUSCRIPT_MAX_MB} MB.{" "}
+              PDF, DOC or DOCX, up to {megabytes(maxBytes)} MB.{" "}
               {file ? `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)` : null}
             </FieldDescription>
             {fileError ? <FieldError errors={[{ message: fileError }]} /> : null}
@@ -242,7 +293,7 @@ export function ManuscriptForm() {
               className="font-semibold tracking-[0.1em] uppercase"
             >
               {isSubmitting ? <Spinner /> : <UploadIcon aria-hidden />}
-              Submit manuscript
+              {uploadPercent !== null ? `Uploading… ${uploadPercent}%` : "Submit manuscript"}
             </Button>
           </div>
         </FieldGroup>
