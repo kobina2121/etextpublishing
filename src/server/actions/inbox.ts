@@ -115,20 +115,10 @@ export async function updateSiteSettings(raw: unknown): Promise<ActionResult> {
       { upsert: true, returnDocument: "after", setDefaultsOnInsert: true, runValidators: true },
     );
 
-    // Settings feed the footer and metadata on every page, so everything is
-    // refreshed rather than guessing which routes read which field.
-    for (const path of [
-      "/",
-      "/about",
-      "/publications",
-      "/authors",
-      "/services",
-      "/news",
-      "/contact",
-      "/submit",
-    ]) {
-      revalidatePath(path);
-    }
+    // Settings feed the footer and metadata on every page, so the whole site
+    // is refreshed. A fixed list of paths missed every detail page — a book,
+    // an author, an article — which kept showing the old footer.
+    revalidatePath("/", "layout");
     return { ok: true, message: "Settings saved." };
   });
 }
