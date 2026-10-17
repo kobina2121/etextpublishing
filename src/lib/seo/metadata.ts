@@ -18,6 +18,7 @@ export async function buildMetadata({
   image,
   publishedTime,
   noIndex = false,
+  other,
 }: {
   title?: string;
   description?: string;
@@ -26,11 +27,17 @@ export async function buildMetadata({
   image?: string;
   publishedTime?: Date;
   noIndex?: boolean;
+  /** Extra <meta name=…> tags, e.g. Google Scholar's citation_* fields. */
+  other?: Metadata["other"];
 }): Promise<Metadata> {
   const site = await getSiteMeta();
   const canonical = absoluteUrl(path);
   const resolvedTitle = title ?? `${site.name} — ${site.tagline}`;
   const resolvedDescription = description ?? site.description;
+  // Every page gets a preview image: its own (a cover) or the site's. A page
+  // that sets openGraph replaces the parent's, so without this the generated
+  // /opengraph-image was never linked and shared links showed no picture.
+  const previewImage = absoluteUrl(image ?? "/opengraph-image");
 
   return {
     // With no title of its own (the home page), use the full site title as-is.
@@ -46,15 +53,16 @@ export async function buildMetadata({
       title: resolvedTitle,
       description: resolvedDescription,
       url: canonical,
-      locale: "en",
-      ...(image ? { images: [{ url: absoluteUrl(image) }] } : {}),
+      locale: "en_GH",
+      images: [{ url: previewImage }],
       ...(publishedTime ? { publishedTime: publishedTime.toISOString() } : {}),
     },
     twitter: {
       card: "summary_large_image",
       title: resolvedTitle,
       description: resolvedDescription,
-      ...(image ? { images: [absoluteUrl(image)] } : {}),
+      images: [previewImage],
     },
+    ...(other ? { other } : {}),
   };
 }
