@@ -14,9 +14,9 @@ vi.mock("resend", () => ({
   },
 }));
 
-const { normaliseSender, sendMail } = await import("@/lib/email");
+const { isReservedTestAddress, normaliseSender, sendMail } = await import("@/lib/email");
 
-const message = { to: "reader@example.com", subject: "Hi", html: "<p>Hi</p>", text: "Hi" };
+const message = { to: "reader@gmail.com", subject: "Hi", html: "<p>Hi</p>", text: "Hi" };
 
 beforeEach(() => {
   send.mockReset().mockResolvedValue({ data: { id: "e1" }, error: null });
@@ -36,7 +36,7 @@ describe("sendMail", () => {
       expect.objectContaining({
         from: "etext Publishing Network <no-reply@etextpublishingnetwork.com>",
         replyTo: "etextpublishingnetwork@gmail.com",
-        to: "reader@example.com",
+        to: "reader@gmail.com",
       }),
     );
   });
@@ -100,5 +100,22 @@ describe("sendMail with a damaged EMAIL_FROM", () => {
         from: "etext Publishing Network <no-reply@etextpublishingnetwork.com>",
       }),
     );
+  });
+});
+
+describe("reserved test addresses", () => {
+  it.each(["a@example.com", "a@example.org", "x@shop.test", "x@nowhere.invalid", "x@localhost"])(
+    "never emails %s",
+    async (to) => {
+      vi.spyOn(console, "info").mockImplementation(() => {});
+      expect(await sendMail({ ...message, to })).toEqual({ ok: true, delivered: false });
+      expect(send).not.toHaveBeenCalled();
+    },
+  );
+
+  it("still emails real addresses, including ones that merely contain the word", () => {
+    expect(isReservedTestAddress("etextpublishingnetwork@gmail.com")).toBe(false);
+    expect(isReservedTestAddress("me@myexample.com")).toBe(false);
+    expect(isReservedTestAddress("me@testing.org")).toBe(false);
   });
 });
