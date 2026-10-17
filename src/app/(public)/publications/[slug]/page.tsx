@@ -8,6 +8,7 @@ import { editionOptions } from "@/components/shop/edition-options";
 import { JsonLd } from "@/components/seo/json-ld";
 import { bookJsonLd, breadcrumbJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { isPlaceholderText } from "@/lib/seo/placeholder";
 
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
@@ -65,6 +66,8 @@ export async function generateMetadata({
     title: publication.title,
     description: publication.excerpt,
     path: `/publications/${publication.slug}`,
+    // A sample title (made-up ISBN and all) stays out of search.
+    noIndex: isPlaceholderText(publication.excerpt, publication.description),
     type: "article",
     ...(publication.coverImage ? { image: publication.coverImage } : {}),
   });
