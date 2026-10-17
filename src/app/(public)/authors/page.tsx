@@ -14,7 +14,8 @@ import { listAuthors } from "@/server/queries";
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({
     title: "Authors",
-    description: "The writers we publish.",
+    description:
+      "The writers and researchers published by etext Publishing Network, and their books.",
     path: "/authors",
   });
 }
