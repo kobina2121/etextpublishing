@@ -14,7 +14,8 @@ import { listServices } from "@/server/queries";
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({
     title: "Services",
-    description: "Textbook and story book publishing services.",
+    description:
+      "Textbook and story book publishing services in Ghana: review and editing, preparation for textbook tenders, writing by subject experts, layout design, evaluation and illustration.",
     path: "/services",
   });
 }

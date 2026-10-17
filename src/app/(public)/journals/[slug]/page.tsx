@@ -9,7 +9,10 @@ import { Section } from "@/components/layout/section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { HeadingText } from "@/components/ui/heading-text";
+import { JsonLd } from "@/components/seo/json-ld";
+import { breadcrumbJsonLd, scholarMeta, scholarlyArticleJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { getSiteMeta } from "@/lib/seo/site-meta";
 import { getJournalBySlug, volumeIssue } from "@/server/journals";
 
 export async function generateMetadata({
@@ -26,6 +29,8 @@ export async function generateMetadata({
     type: "article",
     publishedTime: journal.publishedAt,
     ...(journal.coverImage ? { image: journal.coverImage } : {}),
+    // Google Scholar indexes papers from these tags.
+    other: scholarMeta(journal, (await getSiteMeta()).name),
   });
 }
 
@@ -46,6 +51,14 @@ export default async function JournalPage({ params }: PageProps<"/journals/[slug
 
   return (
     <Section className="pt-32 sm:pt-36">
+      <JsonLd data={scholarlyArticleJsonLd(journal)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Journals", path: "/journals" },
+          { name: journal.title, path: `/journals/${journal.slug}` },
+        ])}
+      />
       <Container width="prose">
         <Link
           href="/journals"
