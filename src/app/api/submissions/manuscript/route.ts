@@ -3,7 +3,12 @@ import { revalidatePath } from "next/cache";
 import { connectToDatabase } from "@/lib/db";
 import { checkRateLimit, rateLimitKey } from "@/lib/rate-limit";
 import { clientIp } from "@/lib/request-ip";
-import { deleteManuscript, storeManuscript } from "@/lib/storage/manuscripts";
+import { isBlobConfigured, verifyUploadedManuscript } from "@/lib/storage/manuscript-blob";
+import {
+  deleteManuscript,
+  storeManuscript,
+  type StoreManuscriptResult,
+} from "@/lib/storage/manuscripts";
 import { manuscriptSchema } from "@/lib/validations/manuscript";
 import { ManuscriptSubmission } from "@/models";
 
@@ -57,8 +62,16 @@ export async function POST(request: Request) {
     );
   }
 
+  // Two ways a file arrives. With Vercel Blob connected, the browser has
+  // already uploaded it and sends only where it went; otherwise the file comes
+  // in this request.
+  const blobPathname = text("blobPathname");
+  const blobFileName = text("fileName") ?? "manuscript";
   const file = form.get("file");
-  if (!(file instanceof File)) {
+  if (!blobPathname && !(file instanceof File)) {
+    return Response.json({ ok: false, error: "Please attach your manuscript." }, { status: 400 });
+  }
+  if (blobPathname && !isBlobConfigured()) {
     return Response.json({ ok: false, error: "Please attach your manuscript." }, { status: 400 });
   }
 
@@ -74,7 +87,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const stored = await storeManuscript(file);
+  const stored = blobPathname
+    ? await claimUploadedManuscript(blobPathname, blobFileName)
+    : await storeManuscript(file as File);
   if (!stored.ok) {
     return Response.json({ ok: false, error: stored.error }, { status: 400 });
   }
@@ -101,4 +116,27 @@ export async function POST(request: Request) {
   revalidatePath("/admin/manuscripts");
 
   return Response.json({ ok: true });
+}
+
+/**
+ * Accepts a file the browser already put in Vercel Blob.
+ *
+ * Its bytes are re-checked, and it may back one submission only: a pathname
+ * already in use is refused, so one upload cannot be attached to many
+ * submissions, or to someone else's.
+ */
+async function claimUploadedManuscript(
+  pathname: string,
+  fileName: string,
+): Promise<StoreManuscriptResult> {
+  await connectToDatabase();
+  if (await ManuscriptSubmission.exists({ fileKey: `blob:${pathname}` })) {
+    return { ok: false, error: "That file has already been submitted. Please attach it again." };
+  }
+  const verified = await verifyUploadedManuscript(pathname, fileName);
+  if (!verified.ok) return verified;
+  return {
+    ok: true,
+    file: { key: verified.key, fileName: verified.fileName, size: verified.size },
+  };
 }
