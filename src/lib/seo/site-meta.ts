@@ -33,7 +33,31 @@ export type SiteMeta = {
     country: string;
   };
   socials: { label: string; href: string }[];
+  /** Optional line shown in the footer, set at /admin/settings. */
+  footerText?: string;
 };
+
+/** The address as display lines: street, area, "city, region postcode", country. */
+export function addressLines(address: SiteMeta["address"]): string[] {
+  return [
+    address.line1,
+    address.line2,
+    [address.city, [address.region, address.postalCode].filter(Boolean).join(" ")]
+      .filter(Boolean)
+      .join(", "),
+    address.country,
+  ].filter((line): line is string => Boolean(line));
+}
+
+/** True while any of the contact details is still an invented placeholder. */
+export function isPlaceholderContact(site: SiteMeta): boolean {
+  const placeholder = siteConfig.contact;
+  return (
+    site.email === placeholder.email ||
+    site.phone === placeholder.phone ||
+    site.address.line1 === placeholder.address.line1
+  );
+}
 
 export const getSiteMeta = cache(async (): Promise<SiteMeta> => {
   const fallback: SiteMeta = {
@@ -69,6 +93,7 @@ export const getSiteMeta = cache(async (): Promise<SiteMeta> => {
         country: settings.contact.address.country,
       },
       socials: settings.socials.map((s) => ({ label: s.label, href: s.href })),
+      ...(settings.footerText ? { footerText: settings.footerText } : {}),
     };
   } catch {
     return fallback;

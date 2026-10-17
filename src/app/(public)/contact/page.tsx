@@ -7,7 +7,7 @@ import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
 import { PageHero } from "@/components/public/page-hero";
 import { ContactForm } from "@/components/forms/contact-form";
-import { siteConfig } from "@/lib/site-config";
+import { addressLines, getSiteMeta, isPlaceholderContact } from "@/lib/seo/site-meta";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({
@@ -16,15 +16,10 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-const { contact } = siteConfig;
-
-export default function ContactPage() {
-  const address = [
-    contact.address.line1,
-    contact.address.line2,
-    `${contact.address.city}, ${contact.address.region} ${contact.address.postalCode}`,
-    contact.address.country,
-  ].filter(Boolean);
+/** Contact details come from /admin/settings, so an edit there shows here. */
+export default async function ContactPage() {
+  const site = await getSiteMeta();
+  const address = addressLines(site.address);
 
   return (
     <>
@@ -55,20 +50,25 @@ export default function ContactPage() {
                 </li>
                 <li className="flex items-center gap-3">
                   <PhoneIcon className="size-4 shrink-0 text-primary" aria-hidden />
-                  <a href={`tel:${contact.phone}`} className="hover:text-primary">
-                    {contact.phone}
+                  <a
+                    href={`tel:${site.phone.replace(/[^\d+]/g, "")}`}
+                    className="hover:text-primary"
+                  >
+                    {site.phone}
                   </a>
                 </li>
                 <li className="flex items-center gap-3">
                   <MailIcon className="size-4 shrink-0 text-primary" aria-hidden />
-                  <a href={`mailto:${contact.email}`} className="hover:text-primary">
-                    {contact.email}
+                  <a href={`mailto:${site.email}`} className="hover:text-primary">
+                    {site.email}
                   </a>
                 </li>
               </ul>
-              <p className="mt-6 text-xs text-muted-foreground">
-                These are placeholder details until real contact information is supplied.
-              </p>
+              {isPlaceholderContact(site) ? (
+                <p className="mt-6 text-xs text-muted-foreground">
+                  These are placeholder details until real contact information is supplied.
+                </p>
+              ) : null}
             </aside>
           </div>
         </Container>

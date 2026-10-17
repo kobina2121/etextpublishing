@@ -17,7 +17,6 @@ import { organizationJsonLd, websiteJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getSiteMeta } from "@/lib/seo/site-meta";
 import { Button } from "@/components/ui/button";
-import { siteConfig } from "@/lib/site-config";
 import {
   getFeaturedAuthors,
   getFeaturedPublications,
@@ -95,8 +94,8 @@ export default async function HomePage() {
 
       <Hero
         title="Publish & Sell Your Book"
-        titleAccent={`with ${siteConfig.name}`}
-        subtitle={siteConfig.tagline}
+        titleAccent={`with ${site.name}`}
+        subtitle={site.tagline}
         images={["/hero-books.jpg", "/shelf.webp"]}
         actions={[
           { label: "View services", href: "/services", variant: "outline" },
@@ -107,7 +106,7 @@ export default async function HomePage() {
       <Section size="lg">
         <Container>
           <SectionHeading
-            title={`Become a published author with ${siteConfig.name}`}
+            title={`Become a published author with ${site.name}`}
             subtitle="A few straightforward steps"
           />
           <div className="mt-16">
