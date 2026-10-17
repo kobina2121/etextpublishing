@@ -85,7 +85,41 @@ export function isEmailConfigured(): boolean {
   return transport() !== null;
 }
 
+/**
+ * Domains reserved for documentation and testing (RFC 2606 and 6761). Nobody
+ * can receive mail there, so a send can only bounce — and bounces count
+ * against the sending domain's reputation. Tests sign up with these.
+ */
+export function isReservedTestAddress(address: string): boolean {
+  const domain = address.trim().toLowerCase().split("@").pop() ?? "";
+  return (
+    /^(example\.(com|net|org)|localhost)$/.test(domain) ||
+    /\.(test|invalid|example|localhost)$/.test(domain)
+  );
+}
+
+function printInsteadOfSending(message: MailMessage, reason: string): void {
+  console.info(
+    [
+      "",
+      "──────────────────────────────────────────────────────────────",
+      ` ${reason} — printing message instead of sending`,
+      `  To      : ${message.to}`,
+      `  Subject : ${message.subject}`,
+      "",
+      message.text,
+      "──────────────────────────────────────────────────────────────",
+      "",
+    ].join("\n"),
+  );
+}
+
 export async function sendMail(message: MailMessage): Promise<MailResult> {
+  if (isReservedTestAddress(message.to)) {
+    printInsteadOfSending(message, "TEST ADDRESS");
+    return { ok: true, delivered: false };
+  }
+
   const configured = transport();
 
   if (!configured) {
@@ -98,19 +132,7 @@ export async function sendMail(message: MailMessage): Promise<MailResult> {
 
     // Development fallback. The body is printed so a message can be checked
     // without a mail provider; this branch is unreachable in production.
-    console.info(
-      [
-        "",
-        "──────────────────────────────────────────────────────────────",
-        " EMAIL NOT CONFIGURED — printing message instead of sending",
-        `  To      : ${message.to}`,
-        `  Subject : ${message.subject}`,
-        "",
-        message.text,
-        "──────────────────────────────────────────────────────────────",
-        "",
-      ].join("\n"),
-    );
+    printInsteadOfSending(message, "EMAIL NOT CONFIGURED");
     return { ok: true, delivered: false };
   }
 
