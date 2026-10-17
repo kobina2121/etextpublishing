@@ -302,10 +302,15 @@ blocked on credentials.
       collection, and downloadable only by an admin, always as an attachment
 - [x] Deleting a submission deletes its file
 - [ ] Presign route with server-side MIME + size validation
-- [ ] Move manuscripts to a private S3 prefix; admin download via short-lived
-      presigned GET. Keys are prefixed `db:` today so both can coexist
-- [ ] Raise the manuscript limit from 4 MB back to 10 MB — Vercel refuses
-      request bodies over 4.5 MB, which only S3's direct upload avoids
+- [x] Manuscripts in **Vercel Blob**, as private files, once a Blob store is
+      connected (`BLOB_READ_WRITE_TOKEN`). The browser uploads straight to Blob
+      with a short-lived token from `/api/submissions/manuscript/upload` (one
+      document, ≤ 10 MB, randomised name, rate limited); the submission then
+      re-checks the file's bytes, size and folder, and refuses a file already
+      claimed. Admin downloads stream through the site. Without the token,
+      manuscripts stay in MongoDB at 4 MB as before. Keys are `blob:` or `db:`, so both kinds coexist
+- [ ] Clean up blobs that were uploaded but never submitted (an author who
+      closes the tab after uploading). Rare and bounded by the rate limit
 - [ ] Resend: submission receipt, staff notification, status-change notice
 
 **Exit:** a manuscript uploads, is unreachable unsigned, downloads from admin, and both emails land.
