@@ -1,13 +1,15 @@
-import { deleteTestUser, disconnect } from "./support/db";
-import { TEST_ADMIN_EMAIL } from "./support/admin-session";
+import { disconnect, sweepTestData } from "./support/db";
 
-/** Removes the test admin, so no admin account outlives the run that made it. */
+/**
+ * Removes every test record, the test admin included, so no run — finished or
+ * cut short — leaves test data on the site.
+ */
 export default async function globalTeardown() {
   try {
     process.loadEnvFile(".env.local");
   } catch {
     // CI provides the variables directly.
   }
-  await deleteTestUser(TEST_ADMIN_EMAIL);
+  await sweepTestData();
   await disconnect();
 }
