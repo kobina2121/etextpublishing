@@ -134,6 +134,73 @@ export async function deleteOrders(references: string[]) {
   await database.collection("orders").deleteMany({ reference: { $in: references } });
 }
 
+/**
+ * Removes every record a test run can create — all named "E2E …" or with an
+ * e2e- address — and the files they point at.
+ *
+ * Runs before and after each run. The suite shares the live site's database,
+ * so a run cut short (a failure, Ctrl-C) used to leave published test titles
+ * visible to visitors until someone noticed.
+ */
+export async function sweepTestData(): Promise<Record<string, number>> {
+  const database = await db();
+  const removed: Record<string, number> = {};
+  const fileIds = (docs: { [key: string]: unknown }[], field: string) =>
+    docs
+      .map((doc) => doc[field])
+      .filter((key): key is string => typeof key === "string" && key.startsWith("db:"))
+      .map((key) => new mongoose.Types.ObjectId(key.slice(3)));
+
+  const publications = await database.collection("publications").find({ title: /^E2E / }).toArray();
+  await database
+    .collection("softcopyfiles")
+    .deleteMany({ _id: { $in: fileIds(publications, "digitalFileKey") } });
+  removed.publications = (
+    await database.collection("publications").deleteMany({ title: /^E2E / })
+  ).deletedCount;
+
+  const journals = await database.collection("journals").find({ title: /^E2E / }).toArray();
+  await database
+    .collection("journalfiles")
+    .deleteMany({ _id: { $in: fileIds(journals, "pdfKey") } });
+  removed.journals = (
+    await database.collection("journals").deleteMany({ title: /^E2E / })
+  ).deletedCount;
+
+  const submissions = await database
+    .collection("manuscriptsubmissions")
+    .find({ email: /^e2e-/ })
+    .toArray();
+  await database
+    .collection("manuscriptfiles")
+    .deleteMany({ _id: { $in: fileIds(submissions, "fileKey") } });
+  removed.submissions = (
+    await database.collection("manuscriptsubmissions").deleteMany({ email: /^e2e-/ })
+  ).deletedCount;
+
+  removed.categories = (
+    await database.collection("categories").deleteMany({ name: /^E2E / })
+  ).deletedCount;
+  removed.orders = (
+    await database
+      .collection("orders")
+      .deleteMany({ $or: [{ reference: /^etx_e2e_/ }, { email: /^e2e-/ }] })
+  ).deletedCount;
+  removed.messages = (
+    await database.collection("contactmessages").deleteMany({ email: /^e2e-/ })
+  ).deletedCount;
+  const users = await database
+    .collection("users")
+    .find({ email: /^e2e-/ })
+    .project({ _id: 1 })
+    .toArray();
+  await database
+    .collection("passwordresettokens")
+    .deleteMany({ user: { $in: users.map((u) => u._id) } });
+  removed.users = (await database.collection("users").deleteMany({ email: /^e2e-/ })).deletedCount;
+  return removed;
+}
+
 export async function disconnect() {
   await mongoose.disconnect();
 }
