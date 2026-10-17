@@ -3,6 +3,7 @@ import "server-only";
 import { Types } from "mongoose";
 
 import { connectToDatabase } from "@/lib/db";
+import { deleteBlobManuscript, isBlobKey } from "@/lib/storage/manuscript-blob";
 import { ManuscriptFile } from "@/models";
 import {
   MANUSCRIPT_MAX_BYTES,
@@ -13,7 +14,8 @@ import {
 /**
  * Manuscript storage.
  *
- * Backed by MongoDB until object storage exists, like images. Unlike images,
+ * The MongoDB store, used when Vercel Blob is not connected (see
+ * ./manuscript-blob, which takes over once BLOB_READ_WRITE_TOKEN is set). Unlike images,
  * nothing here is public: there is no URL helper, and the only route that
  * reads a file is behind the admin check.
  *
@@ -103,6 +105,8 @@ export async function getManuscript(
 
 /** Best-effort cleanup: a missing file must never block deleting a submission. */
 export async function deleteManuscript(key: string | undefined | null): Promise<void> {
+  // Stored in Vercel Blob rather than here.
+  if (isBlobKey(key)) return deleteBlobManuscript(key);
   const id = idFromKey(key);
   if (!id) return;
   await connectToDatabase();

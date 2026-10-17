@@ -39,7 +39,8 @@ const contentSecurityPolicy = [
   // data: and blob: cover next/image placeholders and client-side previews.
   `img-src 'self' data: blob:${assetHost ? ` https://${assetHost}` : ""}`,
   "font-src 'self' data:",
-  "connect-src 'self'",
+  // Manuscripts upload from the browser straight to Vercel Blob's API.
+  "connect-src 'self' https://vercel.com/api/blob https://vercel.com/api/blob/",
   "media-src 'self'",
   "object-src 'none'",
   "base-uri 'self'",

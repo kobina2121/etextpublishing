@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 
 import { getAdminSession } from "@/lib/auth/guards";
 import { connectToDatabase } from "@/lib/db";
+import { isBlobKey, openBlobManuscript } from "@/lib/storage/manuscript-blob";
 import { getManuscript } from "@/lib/storage/manuscripts";
 import { ManuscriptSubmission } from "@/models";
 
@@ -27,22 +28,36 @@ export async function GET(
 
   await connectToDatabase();
   const submission = await ManuscriptSubmission.findById(id)
-    .select("fileKey")
-    .lean<{ fileKey?: string } | null>();
-  const file = await getManuscript(submission?.fileKey);
+    .select("fileKey fileName")
+    .lean<{ fileKey?: string; fileName?: string } | null>();
+  const key = submission?.fileKey;
+
+  // Stored in Vercel Blob: streamed through, never loaded whole into memory,
+  // and never by a public URL — private blobs have none.
+  if (isBlobKey(key)) {
+    const file = await openBlobManuscript(key);
+    if (!file) return new Response("Not found", { status: 404 });
+    return new Response(file.stream, {
+      headers: downloadHeaders(file.contentType, submission?.fileName || "manuscript"),
+    });
+  }
+
+  const file = await getManuscript(key);
   if (!file) return new Response("Not found", { status: 404 });
 
-  // An ASCII fallback for old clients, and the real name in RFC 5987 form.
-  const asciiName = file.fileName.replace(/[^\x20-\x7e]/g, "_").replace(/["\\]/g, "_");
-  const disposition = `attachment; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(file.fileName)}`;
-
   return new Response(new Blob([Uint8Array.from(file.data)], { type: file.contentType }), {
-    headers: {
-      "Content-Type": file.contentType,
-      "Content-Disposition": disposition,
-      "X-Content-Type-Options": "nosniff",
-      // Private, and may be withdrawn: never cache in a shared cache.
-      "Cache-Control": "private, no-store",
-    },
+    headers: downloadHeaders(file.contentType, file.fileName),
   });
+}
+
+function downloadHeaders(contentType: string, fileName: string): HeadersInit {
+  // An ASCII fallback for old clients, and the real name in RFC 5987 form.
+  const asciiName = fileName.replace(/[^\x20-\x7e]/g, "_").replace(/["\\]/g, "_");
+  return {
+    "Content-Type": contentType,
+    "Content-Disposition": `attachment; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(fileName)}`,
+    "X-Content-Type-Options": "nosniff",
+    // Private, and may be withdrawn: never cache in a shared cache.
+    "Cache-Control": "private, no-store",
+  };
 }
