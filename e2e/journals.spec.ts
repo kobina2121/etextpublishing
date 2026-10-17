@@ -24,6 +24,18 @@ const openEditor = async (page: Page) => {
   await expect(page.getByLabel("Title")).toHaveValue(title);
 };
 
+test("Publications opens a dropdown with Books and Journals", async ({ page }) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+  const nav = page.getByRole("navigation", { name: "Main" });
+  await nav.getByRole("button", { name: "Publications" }).click();
+
+  const menu = page.getByRole("menu");
+  await expect(menu.getByRole("menuitem", { name: /Books/ })).toBeVisible();
+  await menu.getByRole("menuitem", { name: /Journals/ }).click();
+  await expect(page).toHaveURL(/\/journals$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Journals");
+});
+
 test("an admin publishes a journal entry with its PDF", async ({ page, context }) => {
   await signInAsAdmin(context);
   await page.goto("/admin/journals/new", { waitUntil: "networkidle" });

@@ -3,15 +3,21 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MenuIcon, UserIcon, UserRoundCheckIcon } from "lucide-react";
+import { ChevronDownIcon, MenuIcon, UserIcon, UserRoundCheckIcon } from "lucide-react";
 
 import { Logo } from "@/components/layout/logo";
 import { ModeToggle } from "@/components/layout/mode-toggle";
 import { CartLink } from "@/components/shop/cart-link";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { siteConfig } from "@/lib/site-config";
+import { siteConfig, type NavItem } from "@/lib/site-config";
 
 /**
  * Routes whose page opens with a full-bleed dark band (Hero or PageHero), and
@@ -63,6 +69,20 @@ export function Navbar({
   const transparent = overlay && !scrolled;
 
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+  // A dropdown is active when any of its pages is.
+  const isItemActive = (item: NavItem) =>
+    item.children ? item.children.some((child) => isActive(child.href)) : isActive(item.href);
+
+  const linkTone = (active: boolean) =>
+    // Over the hero the bar is dark, so brand-coloured text uses the lighter
+    // on-dark tone; --primary would fail AA there.
+    active
+      ? transparent
+        ? "text-primary-on-dark"
+        : "text-primary"
+      : transparent
+        ? "text-white hover:text-primary-on-dark"
+        : "text-foreground hover:text-primary";
 
   return (
     <header
@@ -75,27 +95,47 @@ export function Navbar({
         <Logo inverted={transparent} priority />
 
         <nav aria-label="Main" className="hidden items-center gap-6 lg:flex">
-          {siteConfig.nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={isActive(item.href) ? "page" : undefined}
-              className={cn(
-                "text-sm font-semibold tracking-[0.08em] uppercase transition-colors",
-                // Over the hero the bar is dark, so brand-coloured text uses
-                // the lighter on-dark tone; --primary would fail AA there.
-                isActive(item.href)
-                  ? transparent
-                    ? "text-primary-on-dark"
-                    : "text-primary"
-                  : transparent
-                    ? "text-white hover:text-primary-on-dark"
-                    : "text-foreground hover:text-primary",
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {siteConfig.nav.map((item) =>
+            item.children ? (
+              <DropdownMenu key={item.href} modal={false}>
+                <DropdownMenuTrigger
+                  className={cn(
+                    "inline-flex items-center gap-1 text-sm font-semibold tracking-[0.08em] uppercase transition-colors outline-none focus-visible:underline",
+                    linkTone(isItemActive(item)),
+                  )}
+                >
+                  {item.label}
+                  <ChevronDownIcon className="size-3.5" aria-hidden />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-64 p-1.5">
+                  {item.children.map((child) => (
+                    <DropdownMenuItem key={child.href} asChild className="cursor-pointer">
+                      <Link
+                        href={child.href}
+                        aria-current={isActive(child.href) ? "page" : undefined}
+                        className="flex flex-col items-start gap-0.5 px-3 py-2.5"
+                      >
+                        <span className="text-sm font-semibold">{child.label}</span>
+                        <span className="text-xs text-muted-foreground">{child.description}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive(item.href) ? "page" : undefined}
+                className={cn(
+                  "text-sm font-semibold tracking-[0.08em] uppercase transition-colors",
+                  linkTone(isActive(item.href)),
+                )}
+              >
+                {item.label}
+              </Link>
+            ),
+          )}
         </nav>
 
         <div className="flex items-center gap-1">
@@ -138,20 +178,47 @@ export function Navbar({
                 <SheetTitle className="text-left">Menu</SheetTitle>
               </SheetHeader>
               <nav aria-label="Mobile" className="flex flex-col px-4">
-                {siteConfig.nav.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setOpen(false)}
-                    aria-current={isActive(item.href) ? "page" : undefined}
-                    className={cn(
-                      "border-b border-border py-4 text-base font-semibold tracking-[0.08em] uppercase transition-colors",
-                      isActive(item.href) ? "text-primary" : "text-foreground hover:text-primary",
-                    )}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
+                {siteConfig.nav.map((item) =>
+                  item.children ? (
+                    <div key={item.href} className="border-b border-border py-4">
+                      <p className="text-base font-semibold tracking-[0.08em] text-foreground uppercase">
+                        {item.label}
+                      </p>
+                      <ul className="mt-2 space-y-1 border-l border-border pl-4">
+                        {item.children.map((child) => (
+                          <li key={child.href}>
+                            <Link
+                              href={child.href}
+                              onClick={() => setOpen(false)}
+                              aria-current={isActive(child.href) ? "page" : undefined}
+                              className={cn(
+                                "block py-1.5 text-sm font-semibold tracking-[0.08em] uppercase transition-colors",
+                                isActive(child.href)
+                                  ? "text-primary"
+                                  : "text-muted-foreground hover:text-primary",
+                              )}
+                            >
+                              {child.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setOpen(false)}
+                      aria-current={isActive(item.href) ? "page" : undefined}
+                      className={cn(
+                        "border-b border-border py-4 text-base font-semibold tracking-[0.08em] uppercase transition-colors",
+                        isActive(item.href) ? "text-primary" : "text-foreground hover:text-primary",
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  ),
+                )}
                 <Link
                   href={account ? "/account" : "/login"}
                   onClick={() => setOpen(false)}

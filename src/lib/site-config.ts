@@ -1,5 +1,33 @@
 import { publicEnv } from "@/lib/env";
 
+/** One link in the site navigation. */
+export type NavLink = { label: string; href: string; description?: string };
+/** A top-level item: a link, or a dropdown of links. */
+export type NavItem = NavLink & { children?: readonly NavLink[] };
+
+/** Public navigation. Kept here so the Navbar, footer and sitemap share one source. */
+const NAV: readonly NavItem[] = [
+  { label: "Home", href: "/" },
+  { label: "About", href: "/about" },
+  {
+    label: "Publications",
+    href: "/publications",
+    // A dropdown in the navbar; Books is the shop, Journals are free to read.
+    children: [
+      {
+        label: "Books",
+        href: "/publications",
+        description: "Titles to buy, in print or as downloads",
+      },
+      { label: "Journals", href: "/journals", description: "Research papers, free to read" },
+    ],
+  },
+  { label: "Authors", href: "/authors" },
+  { label: "Services", href: "/services" },
+  { label: "News", href: "/news" },
+  { label: "Contact", href: "/contact" },
+];
+
 /**
  * Build-time fallback for company information.
  *
@@ -56,16 +84,7 @@ export const siteConfig = {
     linkedin: "",
   },
 
-  /** Public navigation. Kept here so the Navbar and sitemap share one source. */
-  nav: [
-    { label: "Home", href: "/" },
-    { label: "About", href: "/about" },
-    { label: "Publications", href: "/publications" },
-    { label: "Authors", href: "/authors" },
-    { label: "Services", href: "/services" },
-    { label: "News", href: "/news" },
-    { label: "Contact", href: "/contact" },
-  ],
+  nav: NAV,
 } as const;
 
 export type SiteConfig = typeof siteConfig;
