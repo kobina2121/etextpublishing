@@ -15,7 +15,8 @@ import { EDITION_LABELS } from "@/types/content";
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({
     title: "Publications",
-    description: "Browse every title we publish, across fiction, non-fiction and academic lists.",
+    description:
+      "Books from etext Publishing Network — buy in print or as a download. Search every title by name, author or ISBN.",
     path: "/publications",
   });
 }

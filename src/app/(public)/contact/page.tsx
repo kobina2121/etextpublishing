@@ -12,6 +12,8 @@ import { addressLines, getSiteMeta, isPlaceholderContact } from "@/lib/seo/site-
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({
     title: "Contact",
+    description:
+      "Contact etext Publishing Network about a title, a manuscript submission or our publishing services.",
     path: "/contact",
   });
 }
