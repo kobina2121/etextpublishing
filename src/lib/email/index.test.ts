@@ -103,6 +103,14 @@ describe("sendMail with a damaged EMAIL_FROM", () => {
   });
 });
 
+describe("per-message Reply-To", () => {
+  it("overrides the default, so a contact notification replies to the visitor", async () => {
+    vi.stubEnv("EMAIL_REPLY_TO", "etextpublishingnetwork@gmail.com");
+    await sendMail({ ...message, replyTo: "visitor@gmail.com" });
+    expect(send.mock.calls[0]?.[0]).toMatchObject({ replyTo: "visitor@gmail.com" });
+  });
+});
+
 describe("reserved test addresses", () => {
   it.each(["a@example.com", "a@example.org", "x@shop.test", "x@nowhere.invalid", "x@localhost"])(
     "never emails %s",
