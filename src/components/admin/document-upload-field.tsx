@@ -9,36 +9,53 @@ import { Spinner } from "@/components/ui/spinner";
 
 type Stored = { key: string; fileName: string; size: number };
 
-/** Lowercase, hyphenated — the PDF's name in storage. */
-function storageName(fileName: string): string {
-  const base = fileName
-    .replace(/\.pdf$/i, "")
+/** Lowercase, hyphenated, in the store's folder, keeping the extension. */
+function storageName(folder: string, fileName: string): string {
+  const dot = fileName.lastIndexOf(".");
+  const ext = dot > 0 ? fileName.slice(dot).toLowerCase() : "";
+  const base = (dot > 0 ? fileName.slice(0, dot) : fileName)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 60);
-  return `journals/${base || "journal"}.pdf`;
+  return `${folder}/${base || "file"}${ext}`;
 }
 
 /**
- * Uploads a journal's PDF and reports back a storage key.
+ * Uploads a private document — a journal PDF, a softcopy — and reports back a
+ * storage key for the form to save.
  *
  * With Vercel Blob the file goes straight from the browser to storage; the
- * server then checks it is a real PDF. Without Blob it is sent to our server,
- * which caps it at 4 MB.
+ * server then checks its bytes. Without Blob it is sent to our server, which
+ * caps it lower.
  */
-export function JournalPdfField({
+export function DocumentUploadField({
   value,
   onChange,
   storage,
   maxBytes,
   invalid,
+  folder,
+  extensions,
+  noun,
+  label,
+  endpoint,
 }: {
   value: Stored | null;
   onChange: (value: Stored | null) => void;
   storage: "blob" | "server";
   maxBytes: number;
   invalid?: boolean;
+  /** Blob folder, matching the server's store. */
+  folder: string;
+  /** Accepted extensions, e.g. [".pdf", ".epub"]. */
+  extensions: readonly string[];
+  /** For messages: "PDF", "PDF or EPUB". */
+  noun: string;
+  /** Accessible name of the file input. */
+  label: string;
+  /** e.g. "/api/admin/softcopies" — `/upload` issues Blob tokens, `/file` stores or checks. */
+  endpoint: string;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [percent, setPercent] = useState<number | null>(null);
@@ -47,8 +64,8 @@ export function JournalPdfField({
 
   const send = async (file: File) => {
     setError(null);
-    if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") {
-      setError("Choose a PDF file.");
+    if (!extensions.some((ext) => file.name.toLowerCase().endsWith(ext))) {
+      setError(`Choose a ${noun} file.`);
       return;
     }
     if (file.size > maxBytes) {
@@ -60,13 +77,13 @@ export function JournalPdfField({
     try {
       let response: Response;
       if (storage === "blob") {
-        const blob = await upload(storageName(file.name), file, {
+        const blob = await upload(storageName(folder, file.name), file, {
           access: "private",
-          handleUploadUrl: "/api/admin/journals/upload",
+          handleUploadUrl: `${endpoint}/upload`,
           multipart: file.size > 5 * 1024 * 1024,
           onUploadProgress: ({ percentage }) => setPercent(Math.round(percentage)),
         });
-        response = await fetch("/api/admin/journals/file", {
+        response = await fetch(`${endpoint}/file`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ blobPathname: blob.pathname, fileName: file.name }),
@@ -74,7 +91,7 @@ export function JournalPdfField({
       } else {
         const body = new FormData();
         body.set("file", file);
-        response = await fetch("/api/admin/journals/file", { method: "POST", body });
+        response = await fetch(`${endpoint}/file`, { method: "POST", body });
       }
       const result = (await response.json()) as
         ({ ok: true } & Stored) | { ok: false; error: string };
@@ -121,7 +138,7 @@ export function JournalPdfField({
               type="button"
               variant="ghost"
               size="icon"
-              aria-label="Remove PDF"
+              aria-label={`Remove ${noun}`}
               onClick={() => onChange(null)}
             >
               <XIcon aria-hidden />
@@ -137,9 +154,11 @@ export function JournalPdfField({
             onClick={() => input.current?.click()}
           >
             {percent !== null ? <Spinner /> : <UploadIcon aria-hidden />}
-            {percent !== null ? `Uploading… ${percent}%` : "Upload the PDF"}
+            {percent !== null ? `Uploading… ${percent}%` : `Upload the ${noun}`}
           </Button>
-          <span className="text-xs text-muted-foreground">PDF only, up to {maxMb} MB.</span>
+          <span className="text-xs text-muted-foreground">
+            {noun}, up to {maxMb} MB.
+          </span>
         </div>
       )}
       {error ? (
@@ -150,8 +169,8 @@ export function JournalPdfField({
       <input
         ref={input}
         type="file"
-        accept="application/pdf,.pdf"
-        aria-label="Journal PDF"
+        accept={extensions.join(",")}
+        aria-label={label}
         className="sr-only"
         onChange={(event) => {
           const file = event.target.files?.[0];
