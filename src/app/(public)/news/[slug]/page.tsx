@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { JsonLd } from "@/components/seo/json-ld";
 import { articleJsonLd, breadcrumbJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { isPlaceholderText } from "@/lib/seo/placeholder";
 
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
@@ -51,6 +52,7 @@ export async function generateMetadata({ params }: PageProps<"/news/[slug]">): P
     title: article.title,
     description: article.excerpt,
     path: `/news/${article.slug}`,
+    noIndex: isPlaceholderText(article.excerpt, article.body),
     type: "article",
     publishedTime: article.publishedAt,
     ...(article.coverImage ? { image: article.coverImage } : {}),
