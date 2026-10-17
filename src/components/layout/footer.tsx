@@ -3,7 +3,7 @@ import { MailIcon, MapPinIcon, PhoneIcon } from "lucide-react";
 
 import { Logo } from "@/components/layout/logo";
 import { addressLines, getSiteMeta } from "@/lib/seo/site-meta";
-import { siteConfig } from "@/lib/site-config";
+import { siteConfig, type NavLink } from "@/lib/site-config";
 
 /**
  * Site footer. Company details come from /admin/settings (via getSiteMeta),
@@ -45,13 +45,18 @@ export async function Footer() {
         <nav aria-label="Footer" className="space-y-4">
           <h2 className="text-sm font-semibold tracking-[0.14em] text-white uppercase">Explore</h2>
           <ul className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-            {siteConfig.nav.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href} className="transition-colors hover:text-primary-on-dark">
-                  {item.label}
-                </Link>
-              </li>
-            ))}
+            {siteConfig.nav
+              .flatMap((item): NavLink[] => [
+                item,
+                ...(item.children ?? []).filter((child) => child.href !== item.href),
+              ])
+              .map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href} className="transition-colors hover:text-primary-on-dark">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
           </ul>
         </nav>
 
