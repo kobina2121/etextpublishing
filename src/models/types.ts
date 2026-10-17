@@ -285,6 +285,26 @@ export type ManuscriptFileDoc = WithTimestamps & {
   filename: string;
 };
 
+/**
+ * The About page's words, edited from /admin/about.
+ *
+ * A singleton like SiteSettings. Until it is first saved, the page shows the
+ * defaults in lib/about-defaults.ts — the text it shipped with.
+ */
+export type AboutPageDoc = WithTimestamps & {
+  _id: Types.ObjectId;
+  key: "about";
+  heroTitle: string;
+  heroDescription: string;
+  /** Uploaded image URL or an external one; empty for the standard banner. */
+  heroImage?: string;
+  /** Plain text. A blank line starts a new paragraph. */
+  intro: string;
+  sectionTitle: string;
+  sectionSubtitle?: string;
+  pillars: { title: string; body: string }[];
+};
+
 export type SiteSettingsDoc = WithTimestamps & {
   _id: Types.ObjectId;
   /** Fixed discriminator that keeps this collection to a single document. */

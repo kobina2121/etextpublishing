@@ -1,6 +1,7 @@
 import {
   BookOpenIcon,
   InboxIcon,
+  InfoIcon,
   LayoutDashboardIcon,
   MailIcon,
   NewspaperIcon,
@@ -25,6 +26,7 @@ const ICONS = {
   Newspaper: NewspaperIcon,
   Wrench: WrenchIcon,
   Inbox: InboxIcon,
+  Info: InfoIcon,
   Mail: MailIcon,
   Settings: SettingsIcon,
   ShoppingBag: ShoppingBagIcon,

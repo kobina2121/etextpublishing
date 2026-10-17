@@ -14,6 +14,7 @@ export const adminNav = [
   { label: "Orders", href: "/admin/orders", icon: "ShoppingBag" },
   { label: "Manuscripts", href: "/admin/manuscripts", icon: "Inbox" },
   { label: "Messages", href: "/admin/messages", icon: "Mail" },
+  { label: "About page", href: "/admin/about", icon: "Info" },
   { label: "Settings", href: "/admin/settings", icon: "Settings" },
 ] as const;
 
