@@ -286,6 +286,38 @@ export type ManuscriptFileDoc = WithTimestamps & {
 };
 
 /**
+ * A journal entry: an academic paper or issue, free for anyone to read.
+ *
+ * The full text is a PDF, read in the browser or downloaded. `pdfKey` is a
+ * storage key, never a public URL: `blob:` for Vercel Blob, `db:` for the
+ * MongoDB fallback. Only published entries are reachable from the site.
+ */
+export type JournalDoc = WithTimestamps & {
+  _id: Types.ObjectId;
+  title: string;
+  slug: string;
+  authors: string[];
+  volume?: string;
+  issue?: string;
+  publishedAt: Date;
+  abstract: string;
+  keywords: string[];
+  coverImage?: string;
+  pdfKey?: string;
+  pdfName?: string;
+  pdfSize?: number;
+  status: "draft" | "published";
+};
+
+/** A journal PDF kept in MongoDB, when Vercel Blob is not connected. */
+export type JournalFileDoc = WithTimestamps & {
+  _id: Types.ObjectId;
+  data: Buffer;
+  size: number;
+  filename: string;
+};
+
+/**
  * The About page's words, edited from /admin/about.
  *
  * A singleton like SiteSettings. Until it is first saved, the page shows the

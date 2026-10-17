@@ -3,6 +3,7 @@ import {
   InboxIcon,
   InfoIcon,
   LayoutDashboardIcon,
+  LibraryIcon,
   MailIcon,
   NewspaperIcon,
   SettingsIcon,
@@ -20,6 +21,7 @@ import {
  */
 const ICONS = {
   LayoutDashboard: LayoutDashboardIcon,
+  Library: LibraryIcon,
   BookOpen: BookOpenIcon,
   Users: UsersIcon,
   Tags: TagsIcon,
