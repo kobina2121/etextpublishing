@@ -315,10 +315,25 @@ export async function listAuthors(
   };
 }
 
+/**
+ * Authors for the home page: featured ones first, topped up with the most
+ * recently added so the section is not empty just because nobody has been
+ * marked Featured yet.
+ */
 export async function getFeaturedAuthors(limit = 4): Promise<AuthorType[]> {
   await connectToDatabase();
-  const docs = await Author.find({ featured: true }).limit(limit).lean<Lean<AuthorDoc>[]>();
-  return docs.map(toAuthor);
+  const featured = await Author.find({ featured: true })
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .lean<Lean<AuthorDoc>[]>();
+  const others =
+    featured.length < limit
+      ? await Author.find({ featured: { $ne: true } })
+          .sort({ createdAt: -1 })
+          .limit(limit - featured.length)
+          .lean<Lean<AuthorDoc>[]>()
+      : [];
+  return [...featured, ...others].map(toAuthor);
 }
 
 export async function getAuthorBySlug(slug: string): Promise<AuthorType | null> {

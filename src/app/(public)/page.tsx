@@ -165,16 +165,24 @@ export default async function HomePage() {
         </Container>
       </Section>
 
-      <Section size="lg" className="bg-muted/40">
-        <Container width="wide">
-          <SectionHeading title="Our authors" subtitle="The writers we publish" />
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {authors.map((author) => (
-              <AuthorCard key={author.id} author={author} />
-            ))}
-          </div>
-        </Container>
-      </Section>
+      {authors.length > 0 ? (
+        <Section size="lg" className="bg-muted/40">
+          <Container width="wide">
+            <SectionHeading title="Our authors" subtitle="The writers we publish" />
+            {/* Centred, so one or two authors do not sit at the left of an empty row. */}
+            <div className="mt-14 flex flex-wrap justify-center gap-6">
+              {authors.map((author) => (
+                <div
+                  key={author.id}
+                  className="w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc((100%-3rem)/3)]"
+                >
+                  <AuthorCard author={author} />
+                </div>
+              ))}
+            </div>
+          </Container>
+        </Section>
+      ) : null}
 
       {/* Hidden until there is something to show. */}
       {articles.length > 0 ? (
