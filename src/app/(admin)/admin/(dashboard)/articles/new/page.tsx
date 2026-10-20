@@ -1,19 +1,17 @@
 import type { Metadata } from "next";
 
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { getFormOptions } from "@/server/admin/queries";
 
-import { journalStorage } from "../../journals/storage";
-import { ArticleForm } from "../article-form";
+import { JournalForm } from "../journal-form";
+import { journalStorage } from "../storage";
 
 export const metadata: Metadata = { title: "New article" };
 
-export default async function NewArticlePage() {
-  const { categories } = await getFormOptions();
+export default function NewJournalPage() {
   return (
     <div className="mx-auto w-full max-w-6xl">
-      <AdminPageHeader title="New article" />
-      <ArticleForm categories={categories} {...journalStorage()} />
+      <AdminPageHeader title="New article" description="Free for anyone to read once published." />
+      <JournalForm {...journalStorage()} />
     </div>
   );
 }

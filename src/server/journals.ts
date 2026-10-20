@@ -21,6 +21,7 @@ export type PublicJournal = {
   coverImage: string;
   hasPdf: boolean;
   pdfSize: number;
+  links: { label: string; href: string }[];
 };
 
 function toPublic(doc: JournalDoc): PublicJournal {
@@ -37,6 +38,7 @@ function toPublic(doc: JournalDoc): PublicJournal {
     coverImage: doc.coverImage ?? "",
     hasPdf: Boolean(doc.pdfKey),
     pdfSize: doc.pdfSize ?? 0,
+    links: (doc.links ?? []).map(({ label, href }) => ({ label, href })),
   };
 }
 
@@ -48,7 +50,10 @@ export function volumeIssue(journal: Pick<PublicJournal, "volume" | "issue">): s
 }
 
 /** Published entries, newest first. Free text search over title, authors and keywords. */
-export async function listJournals({ q }: { q?: string } = {}): Promise<PublicJournal[]> {
+export async function listJournals({
+  q,
+  limit = 200,
+}: { q?: string; limit?: number } = {}): Promise<PublicJournal[]> {
   await connectToDatabase();
   const filter: Record<string, unknown> = { status: "published" };
   const term = q?.trim();
@@ -56,7 +61,10 @@ export async function listJournals({ q }: { q?: string } = {}): Promise<PublicJo
     const pattern = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
     filter.$or = [{ title: pattern }, { authors: pattern }, { keywords: pattern }];
   }
-  const docs = await Journal.find(filter).sort({ publishedAt: -1 }).limit(200).lean<JournalDoc[]>();
+  const docs = await Journal.find(filter)
+    .sort({ publishedAt: -1 })
+    .limit(limit)
+    .lean<JournalDoc[]>();
   return docs.map(toPublic);
 }
 
@@ -148,6 +156,7 @@ export async function getJournalForEdit(
     pdfKey: doc.pdfKey ?? "",
     pdfName: doc.pdfName ?? "",
     pdfSize: doc.pdfSize ?? 0,
+    links: (doc.links ?? []).map(({ label, href }) => ({ label, href })),
     status: doc.status,
   };
 }

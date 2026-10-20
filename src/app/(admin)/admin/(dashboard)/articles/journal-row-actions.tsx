@@ -14,9 +14,9 @@ export function JournalRowActions({
 }) {
   return (
     <EntityRowActions
-      editHref={`/admin/journals/${id}`}
+      editHref={`/admin/articles/${id}`}
       name={title}
-      entity="Journal entry"
+      entity="Article"
       status={status}
       onToggleStatus={(next) => setJournalStatus(id, next)}
       onDelete={() => deleteJournal(id)}

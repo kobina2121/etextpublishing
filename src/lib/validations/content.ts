@@ -1,7 +1,6 @@
 import { z } from "zod";
 
-import { storageKeySchema } from "@/lib/validations/journal";
-import { imageRefSchema, objectIdSchema, slugSchema } from "@/lib/validations/publication";
+import { imageRefSchema, slugSchema } from "@/lib/validations/publication";
 import { PUBLICATION_STATUSES, SUBMISSION_STATUSES } from "@/types/content";
 
 /** Repeated link rows used by authors and site settings. */
@@ -34,40 +33,6 @@ export const categorySchema = z.object({
   name: z.string().trim().min(2, "A name is required.").max(80),
   slug: slugSchema,
   description: z.string().trim().max(400).optional().or(z.literal("")),
-});
-
-export const articleSchema = z.object({
-  title: z.string().trim().min(2, "A title is required.").max(200),
-  slug: slugSchema,
-  excerpt: z.string().trim().min(10, "Write a short excerpt.").max(300),
-  body: z.string().trim().min(50, "Write the article body.").max(50000),
-  coverImage: imageRefSchema,
-  authorName: z.string().trim().min(2, "Who wrote this?").max(120),
-  category: objectIdSchema,
-  /**
-   * Comma-separated in the form; normalised to an array here. Also accepts the
-   * array: the form submits values already parsed by this schema, and the
-   * server action parses them again.
-   */
-  tags: z
-    .union([z.string(), z.array(z.string())])
-    .optional()
-    .transform((value) =>
-      (Array.isArray(value) ? value.join(",") : (value ?? ""))
-        .split(",")
-        .map((tag) => tag.trim().toLowerCase())
-        .filter(Boolean)
-        .slice(0, 12),
-    ),
-  publishedAt: z.coerce.date({ message: "Choose a publication date." }),
-  status: z.enum(PUBLICATION_STATUSES).default("draft"),
-  featured: z.boolean().default(false),
-  /** Further reading, shown under the article: label and address. */
-  links: linkListSchema,
-  /** Optional: a PDF readers can open or download from the article page. */
-  pdfKey: storageKeySchema,
-  pdfName: z.string().trim().max(200).optional().or(z.literal("")),
-  pdfSize: z.coerce.number().int().min(0).optional().default(0),
 });
 
 export const serviceSchema = z.object({
@@ -107,9 +72,6 @@ export const siteSettingsSchema = z.object({
 
 export type AuthorInput = z.input<typeof authorSchema>;
 export type CategoryInput = z.input<typeof categorySchema>;
-export type ArticleInput = z.input<typeof articleSchema>;
-/** Output differs from input: `tags` is a comma-separated string that becomes an array. */
-export type ArticleValues = z.output<typeof articleSchema>;
 export type ServiceInput = z.input<typeof serviceSchema>;
 export type SubmissionUpdateInput = z.input<typeof submissionUpdateSchema>;
 export type SiteSettingsInput = z.input<typeof siteSettingsSchema>;

@@ -2,10 +2,8 @@ import { Schema, deleteModel, model, models, type Model } from "mongoose";
 
 import type {
   AboutPageDoc,
-  ArticleDoc,
   ImageDoc,
   JournalDoc,
-  ArticleFileDoc,
   JournalFileDoc,
   SoftcopyFileDoc,
   ManuscriptFileDoc,
@@ -154,31 +152,6 @@ const publicationSchema = new Schema<PublicationDoc>(
 // Drives the default listing: published titles, newest first.
 publicationSchema.index({ status: 1, publicationDate: -1 });
 publicationSchema.index({ status: 1, featured: 1, publicationDate: -1 });
-
-// --- Article ----------------------------------------------------------------
-
-const articleSchema = new Schema<ArticleDoc>(
-  {
-    title: { type: String, required: true, trim: true },
-    slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    excerpt: { type: String, required: true },
-    body: { type: String, required: true },
-    coverImage: { type: String, trim: true },
-    authorName: { type: String, required: true, trim: true },
-    category: { type: Schema.Types.ObjectId, ref: "Category", required: true, index: true },
-    tags: { type: [String], default: [] },
-    publishedAt: { type: Date, required: true },
-    status: { type: String, enum: STATUSES, default: "draft", required: true },
-    featured: { type: Boolean, default: false },
-    links: { type: [linkSchema], default: [] },
-    pdfKey: { type: String, trim: true },
-    pdfName: { type: String, trim: true },
-    pdfSize: { type: Number, min: 0 },
-  },
-  { timestamps: true },
-);
-
-articleSchema.index({ status: 1, publishedAt: -1 });
 
 // --- Service ----------------------------------------------------------------
 
@@ -380,6 +353,7 @@ const journalSchema = new Schema<JournalDoc>(
     pdfKey: { type: String, trim: true },
     pdfName: { type: String, trim: true },
     pdfSize: { type: Number, min: 0 },
+    links: { type: [linkSchema], default: [] },
     status: { type: String, enum: ["draft", "published"], default: "draft", required: true },
   },
   { timestamps: true },
@@ -399,7 +373,6 @@ const journalFileSchema = new Schema<JournalFileDoc>(
 
 // Same shape: a private document kept in MongoDB until Vercel Blob is connected.
 const softcopyFileSchema = journalFileSchema.clone();
-const articleFileSchema = journalFileSchema.clone();
 
 // --- AboutPage --------------------------------------------------------------
 
@@ -466,7 +439,6 @@ export const User = defineModel<UserDoc>("User", userSchema);
 export const Category = defineModel<CategoryDoc>("Category", categorySchema);
 export const Author = defineModel<AuthorDoc>("Author", authorSchema);
 export const Publication = defineModel<PublicationDoc>("Publication", publicationSchema);
-export const Article = defineModel<ArticleDoc>("Article", articleSchema);
 export const Service = defineModel<ServiceDoc>("Service", serviceSchema);
 export const ManuscriptSubmission = defineModel<ManuscriptSubmissionDoc>(
   "ManuscriptSubmission",
@@ -492,4 +464,3 @@ export const AboutPage = defineModel<AboutPageDoc>("AboutPage", aboutPageSchema)
 export const Journal = defineModel<JournalDoc>("Journal", journalSchema);
 export const JournalFile = defineModel<JournalFileDoc>("JournalFile", journalFileSchema);
 export const SoftcopyFile = defineModel<SoftcopyFileDoc>("SoftcopyFile", softcopyFileSchema);
-export const ArticleFile = defineModel<ArticleFileDoc>("ArticleFile", articleFileSchema);

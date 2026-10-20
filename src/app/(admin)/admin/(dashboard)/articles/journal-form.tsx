@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { DocumentUploadField } from "@/components/admin/document-upload-field";
 import { ImageUpload } from "@/components/admin/image-upload";
+import { LinkListField } from "@/components/admin/link-list-field";
 import { SlugField } from "@/components/admin/slug-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ const EMPTY: JournalInput = {
   pdfKey: "",
   pdfName: "",
   pdfSize: 0,
+  links: [],
   status: "draft",
 };
 
@@ -75,12 +77,21 @@ export function JournalForm({
     ? { key: pdfKey, fileName: pdfName || "journal.pdf", size: Number(pdfSize ?? 0) }
     : null;
 
+  // Row errors live at links.N.label / links.N.href; show each row's once.
+  const linkErrors = (Array.isArray(errors.links) ? errors.links : [])
+    .map((row, index) =>
+      row?.label || row?.href
+        ? { message: `Link ${index + 1}: ${(row.label ?? row.href)?.message}` }
+        : undefined,
+    )
+    .filter(Boolean);
+
   const onSubmit = async (values: JournalValues) => {
     setFormError(null);
     const result = initial ? await updateJournal(initial.id, values) : await createJournal(values);
     if (result.ok) {
       toast.success(result.message ?? "Saved.");
-      router.push("/admin/journals");
+      router.push("/admin/articles");
       router.refresh();
       return;
     }
@@ -121,7 +132,7 @@ export function JournalForm({
                           value={field.value ?? ""}
                           onChange={field.onChange}
                           sourceValue={title ?? ""}
-                          prefix="/journals/"
+                          prefix="/articles/"
                         />
                       )}
                     />
@@ -166,7 +177,7 @@ export function JournalForm({
                   folder="journals"
                   extensions={[".pdf"]}
                   noun="PDF"
-                  label="Journal PDF"
+                  label="Article PDF"
                   endpoint="/api/admin/journals"
                   storage={storage}
                   maxBytes={maxBytes}
@@ -184,6 +195,22 @@ export function JournalForm({
                   Readers open this in their browser or download it, free.
                 </FieldDescription>
                 <FieldError errors={[errors.pdfKey]} />
+              </Field>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Links (optional)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Field data-invalid={!!errors.links}>
+                <LinkListField control={control} name="links" addLabel="Add link" />
+                <FieldDescription>
+                  Further reading shown under the article, e.g. the journal it appeared in or a
+                  dataset. Each needs a label and a full web address (https://…).
+                </FieldDescription>
+                <FieldError errors={linkErrors} />
               </Field>
             </CardContent>
           </Card>
@@ -240,7 +267,7 @@ export function JournalForm({
                         <ImageUpload
                           value={field.value ?? ""}
                           onChange={field.onChange}
-                          label="journal cover"
+                          label="article cover"
                         />
                       )}
                     />
@@ -254,7 +281,7 @@ export function JournalForm({
           <div className="flex gap-2">
             <Button type="submit" disabled={isSubmitting} className="flex-1">
               {isSubmitting ? <Spinner /> : null}
-              {initial ? "Save changes" : "Create journal entry"}
+              {initial ? "Save changes" : "Create article"}
             </Button>
             <Button type="button" variant="outline" onClick={() => router.back()}>
               Cancel

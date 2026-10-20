@@ -5,35 +5,35 @@ import { ExternalLinkIcon } from "lucide-react";
 
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Button } from "@/components/ui/button";
-import { getArticleForEdit, getFormOptions } from "@/server/admin/queries";
+import { getJournalForEdit } from "@/server/journals";
 
-import { journalStorage } from "../../journals/storage";
-import { ArticleForm } from "../article-form";
+import { JournalForm } from "../journal-form";
+import { journalStorage } from "../storage";
 
 export const metadata: Metadata = { title: "Edit article" };
 
-export default async function EditArticlePage({ params }: PageProps<"/admin/articles/[id]">) {
+export default async function EditJournalPage({ params }: PageProps<"/admin/articles/[id]">) {
   const { id } = await params;
-  const [article, options] = await Promise.all([getArticleForEdit(id), getFormOptions()]);
-  if (!article) notFound();
+  const journal = await getJournalForEdit(id);
+  if (!journal) notFound();
 
   return (
     <div className="mx-auto w-full max-w-6xl">
       <AdminPageHeader
-        title={article.title}
+        title={journal.title}
         description="Edit this article."
         actions={
-          article.status === "published" ? (
-            <Button asChild variant="outline">
-              <Link href={`/news/${article.slug}`} target="_blank" rel="noopener noreferrer">
+          journal.status === "published" ? (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/articles/${journal.slug}`} target="_blank" rel="noopener noreferrer">
                 <ExternalLinkIcon aria-hidden />
-                View live
+                View on site
               </Link>
             </Button>
           ) : null
         }
       />
-      <ArticleForm initial={article} categories={options.categories} {...journalStorage()} />
+      <JournalForm initial={journal} {...journalStorage()} />
     </div>
   );
 }

@@ -29,14 +29,33 @@ describe("journalSchema", () => {
     expect(journalSchema.safeParse(valid).success).toBe(true);
   });
 
-  it("will not publish without the PDF", () => {
-    const result = journalSchema.safeParse({ ...valid, pdfKey: "" });
-    expect(result.success).toBe(false);
-    expect(result.error?.issues[0]?.path).toEqual(["pdfKey"]);
+  // An article may link to where it was published instead of carrying a PDF.
+  it("publishes without a PDF", () => {
+    expect(journalSchema.safeParse({ ...valid, pdfKey: "" }).success).toBe(true);
   });
 
-  it("lets a draft be saved before its PDF is ready", () => {
-    expect(journalSchema.safeParse({ ...valid, pdfKey: "", status: "draft" }).success).toBe(true);
+  it("accepts labelled https links, and none", () => {
+    const links = [
+      { label: "DOI: 10.4314/just.v44i2.9", href: "https://doi.org/10.4314/just.v44i2.9" },
+    ];
+    expect(journalSchema.parse({ ...valid, links }).links).toEqual(links);
+    expect(journalSchema.parse(valid).links).toEqual([]);
+  });
+
+  it.each(["javascript:alert(1)", "data:text/html,hi", "ftp://example.org", "example.org"])(
+    "rejects the link %s",
+    (href) => {
+      expect(journalSchema.safeParse({ ...valid, links: [{ label: "Bad", href }] }).success).toBe(
+        false,
+      );
+    },
+  );
+
+  it("needs a label on every link", () => {
+    expect(
+      journalSchema.safeParse({ ...valid, links: [{ label: "", href: "https://example.org" }] })
+        .success,
+    ).toBe(false);
   });
 
   it("refuses a storage key it did not issue", () => {

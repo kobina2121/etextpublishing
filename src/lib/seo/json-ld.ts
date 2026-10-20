@@ -4,7 +4,7 @@ import { toMajorUnits } from "@/lib/money";
 import { absoluteUrl, type SiteMeta } from "@/lib/seo/site-meta";
 import { siteConfig } from "@/lib/site-config";
 import type { PublicJournal } from "@/server/journals";
-import type { ArticleWithRelations, Author, PublicationWithRelations } from "@/types/content";
+import type { Author, PublicationWithRelations } from "@/types/content";
 
 /**
  * Structured data builders.
@@ -156,26 +156,6 @@ export function personJsonLd(author: Author) {
   };
 }
 
-export function articleJsonLd(article: ArticleWithRelations) {
-  const path = `/news/${article.slug}`;
-  return {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    "@id": absoluteUrl(`${path}#article`),
-    headline: article.title,
-    url: absoluteUrl(path),
-    description: article.excerpt,
-    datePublished: article.publishedAt.toISOString(),
-    dateModified: article.publishedAt.toISOString(),
-    articleSection: article.category.name,
-    inLanguage: "en",
-    author: { "@type": "Organization", "@id": absoluteUrl("/#organization") },
-    publisher: { "@id": absoluteUrl("/#organization") },
-    ...(article.tags.length > 0 ? { keywords: article.tags.join(", ") } : {}),
-    ...(article.coverImage ? { image: absoluteUrl(article.coverImage) } : {}),
-  };
-}
-
 export function breadcrumbJsonLd(trail: { name: string; path: string }[]) {
   return {
     "@context": "https://schema.org",
@@ -194,7 +174,7 @@ export function breadcrumbJsonLd(trail: { name: string; path: string }[]) {
  * scholarMeta), which are what Scholar itself reads.
  */
 export function scholarlyArticleJsonLd(journal: PublicJournal) {
-  const path = `/journals/${journal.slug}`;
+  const path = `/articles/${journal.slug}`;
   return {
     "@context": "https://schema.org",
     "@type": "ScholarlyArticle",
@@ -251,10 +231,10 @@ export function scholarMeta(
     citation_journal_title: siteName,
     citation_publisher: siteName,
     citation_language: "en",
-    citation_abstract_html_url: absoluteUrl(`/journals/${journal.slug}`),
+    citation_abstract_html_url: absoluteUrl(`/articles/${journal.slug}`),
     ...(journal.volume ? { citation_volume: journal.volume } : {}),
     ...(journal.issue ? { citation_issue: journal.issue } : {}),
     ...(journal.keywords.length > 0 ? { citation_keywords: journal.keywords.join("; ") } : {}),
-    ...(journal.hasPdf ? { citation_pdf_url: absoluteUrl(`/journals/${journal.slug}/pdf`) } : {}),
+    ...(journal.hasPdf ? { citation_pdf_url: absoluteUrl(`/articles/${journal.slug}/pdf`) } : {}),
   };
 }

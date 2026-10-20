@@ -111,29 +111,6 @@ export type PublicationWithRelations = Publication & {
   category: Category;
 };
 
-export type Article = {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string;
-  body: string;
-  coverImage?: string;
-  authorName: string;
-  categoryId: string;
-  tags: string[];
-  publishedAt: Date;
-  status: PublicationStatus;
-  featured: boolean;
-  links: { label: string; href: string }[];
-  /** Whether a PDF is attached; it is read through /news/[slug]/pdf. */
-  hasPdf: boolean;
-  pdfSize?: number;
-};
-
-export type ArticleWithRelations = Article & {
-  category: Category;
-};
-
 export type Service = {
   id: string;
   title: string;

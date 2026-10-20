@@ -2,7 +2,7 @@ import "server-only";
 
 import { connectToDatabase } from "@/lib/db";
 import { isPlaceholderText } from "@/lib/seo/placeholder";
-import { Article, Author, Journal, Publication } from "@/models";
+import { Author, Journal, Publication } from "@/models";
 
 export type SitemapEntry = { slug: string; updatedAt?: Date };
 
@@ -22,19 +22,16 @@ const real = (rows: Row[]): SitemapEntry[] =>
 export async function getSitemapEntries(): Promise<{
   publications: SitemapEntry[];
   authors: SitemapEntry[];
+  /** Journal entries, shown on the site as articles. */
   articles: SitemapEntry[];
-  journals: SitemapEntry[];
 }> {
   await connectToDatabase();
   const fields = { slug: 1, updatedAt: 1 } as const;
-  const [publications, authors, articles, journals] = await Promise.all([
+  const [publications, authors, articles] = await Promise.all([
     Publication.find({ status: "published" }, { ...fields, excerpt: 1, description: 1 }).lean<
       (SitemapEntry & { excerpt?: string; description?: string })[]
     >(),
     Author.find({}, { ...fields, bio: 1 }).lean<(SitemapEntry & { bio?: string })[]>(),
-    Article.find({ status: "published" }, { ...fields, excerpt: 1, body: 1 }).lean<
-      (SitemapEntry & { excerpt?: string; body?: string })[]
-    >(),
     Journal.find({ status: "published" }, fields).lean<SitemapEntry[]>(),
   ]);
   return {
@@ -42,7 +39,6 @@ export async function getSitemapEntries(): Promise<{
       publications.map((p) => ({ ...p, text: [p.excerpt ?? "", p.description ?? ""] })),
     ),
     authors: real(authors.map((a) => ({ ...a, text: [a.bio ?? ""] }))),
-    articles: real(articles.map((a) => ({ ...a, text: [a.excerpt ?? "", a.body ?? ""] }))),
-    journals,
+    articles,
   };
 }

@@ -7,10 +7,10 @@
 export const adminNav = [
   { label: "Dashboard", href: "/admin", icon: "LayoutDashboard", exact: true },
   { label: "Publications", href: "/admin/publications", icon: "BookOpen" },
-  { label: "Journals", href: "/admin/journals", icon: "Library" },
+  // Articles are journal entries (the Journal model); there is no other kind.
+  { label: "Articles", href: "/admin/articles", icon: "Library" },
   { label: "Authors", href: "/admin/authors", icon: "Users" },
   { label: "Categories", href: "/admin/categories", icon: "Tags" },
-  { label: "Articles", href: "/admin/articles", icon: "Newspaper" },
   { label: "Services", href: "/admin/services", icon: "Wrench" },
   { label: "Orders", href: "/admin/orders", icon: "ShoppingBag" },
   { label: "Manuscripts", href: "/admin/manuscripts", icon: "Inbox" },

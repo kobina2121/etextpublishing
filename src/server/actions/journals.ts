@@ -27,13 +27,15 @@ function toDocument(values: JournalValues) {
     pdfKey: values.pdfKey || undefined,
     pdfName: values.pdfName || undefined,
     pdfSize: values.pdfSize || undefined,
+    links: values.links,
     status: values.status,
   };
 }
 
 function refresh(...slugs: (string | undefined)[]) {
-  revalidatePath("/journals");
-  for (const slug of slugs) if (slug) revalidatePath(`/journals/${slug}`);
+  revalidatePath("/"); // the home page lists the latest articles
+  revalidatePath("/articles");
+  for (const slug of slugs) if (slug) revalidatePath(`/articles/${slug}`);
   revalidatePath("/sitemap.xml");
 }
 
@@ -56,7 +58,7 @@ export async function createJournal(raw: unknown): Promise<ActionResult> {
     try {
       const created = await Journal.create(toDocument(parsed.data));
       refresh(created.slug);
-      return { ok: true, message: "Journal entry created.", id: created._id.toString() };
+      return { ok: true, message: "Article created.", id: created._id.toString() };
     } catch (error) {
       if (isDuplicateKeyError(error)) return slugTaken;
       throw error;
@@ -79,7 +81,7 @@ export async function updateJournal(id: string, raw: unknown): Promise<ActionRes
       pdfKey?: string;
       coverImage?: string;
     } | null>();
-    if (!previous) return { ok: false, error: "That journal entry no longer exists." };
+    if (!previous) return { ok: false, error: "That article no longer exists." };
 
     try {
       await Journal.findByIdAndUpdate(
@@ -101,7 +103,7 @@ export async function updateJournal(id: string, raw: unknown): Promise<ActionRes
     }
 
     refresh(previous.slug, parsed.data.slug);
-    return { ok: true, message: "Journal entry saved." };
+    return { ok: true, message: "Article saved." };
   });
 }
 
@@ -111,10 +113,7 @@ export async function setJournalStatus(
 ): Promise<ActionResult> {
   return withAdmin(async () => {
     const journal = await Journal.findById(id);
-    if (!journal) return { ok: false, error: "That journal entry no longer exists." };
-    if (status === "published" && !journal.pdfKey) {
-      return { ok: false, error: "Upload the PDF before publishing." };
-    }
+    if (!journal) return { ok: false, error: "That article no longer exists." };
     journal.status = status;
     await journal.save();
     refresh(journal.slug);
@@ -125,10 +124,10 @@ export async function setJournalStatus(
 export async function deleteJournal(id: string): Promise<ActionResult> {
   return withAdmin(async () => {
     const deleted = await Journal.findByIdAndDelete(id);
-    if (!deleted) return { ok: false, error: "That journal entry no longer exists." };
+    if (!deleted) return { ok: false, error: "That article no longer exists." };
     await deleteJournalPdf(deleted.pdfKey);
     await deleteImageByUrl(deleted.coverImage);
     refresh(deleted.slug);
-    return { ok: true, message: "Journal entry deleted." };
+    return { ok: true, message: "Article deleted." };
   });
 }

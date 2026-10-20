@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
-import { ArrowLeftIcon, BookOpenTextIcon, DownloadIcon } from "lucide-react";
+import { ArrowLeftIcon, ArrowUpRightIcon, BookOpenTextIcon, DownloadIcon } from "lucide-react";
 
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
@@ -17,7 +17,7 @@ import { getJournalBySlug, volumeIssue } from "@/server/journals";
 
 export async function generateMetadata({
   params,
-}: PageProps<"/journals/[slug]">): Promise<Metadata> {
+}: PageProps<"/articles/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const journal = await getJournalBySlug(slug);
   // Before the shell flushes, so an unknown slug gets a real 404.
@@ -25,7 +25,7 @@ export async function generateMetadata({
   return buildMetadata({
     title: journal.title,
     description: journal.abstract.slice(0, 160),
-    path: `/journals/${journal.slug}`,
+    path: `/articles/${journal.slug}`,
     type: "article",
     publishedTime: journal.publishedAt,
     ...(journal.coverImage ? { image: journal.coverImage } : {}),
@@ -39,12 +39,12 @@ export async function generateMetadata({
  * — "Read online" opens the PDF in the browser's own viewer, "Download" saves
  * it. No account or payment, by design.
  */
-export default async function JournalPage({ params }: PageProps<"/journals/[slug]">) {
+export default async function JournalPage({ params }: PageProps<"/articles/[slug]">) {
   const { slug } = await params;
   const journal = await getJournalBySlug(slug);
   if (!journal) notFound();
 
-  const pdf = `/journals/${journal.slug}/pdf`;
+  const pdf = `/articles/${journal.slug}/pdf`;
   const meta = [volumeIssue(journal), format(journal.publishedAt, "d MMMM yyyy")]
     .filter(Boolean)
     .join(" · ");
@@ -55,13 +55,13 @@ export default async function JournalPage({ params }: PageProps<"/journals/[slug
       <JsonLd
         data={breadcrumbJsonLd([
           { name: "Home", path: "/" },
-          { name: "Articles", path: "/journals" },
-          { name: journal.title, path: `/journals/${journal.slug}` },
+          { name: "Articles", path: "/articles" },
+          { name: journal.title, path: `/articles/${journal.slug}` },
         ])}
       />
       <Container width="prose">
         <Link
-          href="/journals"
+          href="/articles"
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeftIcon className="size-4" aria-hidden />
@@ -119,13 +119,40 @@ export default async function JournalPage({ params }: PageProps<"/journals/[slug
             ))}
         </div>
 
+        {journal.links.length > 0 ? (
+          <section aria-labelledby="article-links" className="mt-10">
+            <h2 id="article-links" className="text-sm font-semibold tracking-[0.14em] uppercase">
+              Links
+            </h2>
+            <ul className="mt-3 space-y-3">
+              {journal.links.map((link) => (
+                <li key={link.href}>
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-start gap-1.5 text-primary underline-offset-4 hover:underline"
+                  >
+                    {link.label}
+                    <ArrowUpRightIcon
+                      aria-hidden
+                      className="mt-0.5 size-4 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                    />
+                    <span className="sr-only">(opens in a new tab)</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
         {journal.keywords.length > 0 ? (
           <div className="mt-10">
             <h2 className="text-sm font-semibold tracking-[0.14em] uppercase">Keywords</h2>
             <ul className="mt-3 flex flex-wrap gap-2">
               {journal.keywords.map((keyword) => (
                 <li key={keyword}>
-                  <Link href={`/journals?q=${encodeURIComponent(keyword)}`}>
+                  <Link href={`/articles?q=${encodeURIComponent(keyword)}`}>
                     <Badge variant="outline" className="hover:border-primary">
                       {keyword}
                     </Badge>

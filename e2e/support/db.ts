@@ -178,14 +178,6 @@ export async function sweepTestData(): Promise<Record<string, number>> {
     await database.collection("manuscriptsubmissions").deleteMany({ email: /^e2e-/ })
   ).deletedCount;
 
-  const articles = await database.collection("articles").find({ title: /^E2E / }).toArray();
-  await database
-    .collection("articlefiles")
-    .deleteMany({ _id: { $in: fileIds(articles, "pdfKey") } });
-  removed.articles = (
-    await database.collection("articles").deleteMany({ title: /^E2E / })
-  ).deletedCount;
-
   removed.categories = (
     await database.collection("categories").deleteMany({ name: /^E2E / })
   ).deletedCount;
@@ -209,33 +201,12 @@ export async function sweepTestData(): Promise<Record<string, number>> {
   return removed;
 }
 
-export async function articleBySlug(
-  slug: string,
-): Promise<{ tags: string[]; pdfKey?: string } | null> {
-  const database = await db();
-  const doc = await database
-    .collection("articles")
-    .findOne({ slug }, { projection: { tags: 1, pdfKey: 1 } });
-  return doc ? { tags: (doc.tags as string[] | undefined) ?? [], pdfKey: doc.pdfKey } : null;
-}
-
 /** Whether a `db:` file key still has its file in the collection. */
 export async function storedFileExists(collection: string, key: string): Promise<boolean> {
   if (!key.startsWith("db:")) throw new Error(`Not a database key: ${key}`);
   const database = await db();
   const id = new mongoose.Types.ObjectId(key.slice(3));
   return (await database.collection(collection).countDocuments({ _id: id })) > 0;
-}
-
-export async function deleteArticle(slug: string) {
-  const database = await db();
-  const doc = await database.collection("articles").findOne({ slug });
-  if (typeof doc?.pdfKey === "string" && doc.pdfKey.startsWith("db:")) {
-    await database
-      .collection("articlefiles")
-      .deleteOne({ _id: new mongoose.Types.ObjectId(doc.pdfKey.slice(3)) });
-  }
-  await database.collection("articles").deleteOne({ slug });
 }
 
 export async function disconnect() {

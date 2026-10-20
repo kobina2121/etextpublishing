@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { format } from "date-fns";
-import { PlusIcon } from "lucide-react";
+import { FileWarningIcon, PlusIcon } from "lucide-react";
 
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSearch } from "@/components/admin/admin-search";
 import { StatusBadge } from "@/components/admin/status-badge";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty";
 import {
@@ -17,23 +16,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { listArticlesAdmin } from "@/server/admin/queries";
+import { listJournalsAdmin } from "@/server/journals";
 
-import { ArticleRowActions } from "./article-row-actions";
+import { JournalRowActions } from "./journal-row-actions";
 
 export const metadata: Metadata = { title: "Articles" };
 
-export default async function AdminArticlesPage({ searchParams }: PageProps<"/admin/articles">) {
+export default async function AdminJournalsPage({ searchParams }: PageProps<"/admin/articles">) {
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q : undefined;
   const status = typeof params.status === "string" ? params.status : undefined;
-  const rows = await listArticlesAdmin({ q, status });
+  const rows = await listJournalsAdmin({ q, status });
 
   return (
     <div className="mx-auto w-full max-w-6xl">
       <AdminPageHeader
         title="Articles"
-        description="News and editorial posts, including drafts."
+        description="Research articles, free for anyone to read on the site."
         actions={
           <Button asChild>
             <Link href="/admin/articles/new">
@@ -45,23 +44,22 @@ export default async function AdminArticlesPage({ searchParams }: PageProps<"/ad
       />
 
       <AdminSearch
-        placeholder="Search by title or byline…"
+        placeholder="Search by title, author or slug…"
         statuses={[
           { value: "published", label: "Published" },
           { value: "draft", label: "Draft" },
-          { value: "archived", label: "Archived" },
         ]}
       />
 
       <p className="mt-4 text-sm text-muted-foreground" aria-live="polite">
-        {rows.length} {rows.length === 1 ? "article" : "articles"}
+        {rows.length} {rows.length === 1 ? "entry" : "entries"}
       </p>
 
       {rows.length === 0 ? (
         <Empty className="mt-6 border border-dashed border-border py-16">
           <EmptyHeader>
             <EmptyTitle>No articles</EmptyTitle>
-            <EmptyDescription>Nothing matches those filters.</EmptyDescription>
+            <EmptyDescription>Add the first one to start the Articles page.</EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (
@@ -70,9 +68,9 @@ export default async function AdminArticlesPage({ searchParams }: PageProps<"/ad
             <TableHeader>
               <TableRow>
                 <TableHead>Title</TableHead>
-                <TableHead className="hidden md:table-cell">Category</TableHead>
-                <TableHead className="hidden lg:table-cell">Byline</TableHead>
-                <TableHead className="hidden sm:table-cell">Date</TableHead>
+                <TableHead className="hidden md:table-cell">Authors</TableHead>
+                <TableHead className="hidden lg:table-cell">Vol. / No.</TableHead>
+                <TableHead className="hidden sm:table-cell">Published</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -87,15 +85,18 @@ export default async function AdminArticlesPage({ searchParams }: PageProps<"/ad
                     >
                       {row.title}
                     </Link>
-                    {row.featured ? (
-                      <Badge variant="secondary" className="ml-2 tracking-wide uppercase">
-                        Featured
-                      </Badge>
-                    ) : null}
                     <p className="mt-0.5 font-mono text-xs text-muted-foreground">/{row.slug}</p>
+                    {row.hasPdf ? null : (
+                      <p className="mt-1 flex items-center gap-1 text-xs text-destructive">
+                        <FileWarningIcon className="size-3.5" aria-hidden />
+                        No PDF yet
+                      </p>
+                    )}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">{row.categoryName}</TableCell>
-                  <TableCell className="hidden lg:table-cell">{row.authorName}</TableCell>
+                  <TableCell className="hidden max-w-xs truncate md:table-cell">
+                    {row.authors}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">{row.volumeIssue || "—"}</TableCell>
                   <TableCell className="hidden sm:table-cell">
                     {format(row.publishedAt, "d MMM yyyy")}
                   </TableCell>
@@ -103,7 +104,7 @@ export default async function AdminArticlesPage({ searchParams }: PageProps<"/ad
                     <StatusBadge status={row.status} />
                   </TableCell>
                   <TableCell className="text-right">
-                    <ArticleRowActions id={row.id} title={row.title} status={row.status} />
+                    <JournalRowActions id={row.id} title={row.title} status={row.status} />
                   </TableCell>
                 </TableRow>
               ))}

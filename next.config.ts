@@ -80,6 +80,19 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  // Journal entries became Articles at /articles, replacing the old news
+  // posts. Permanent, so shared links and Google follow them to the new home.
+  async redirects() {
+    return [
+      { source: "/journals", destination: "/articles", permanent: true },
+      { source: "/journals/:path*", destination: "/articles/:path*", permanent: true },
+      { source: "/admin/journals", destination: "/admin/articles", permanent: true },
+      { source: "/admin/journals/:path*", destination: "/admin/articles/:path*", permanent: true },
+      // News posts no longer exist; their nearest replacement is the list.
+      { source: "/news", destination: "/articles", permanent: true },
+      { source: "/news/:path*", destination: "/articles", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

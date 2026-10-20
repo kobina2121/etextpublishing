@@ -6,7 +6,7 @@ import { JournalFile } from "@/models";
 
 /**
  * Journal PDFs: a private document store (see ./document-store). Read through
- * /journals/[slug]/pdf, which serves published entries only.
+ * /articles/[slug]/pdf, which serves published entries only.
  */
 const store = createDocumentStore({
   folder: "journals",
