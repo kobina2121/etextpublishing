@@ -12,14 +12,16 @@ const NAV: readonly NavItem[] = [
   {
     label: "Publications",
     href: "/publications",
-    // A dropdown in the navbar; Books is the shop, Journals are free to read.
+    // A dropdown in the navbar; Books is the shop, Articles are free to read.
+    // Articles are the journal entries — labelled Articles for visitors, still
+    // Journals in the dashboard and at /journals.
     children: [
       {
         label: "Books",
         href: "/publications",
         description: "Titles to buy, in print or as downloads",
       },
-      { label: "Journals", href: "/journals", description: "Research papers, free to read" },
+      { label: "Articles", href: "/journals", description: "Research articles, free to read" },
     ],
   },
   { label: "Authors", href: "/authors" },

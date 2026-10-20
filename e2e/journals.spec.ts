@@ -3,7 +3,8 @@ import { expect, test, type Page } from "@playwright/test";
 import { signInAsAdmin } from "./support/admin-session";
 
 /**
- * Journals: the dropdown, the admin journey, and free reading.
+ * Journals — shown to visitors as Articles: the dropdown, the admin journey,
+ * and free reading.
  *
  * Serial: each step works on the entry the first one made, and the last step
  * deletes it, which is what keeps the shared database clean.
@@ -24,16 +25,18 @@ const openEditor = async (page: Page) => {
   await expect(page.getByLabel("Title")).toHaveValue(title);
 };
 
-test("Publications opens a dropdown with Books and Journals", async ({ page }) => {
+test("Publications opens a dropdown with Books and Articles", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle" });
   const nav = page.getByRole("navigation", { name: "Main" });
   await nav.getByRole("button", { name: "Publications" }).click();
 
+  // Articles are the journal entries; there is no separate Journals item.
   const menu = page.getByRole("menu");
+  await expect(menu.getByRole("menuitem")).toHaveCount(2);
   await expect(menu.getByRole("menuitem", { name: /Books/ })).toBeVisible();
-  await menu.getByRole("menuitem", { name: /Journals/ }).click();
+  await menu.getByRole("menuitem", { name: /Articles/ }).click();
   await expect(page).toHaveURL(/\/journals$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Journals");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Articles");
 });
 
 test("an admin publishes a journal entry with its PDF", async ({ page, context }) => {
