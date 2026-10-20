@@ -38,13 +38,16 @@ export const articleSchema = z.object({
   coverImage: imageRefSchema,
   authorName: z.string().trim().min(2, "Who wrote this?").max(120),
   category: objectIdSchema,
-  /** Comma-separated in the form; normalised to an array here. */
+  /**
+   * Comma-separated in the form; normalised to an array here. Also accepts the
+   * array: the form submits values already parsed by this schema, and the
+   * server action parses them again.
+   */
   tags: z
-    .string()
-    .trim()
+    .union([z.string(), z.array(z.string())])
     .optional()
     .transform((value) =>
-      (value ?? "")
+      (Array.isArray(value) ? value.join(",") : (value ?? ""))
         .split(",")
         .map((tag) => tag.trim().toLowerCase())
         .filter(Boolean)
