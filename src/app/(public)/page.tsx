@@ -115,28 +115,30 @@ export default async function HomePage() {
         </Container>
       </Section>
 
-      <Section size="lg" className="bg-muted/40">
-        <Container width="wide">
-          <SectionHeading title="Featured titles" subtitle="Recently published" />
-          <PublicationCarousel
-            label="Featured titles"
-            slides={publications.map((publication, index) => ({
-              id: publication.id,
-              content: <PublicationCard publication={publication} priority={index < 2} />,
-            }))}
-          />
-          <div className="mt-12 text-center">
-            <Button
-              asChild
-              size="xl"
-              variant="outline"
-              className="font-semibold tracking-[0.1em] uppercase"
-            >
-              <Link href="/publications">Browse all publications</Link>
-            </Button>
-          </div>
-        </Container>
-      </Section>
+      {publications.length > 0 ? (
+        <Section size="lg" className="bg-muted/40">
+          <Container width="wide">
+            <SectionHeading title="Featured titles" subtitle="Recently published" />
+            <PublicationCarousel
+              label="Featured titles"
+              slides={publications.map((publication, index) => ({
+                id: publication.id,
+                content: <PublicationCard publication={publication} priority={index < 2} />,
+              }))}
+            />
+            <div className="mt-12 text-center">
+              <Button
+                asChild
+                size="xl"
+                variant="outline"
+                className="font-semibold tracking-[0.1em] uppercase"
+              >
+                <Link href="/publications">Browse all publications</Link>
+              </Button>
+            </div>
+          </Container>
+        </Section>
+      ) : null}
 
       <Section size="lg">
         <Container width="wide">

@@ -3,10 +3,17 @@ import { expect, test, type Page } from "@playwright/test";
 const cards = (page: Page) => page.locator('main a[href^="/publications/"]');
 
 test("homepage renders", async ({ page }) => {
-  const response = await page.goto("/");
+  // The server's HTML can be fine while the page crashes in the browser — an
+  // empty catalogue once broke the carousel and showed "Something went wrong".
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+
+  const response = await page.goto("/", { waitUntil: "networkidle" });
   expect(response?.status()).toBe(200);
   await expect(page.locator("h1").first()).toBeVisible();
   await expect(page.getByRole("navigation").first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Something went wrong" })).toHaveCount(0);
+  expect(errors).toEqual([]);
 });
 
 test("a publication opens from the listing", async ({ page }) => {
