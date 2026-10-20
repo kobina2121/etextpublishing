@@ -83,10 +83,12 @@ export function PublicationCarousel({ slides, label }: { slides: CarouselSlide[]
   const playing = wantsAutoplay && !reduced;
 
   useEffect(() => {
-    if (!api) return;
+    // With no slides, Embla's autoplay reads a slide that does not exist and
+    // throws, which took down the whole home page when the catalogue was empty.
+    if (!api || slides.length === 0) return;
     if (playing) autoplay.play();
     else autoplay.stop();
-  }, [api, playing, autoplay]);
+  }, [api, playing, autoplay, slides.length]);
 
   // Nothing to scroll: one page of slides needs no controls at all.
   const showControls = pageCount > 1;
