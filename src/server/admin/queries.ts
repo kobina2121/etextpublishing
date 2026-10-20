@@ -461,6 +461,7 @@ export type ArticleFormValues = {
   publishedAt: string;
   status: string;
   featured: boolean;
+  links: { label: string; href: string }[];
   pdfKey: string;
   pdfName: string;
   pdfSize: number;
@@ -483,6 +484,7 @@ export async function getArticleForEdit(id: string): Promise<ArticleFormValues |
     publishedAt: new Date(doc.publishedAt).toISOString().slice(0, 10),
     status: doc.status,
     featured: doc.featured,
+    links: (doc.links ?? []).map(({ label, href }) => ({ label, href })),
     pdfKey: doc.pdfKey ?? "",
     pdfName: doc.pdfName ?? "",
     pdfSize: doc.pdfSize ?? 0,

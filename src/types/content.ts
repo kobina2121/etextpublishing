@@ -124,6 +124,7 @@ export type Article = {
   publishedAt: Date;
   status: PublicationStatus;
   featured: boolean;
+  links: { label: string; href: string }[];
   /** Whether a PDF is attached; it is read through /news/[slug]/pdf. */
   hasPdf: boolean;
   pdfSize?: number;

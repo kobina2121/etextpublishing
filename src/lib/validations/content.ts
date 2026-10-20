@@ -9,7 +9,12 @@ export const linkListSchema = z
   .array(
     z.object({
       label: z.string().trim().min(1, "Give the link a label.").max(60),
-      href: z.string().trim().url("Enter a valid URL."),
+      // http(s) only: `javascript:` and `data:` also parse as URLs.
+      href: z
+        .string()
+        .trim()
+        .url("Enter a valid URL.")
+        .refine((value) => /^https?:\/\//i.test(value), "Start the address with https://."),
     }),
   )
   .max(10)
@@ -57,6 +62,8 @@ export const articleSchema = z.object({
   publishedAt: z.coerce.date({ message: "Choose a publication date." }),
   status: z.enum(PUBLICATION_STATUSES).default("draft"),
   featured: z.boolean().default(false),
+  /** Further reading, shown under the article: label and address. */
+  links: linkListSchema,
   /** Optional: a PDF readers can open or download from the article page. */
   pdfKey: storageKeySchema,
   pdfName: z.string().trim().max(200).optional().or(z.literal("")),

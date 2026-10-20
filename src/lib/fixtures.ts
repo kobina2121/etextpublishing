@@ -284,6 +284,7 @@ export const articles: Article[] = [
     status: "published",
     featured: true,
     hasPdf: false,
+    links: [],
   },
   {
     id: "n2",
@@ -298,6 +299,7 @@ export const articles: Article[] = [
     status: "published",
     featured: true,
     hasPdf: false,
+    links: [],
   },
   {
     id: "n3",
@@ -312,6 +314,7 @@ export const articles: Article[] = [
     status: "published",
     featured: false,
     hasPdf: false,
+    links: [],
   },
   {
     id: "n4",
@@ -326,6 +329,7 @@ export const articles: Article[] = [
     status: "published",
     featured: false,
     hasPdf: false,
+    links: [],
   },
   {
     id: "n5",
@@ -340,6 +344,7 @@ export const articles: Article[] = [
     status: "draft",
     featured: false,
     hasPdf: false,
+    links: [],
   },
 ];
 

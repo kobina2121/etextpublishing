@@ -132,6 +132,7 @@ function toArticle(doc: JoinedArticle): ArticleWithRelations {
     status: doc.status,
     featured: doc.featured,
     category: toCategory(doc.category),
+    links: (doc.links ?? []).map(({ label, href }) => ({ label, href })),
     hasPdf: Boolean(doc.pdfKey),
     ...(doc.pdfKey && doc.pdfSize ? { pdfSize: doc.pdfSize } : {}),
     ...(doc.coverImage ? { coverImage: doc.coverImage } : {}),

@@ -170,6 +170,7 @@ const articleSchema = new Schema<ArticleDoc>(
     publishedAt: { type: Date, required: true },
     status: { type: String, enum: STATUSES, default: "draft", required: true },
     featured: { type: Boolean, default: false },
+    links: { type: [linkSchema], default: [] },
     pdfKey: { type: String, trim: true },
     pdfName: { type: String, trim: true },
     pdfSize: { type: Number, min: 0 },

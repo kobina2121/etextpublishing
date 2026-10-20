@@ -35,3 +35,29 @@ describe("articleSchema tags", () => {
     expect(articleSchema.parse({ ...valid, tags: undefined }).tags).toEqual([]);
   });
 });
+
+describe("articleSchema links", () => {
+  const withLinks = (links: { label: string; href: string }[]) =>
+    articleSchema.safeParse({ ...valid, links });
+
+  it("accepts labelled https links", () => {
+    const parsed = withLinks([{ label: "Journal of Science", href: "https://example.org/paper" }]);
+    expect(parsed.success).toBe(true);
+    expect(parsed.data?.links).toHaveLength(1);
+  });
+
+  it("defaults to no links", () => {
+    expect(articleSchema.parse(valid).links).toEqual([]);
+  });
+
+  it.each(["javascript:alert(1)", "data:text/html,hi", "ftp://example.org", "example.org"])(
+    "rejects %s",
+    (href) => {
+      expect(withLinks([{ label: "Bad", href }]).success).toBe(false);
+    },
+  );
+
+  it("needs a label", () => {
+    expect(withLinks([{ label: "", href: "https://example.org" }]).success).toBe(false);
+  });
+});
