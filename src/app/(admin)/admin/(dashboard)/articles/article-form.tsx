@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { DocumentUploadField } from "@/components/admin/document-upload-field";
 import { ImageUpload } from "@/components/admin/image-upload";
+import { LinkListField } from "@/components/admin/link-list-field";
 import { SlugField } from "@/components/admin/slug-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -80,6 +81,7 @@ export function ArticleForm({
           publishedAt: new Date().toISOString().slice(0, 10),
           status: "draft",
           featured: false,
+          links: [],
           pdfKey: "",
           pdfName: "",
           pdfSize: 0,
@@ -95,6 +97,15 @@ export function ArticleForm({
   const pdf = pdfKey
     ? { key: pdfKey, fileName: pdfName || "article.pdf", size: Number(pdfSize ?? 0) }
     : null;
+
+  // Row errors live at links.N.label / links.N.href; show each row's once.
+  const linkErrors = (Array.isArray(errors.links) ? errors.links : [])
+    .map((row, index) =>
+      row?.label || row?.href
+        ? { message: `Link ${index + 1}: ${(row.label ?? row.href)?.message}` }
+        : undefined,
+    )
+    .filter(Boolean);
 
   const onSubmit = async (values: ArticleValues) => {
     setFormError(null);
@@ -206,6 +217,22 @@ export function ArticleForm({
                   Readers can open it in their browser or download it from the article page.
                 </FieldDescription>
                 <FieldError errors={[errors.pdfKey]} />
+              </Field>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Links (optional)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Field data-invalid={!!errors.links}>
+                <LinkListField control={control} name="links" addLabel="Add link" />
+                <FieldDescription>
+                  Further reading shown under the article, e.g. the journal it appeared in or a
+                  related source. Each needs a label and a full web address (https://…).
+                </FieldDescription>
+                <FieldError errors={linkErrors} />
               </Field>
             </CardContent>
           </Card>

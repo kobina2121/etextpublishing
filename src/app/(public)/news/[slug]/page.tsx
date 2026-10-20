@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
-import { BookOpenTextIcon, DownloadIcon } from "lucide-react";
+import { ArrowUpRightIcon, BookOpenTextIcon, DownloadIcon } from "lucide-react";
 
 import { JsonLd } from "@/components/seo/json-ld";
 import { articleJsonLd, breadcrumbJsonLd } from "@/lib/seo/json-ld";
@@ -142,6 +142,33 @@ export default async function ArticleDetailPage({ params }: PageProps<"/news/[sl
               <p key={index}>{paragraph}</p>
             ))}
           </div>
+
+          {article.links.length > 0 ? (
+            <section aria-labelledby="article-links" className="mt-12 border-t pt-8">
+              <h2 id="article-links" className="text-sm font-semibold tracking-[0.14em] uppercase">
+                Links
+              </h2>
+              <ul className="mt-4 space-y-3">
+                {article.links.map((link) => (
+                  <li key={link.href}>
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group inline-flex items-start gap-1.5 text-primary underline-offset-4 hover:underline"
+                    >
+                      {link.label}
+                      <ArrowUpRightIcon
+                        aria-hidden
+                        className="mt-0.5 size-4 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                      />
+                      <span className="sr-only">(opens in a new tab)</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           {article.tags.length > 0 ? (
             <div className="mt-10 flex flex-wrap gap-2">

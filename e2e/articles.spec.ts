@@ -96,6 +96,25 @@ test("readers can open or download the PDF", async ({ page, request }) => {
   expect(download.headers()["content-disposition"]).toMatch(/^attachment/);
 });
 
+test("an admin adds a link, shown under the article", async ({ page, context }) => {
+  await signInAsAdmin(context);
+  await openEditor(page);
+  await page.getByRole("button", { name: "Add link" }).click();
+  await page.getByPlaceholder("Label").fill("E2E Further reading");
+  await page.getByPlaceholder("https://…").fill("javascript:alert(1)");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByText(/Link 1: Start the address with https/)).toBeVisible();
+
+  await page.getByPlaceholder("https://…").fill("https://example.org/e2e-reading");
+  await save(page);
+
+  await page.goto(`/news/${slug}`);
+  const links = page.getByRole("region", { name: "Links" });
+  const link = links.getByRole("link", { name: /E2E Further reading/ });
+  await expect(link).toHaveAttribute("href", "https://example.org/e2e-reading");
+  await expect(link).toHaveAttribute("target", "_blank");
+});
+
 test("a draft's PDF is not public", async ({ page, context, request }) => {
   await signInAsAdmin(context);
   await openEditor(page);

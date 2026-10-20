@@ -182,6 +182,7 @@ export type ArticleDoc = WithTimestamps & {
   publishedAt: Date;
   status: PublicationStatusValue;
   featured: boolean;
+  links: { label: string; href: string }[];
   /** An optional PDF readers can open or download: `blob:` or `db:` key. */
   pdfKey?: string;
   pdfName?: string;
