@@ -178,6 +178,10 @@ export async function sweepTestData(): Promise<Record<string, number>> {
     await database.collection("manuscriptsubmissions").deleteMany({ email: /^e2e-/ })
   ).deletedCount;
 
+  removed.articles = (
+    await database.collection("articles").deleteMany({ title: /^E2E / })
+  ).deletedCount;
+
   removed.categories = (
     await database.collection("categories").deleteMany({ name: /^E2E / })
   ).deletedCount;
@@ -199,6 +203,17 @@ export async function sweepTestData(): Promise<Record<string, number>> {
     .deleteMany({ user: { $in: users.map((u) => u._id) } });
   removed.users = (await database.collection("users").deleteMany({ email: /^e2e-/ })).deletedCount;
   return removed;
+}
+
+export async function articleTagsBySlug(slug: string): Promise<string[] | null> {
+  const database = await db();
+  const doc = await database.collection("articles").findOne({ slug }, { projection: { tags: 1 } });
+  return doc ? ((doc.tags as string[] | undefined) ?? []) : null;
+}
+
+export async function deleteArticle(slug: string) {
+  const database = await db();
+  await database.collection("articles").deleteOne({ slug });
 }
 
 export async function disconnect() {
