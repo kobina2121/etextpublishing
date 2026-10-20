@@ -7,6 +7,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Button } from "@/components/ui/button";
 import { getArticleForEdit, getFormOptions } from "@/server/admin/queries";
 
+import { journalStorage } from "../../journals/storage";
 import { ArticleForm } from "../article-form";
 
 export const metadata: Metadata = { title: "Edit article" };
@@ -32,7 +33,7 @@ export default async function EditArticlePage({ params }: PageProps<"/admin/arti
           ) : null
         }
       />
-      <ArticleForm initial={article} categories={options.categories} />
+      <ArticleForm initial={article} categories={options.categories} {...journalStorage()} />
     </div>
   );
 }

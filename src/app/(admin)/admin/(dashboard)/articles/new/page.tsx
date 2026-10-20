@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { getFormOptions } from "@/server/admin/queries";
 
+import { journalStorage } from "../../journals/storage";
 import { ArticleForm } from "../article-form";
 
 export const metadata: Metadata = { title: "New article" };
@@ -12,7 +13,7 @@ export default async function NewArticlePage() {
   return (
     <div className="mx-auto w-full max-w-6xl">
       <AdminPageHeader title="New article" />
-      <ArticleForm categories={categories} />
+      <ArticleForm categories={categories} {...journalStorage()} />
     </div>
   );
 }

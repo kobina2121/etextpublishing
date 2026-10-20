@@ -283,6 +283,7 @@ export const articles: Article[] = [
     publishedAt: day("2025-08-19"),
     status: "published",
     featured: true,
+    hasPdf: false,
   },
   {
     id: "n2",
@@ -296,6 +297,7 @@ export const articles: Article[] = [
     publishedAt: day("2025-07-02"),
     status: "published",
     featured: true,
+    hasPdf: false,
   },
   {
     id: "n3",
@@ -309,6 +311,7 @@ export const articles: Article[] = [
     publishedAt: day("2025-05-28"),
     status: "published",
     featured: false,
+    hasPdf: false,
   },
   {
     id: "n4",
@@ -322,6 +325,7 @@ export const articles: Article[] = [
     publishedAt: day("2025-02-11"),
     status: "published",
     featured: false,
+    hasPdf: false,
   },
   {
     id: "n5",
@@ -335,6 +339,7 @@ export const articles: Article[] = [
     publishedAt: day("2026-02-01"),
     status: "draft",
     featured: false,
+    hasPdf: false,
   },
 ];
 

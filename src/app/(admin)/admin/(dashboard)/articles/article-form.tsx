@@ -6,6 +6,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 
+import { DocumentUploadField } from "@/components/admin/document-upload-field";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { SlugField } from "@/components/admin/slug-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -44,9 +45,14 @@ const STATUS_LABELS: Record<string, string> = {
 export function ArticleForm({
   initial,
   categories,
+  storage,
+  maxBytes,
 }: {
   initial?: ArticleFormValues;
   categories: Option[];
+  /** Where PDFs go, decided on the server — see ../journals/storage. */
+  storage: "blob" | "server";
+  maxBytes: number;
 }) {
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
@@ -56,6 +62,7 @@ export function ArticleForm({
     handleSubmit,
     control,
     setError,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ArticleInput, unknown, ArticleValues>({
     resolver: zodResolver(articleSchema),
@@ -73,12 +80,21 @@ export function ArticleForm({
           publishedAt: new Date().toISOString().slice(0, 10),
           status: "draft",
           featured: false,
+          pdfKey: "",
+          pdfName: "",
+          pdfSize: 0,
         },
   });
 
   // useWatch rather than watch(): watch() is not memoizable, which the
   // React compiler lint flags.
-  const slugSource = useWatch({ control, name: "title" }) ?? "";
+  const [slugSource = "", pdfKey, pdfName, pdfSize] = useWatch({
+    control,
+    name: ["title", "pdfKey", "pdfName", "pdfSize"],
+  });
+  const pdf = pdfKey
+    ? { key: pdfKey, fileName: pdfName || "article.pdf", size: Number(pdfSize ?? 0) }
+    : null;
 
   const onSubmit = async (values: ArticleValues) => {
     setFormError(null);
@@ -105,60 +121,95 @@ export function ArticleForm({
       ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Article</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <FieldSet>
-              <FieldGroup>
-                <Field data-invalid={!!errors.title}>
-                  <FieldLabel htmlFor="art-title">Title</FieldLabel>
-                  <Input id="art-title" {...register("title")} />
-                  <FieldError errors={[errors.title]} />
-                </Field>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Article</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FieldSet>
+                <FieldGroup>
+                  <Field data-invalid={!!errors.title}>
+                    <FieldLabel htmlFor="art-title">Title</FieldLabel>
+                    <Input id="art-title" {...register("title")} />
+                    <FieldError errors={[errors.title]} />
+                  </Field>
 
-                <Field data-invalid={!!errors.slug}>
-                  <FieldLabel htmlFor="art-slug">Slug</FieldLabel>
-                  <Controller
-                    control={control}
-                    name="slug"
-                    render={({ field }) => (
-                      <SlugField
-                        id="art-slug"
-                        value={field.value ?? ""}
-                        onChange={field.onChange}
-                        sourceValue={slugSource}
-                        prefix="/news"
-                      />
-                    )}
-                  />
-                  <FieldError errors={[errors.slug]} />
-                </Field>
+                  <Field data-invalid={!!errors.slug}>
+                    <FieldLabel htmlFor="art-slug">Slug</FieldLabel>
+                    <Controller
+                      control={control}
+                      name="slug"
+                      render={({ field }) => (
+                        <SlugField
+                          id="art-slug"
+                          value={field.value ?? ""}
+                          onChange={field.onChange}
+                          sourceValue={slugSource}
+                          prefix="/news"
+                        />
+                      )}
+                    />
+                    <FieldError errors={[errors.slug]} />
+                  </Field>
 
-                <Field data-invalid={!!errors.excerpt}>
-                  <FieldLabel htmlFor="art-excerpt">Excerpt</FieldLabel>
-                  <Textarea id="art-excerpt" rows={2} {...register("excerpt")} />
-                  <FieldError errors={[errors.excerpt]} />
-                </Field>
+                  <Field data-invalid={!!errors.excerpt}>
+                    <FieldLabel htmlFor="art-excerpt">Excerpt</FieldLabel>
+                    <Textarea id="art-excerpt" rows={2} {...register("excerpt")} />
+                    <FieldError errors={[errors.excerpt]} />
+                  </Field>
 
-                <Field data-invalid={!!errors.body}>
-                  <FieldLabel htmlFor="art-body">Body</FieldLabel>
-                  <Textarea
-                    id="art-body"
-                    rows={16}
-                    className="font-mono text-sm"
-                    {...register("body")}
-                  />
-                  <FieldDescription>
-                    Separate paragraphs with a blank line. Rich text arrives in a later phase.
-                  </FieldDescription>
-                  <FieldError errors={[errors.body]} />
-                </Field>
-              </FieldGroup>
-            </FieldSet>
-          </CardContent>
-        </Card>
+                  <Field data-invalid={!!errors.body}>
+                    <FieldLabel htmlFor="art-body">Body</FieldLabel>
+                    <Textarea
+                      id="art-body"
+                      rows={16}
+                      className="font-mono text-sm"
+                      {...register("body")}
+                    />
+                    <FieldDescription>
+                      Separate paragraphs with a blank line. Rich text arrives in a later phase.
+                    </FieldDescription>
+                    <FieldError errors={[errors.body]} />
+                  </Field>
+                </FieldGroup>
+              </FieldSet>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>PDF (optional)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Field data-invalid={!!errors.pdfKey}>
+                <DocumentUploadField
+                  value={pdf}
+                  folder="articles"
+                  extensions={[".pdf"]}
+                  noun="PDF"
+                  label="Article PDF"
+                  endpoint="/api/admin/articles"
+                  storage={storage}
+                  maxBytes={maxBytes}
+                  invalid={!!errors.pdfKey}
+                  onChange={(next) => {
+                    setValue("pdfKey", next?.key ?? "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                    setValue("pdfName", next?.fileName ?? "", { shouldDirty: true });
+                    setValue("pdfSize", next?.size ?? 0, { shouldDirty: true });
+                  }}
+                />
+                <FieldDescription>
+                  Readers can open it in their browser or download it from the article page.
+                </FieldDescription>
+                <FieldError errors={[errors.pdfKey]} />
+              </Field>
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="space-y-6">
           <Card>

@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { storageKeySchema } from "@/lib/validations/journal";
 import { imageRefSchema, objectIdSchema, slugSchema } from "@/lib/validations/publication";
 import { PUBLICATION_STATUSES, SUBMISSION_STATUSES } from "@/types/content";
 
@@ -56,6 +57,10 @@ export const articleSchema = z.object({
   publishedAt: z.coerce.date({ message: "Choose a publication date." }),
   status: z.enum(PUBLICATION_STATUSES).default("draft"),
   featured: z.boolean().default(false),
+  /** Optional: a PDF readers can open or download from the article page. */
+  pdfKey: storageKeySchema,
+  pdfName: z.string().trim().max(200).optional().or(z.literal("")),
+  pdfSize: z.coerce.number().int().min(0).optional().default(0),
 });
 
 export const serviceSchema = z.object({
