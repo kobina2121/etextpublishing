@@ -132,6 +132,8 @@ function toArticle(doc: JoinedArticle): ArticleWithRelations {
     status: doc.status,
     featured: doc.featured,
     category: toCategory(doc.category),
+    hasPdf: Boolean(doc.pdfKey),
+    ...(doc.pdfKey && doc.pdfSize ? { pdfSize: doc.pdfSize } : {}),
     ...(doc.coverImage ? { coverImage: doc.coverImage } : {}),
   };
 }
@@ -475,6 +477,18 @@ export async function getArticleBySlug(slug: string): Promise<ArticleWithRelatio
   ]);
   const doc = docs[0];
   return doc ? toArticle(doc) : null;
+}
+
+/** A published article's PDF, for /news/[slug]/pdf. Drafts' files stay private. */
+export async function getPublishedArticlePdf(
+  slug: string,
+): Promise<{ key: string; fileName: string } | null> {
+  await connectToDatabase();
+  const doc = await Article.findOne({ slug, status: "published" })
+    .select("pdfKey pdfName slug")
+    .lean<Pick<ArticleDoc, "pdfKey" | "pdfName" | "slug"> | null>();
+  if (!doc?.pdfKey) return null;
+  return { key: doc.pdfKey, fileName: doc.pdfName || `${doc.slug}.pdf` };
 }
 
 export async function getArticleSlugs(): Promise<string[]> {

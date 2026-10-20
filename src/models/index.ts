@@ -5,6 +5,7 @@ import type {
   ArticleDoc,
   ImageDoc,
   JournalDoc,
+  ArticleFileDoc,
   JournalFileDoc,
   SoftcopyFileDoc,
   ManuscriptFileDoc,
@@ -169,6 +170,9 @@ const articleSchema = new Schema<ArticleDoc>(
     publishedAt: { type: Date, required: true },
     status: { type: String, enum: STATUSES, default: "draft", required: true },
     featured: { type: Boolean, default: false },
+    pdfKey: { type: String, trim: true },
+    pdfName: { type: String, trim: true },
+    pdfSize: { type: Number, min: 0 },
   },
   { timestamps: true },
 );
@@ -394,6 +398,7 @@ const journalFileSchema = new Schema<JournalFileDoc>(
 
 // Same shape: a private document kept in MongoDB until Vercel Blob is connected.
 const softcopyFileSchema = journalFileSchema.clone();
+const articleFileSchema = journalFileSchema.clone();
 
 // --- AboutPage --------------------------------------------------------------
 
@@ -486,3 +491,4 @@ export const AboutPage = defineModel<AboutPageDoc>("AboutPage", aboutPageSchema)
 export const Journal = defineModel<JournalDoc>("Journal", journalSchema);
 export const JournalFile = defineModel<JournalFileDoc>("JournalFile", journalFileSchema);
 export const SoftcopyFile = defineModel<SoftcopyFileDoc>("SoftcopyFile", softcopyFileSchema);
+export const ArticleFile = defineModel<ArticleFileDoc>("ArticleFile", articleFileSchema);

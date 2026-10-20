@@ -182,6 +182,10 @@ export type ArticleDoc = WithTimestamps & {
   publishedAt: Date;
   status: PublicationStatusValue;
   featured: boolean;
+  /** An optional PDF readers can open or download: `blob:` or `db:` key. */
+  pdfKey?: string;
+  pdfName?: string;
+  pdfSize?: number;
 };
 
 export type ServiceDoc = WithTimestamps & {
@@ -325,6 +329,9 @@ export type JournalFileDoc = WithTimestamps & {
 
 /** A softcopy (PDF or EPUB) kept in MongoDB, when Vercel Blob is not connected. */
 export type SoftcopyFileDoc = JournalFileDoc;
+
+/** An article's PDF kept in MongoDB, when Vercel Blob is not connected. */
+export type ArticleFileDoc = JournalFileDoc;
 
 /**
  * The About page's words, edited from /admin/about.

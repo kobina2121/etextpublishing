@@ -461,6 +461,9 @@ export type ArticleFormValues = {
   publishedAt: string;
   status: string;
   featured: boolean;
+  pdfKey: string;
+  pdfName: string;
+  pdfSize: number;
 };
 
 export async function getArticleForEdit(id: string): Promise<ArticleFormValues | null> {
@@ -480,6 +483,9 @@ export async function getArticleForEdit(id: string): Promise<ArticleFormValues |
     publishedAt: new Date(doc.publishedAt).toISOString().slice(0, 10),
     status: doc.status,
     featured: doc.featured,
+    pdfKey: doc.pdfKey ?? "",
+    pdfName: doc.pdfName ?? "",
+    pdfSize: doc.pdfSize ?? 0,
   };
 }
 

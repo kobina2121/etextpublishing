@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
+import { BookOpenTextIcon, DownloadIcon } from "lucide-react";
 
 import { JsonLd } from "@/components/seo/json-ld";
 import { articleJsonLd, breadcrumbJsonLd } from "@/lib/seo/json-ld";
@@ -18,6 +19,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { getArticleBySlug, getArticleSlugs } from "@/server/queries";
 import { HeadingText } from "@/components/ui/heading-text";
 
@@ -104,6 +106,34 @@ export default async function ArticleDetailPage({ params }: PageProps<"/news/[sl
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">{article.excerpt}</p>
           <p className="mt-6 text-sm text-muted-foreground">By {article.authorName}</p>
+
+          {article.hasPdf ? (
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Button asChild size="lg" className="font-semibold tracking-[0.08em] uppercase">
+                {/* A plain link: the browser's own PDF viewer, in a new tab. */}
+                <a href={`/news/${article.slug}/pdf`} target="_blank" rel="noopener">
+                  <BookOpenTextIcon aria-hidden />
+                  Read PDF
+                </a>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="font-semibold tracking-[0.08em] uppercase"
+              >
+                <a href={`/news/${article.slug}/pdf?download=1`} download>
+                  <DownloadIcon aria-hidden />
+                  Download PDF
+                </a>
+              </Button>
+              {article.pdfSize ? (
+                <span className="text-sm text-muted-foreground">
+                  PDF, {(article.pdfSize / 1024 / 1024).toFixed(1)} MB
+                </span>
+              ) : null}
+            </div>
+          ) : null}
 
           {/* Fixture bodies are plain text split on blank lines. Phase 6 swaps
               this for sanitised rich text from the admin editor. */}

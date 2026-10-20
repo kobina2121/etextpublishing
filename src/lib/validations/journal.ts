@@ -18,7 +18,8 @@ export function splitList(value: string): string[] {
     .filter(Boolean);
 }
 
-const storageKey = z
+/** A stored file's key, `blob:…` or `db:…`; empty when there is none. */
+export const storageKeySchema = z
   .string()
   .trim()
   .refine((value) => value === "" || /^(blob|db):\S+$/.test(value), "Upload the PDF again.")
@@ -52,7 +53,7 @@ export const journalSchema = z
       .max(6000),
     keywords: z.string().trim().max(400).optional().or(z.literal("")),
     coverImage: imageRefSchema,
-    pdfKey: storageKey,
+    pdfKey: storageKeySchema,
     pdfName: z.string().trim().max(200).optional().or(z.literal("")),
     pdfSize: z.coerce.number().int().min(0).optional().default(0),
     status: z.enum(["draft", "published"]).default("draft"),
