@@ -2,15 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 
-import { deleteArticlePdf } from "@/lib/storage/article-files";
 import { deleteImageByUrl } from "@/lib/storage/images";
-import {
-  articleSchema,
-  authorSchema,
-  categorySchema,
-  serviceSchema,
-} from "@/lib/validations/content";
-import { Article, Author, Category, Publication, Service } from "@/models";
+import { authorSchema, categorySchema, serviceSchema } from "@/lib/validations/content";
+import { Author, Category, Publication, Service } from "@/models";
 import {
   isDuplicateKeyError,
   toFieldErrors,
@@ -120,7 +114,6 @@ export async function deleteAuthor(id: string): Promise<ActionResult> {
 function refreshCategory() {
   revalidatePath("/");
   revalidatePath("/publications");
-  revalidatePath("/news");
 }
 
 export async function createCategory(raw: unknown): Promise<ActionResult> {
@@ -164,11 +157,7 @@ export async function updateCategory(id: string, raw: unknown): Promise<ActionRe
 
 export async function deleteCategory(id: string): Promise<ActionResult> {
   return withAdmin(async () => {
-    const [pubs, articles] = await Promise.all([
-      Publication.countDocuments({ category: id }),
-      Article.countDocuments({ category: id }),
-    ]);
-    const total = pubs + articles;
+    const total = await Publication.countDocuments({ category: id });
     if (total > 0) {
       return {
         ok: false,
@@ -180,114 +169,6 @@ export async function deleteCategory(id: string): Promise<ActionResult> {
     if (!deleted) return { ok: false, error: "That category no longer exists." };
     refreshCategory();
     return { ok: true, message: "Category deleted." };
-  });
-}
-
-// --- Articles ---------------------------------------------------------------
-
-function refreshArticle(slug?: string) {
-  revalidatePath("/");
-  revalidatePath("/news");
-  if (slug) revalidatePath(`/news/${slug}`);
-}
-
-export async function createArticle(raw: unknown): Promise<ActionResult> {
-  return withAdmin(async () => {
-    const parsed = articleSchema.safeParse(raw);
-    if (!parsed.success) return invalid(parsed.error);
-
-    const { coverImage, pdfKey, pdfName, pdfSize, ...rest } = parsed.data;
-    try {
-      const created = await Article.create({
-        ...rest,
-        ...(coverImage ? { coverImage } : {}),
-        ...(pdfKey ? { pdfKey, pdfName: pdfName || undefined, pdfSize } : {}),
-      });
-      refreshArticle(created.slug);
-      return { ok: true, message: "Article created.", id: created._id.toString() };
-    } catch (error) {
-      if (isDuplicateKeyError(error)) return duplicateSlug;
-      throw error;
-    }
-  });
-}
-
-export async function updateArticle(id: string, raw: unknown): Promise<ActionResult> {
-  return withAdmin(async () => {
-    const parsed = articleSchema.safeParse(raw);
-    if (!parsed.success) return invalid(parsed.error);
-
-    const previous = await Article.findById(id, { slug: 1, coverImage: 1, pdfKey: 1 }).lean<{
-      slug: string;
-      coverImage?: string;
-      pdfKey?: string;
-    } | null>();
-    if (!previous) return { ok: false, error: "That article no longer exists." };
-
-    const { coverImage, pdfKey, pdfName, pdfSize, ...rest } = parsed.data;
-    try {
-      const updated = await Article.findByIdAndUpdate(
-        id,
-        // Mongoose drops undefined from $set, so a removed PDF is unset
-        // explicitly rather than left pointing at a deleted file.
-        pdfKey
-          ? {
-              $set: {
-                ...rest,
-                coverImage: coverImage || undefined,
-                pdfKey,
-                pdfName: pdfName || undefined,
-                pdfSize,
-              },
-            }
-          : {
-              $set: { ...rest, coverImage: coverImage || undefined },
-              $unset: { pdfKey: 1, pdfName: 1, pdfSize: 1 },
-            },
-        { returnDocument: "after", runValidators: true },
-      );
-      if (!updated) return { ok: false, error: "That article no longer exists." };
-
-      if (previous.coverImage && previous.coverImage !== updated.coverImage) {
-        await deleteImageByUrl(previous.coverImage);
-      }
-      if (previous.pdfKey && previous.pdfKey !== updated.pdfKey) {
-        await deleteArticlePdf(previous.pdfKey);
-      }
-      refreshArticle(updated.slug);
-      if (previous.slug !== updated.slug) revalidatePath(`/news/${previous.slug}`);
-      return { ok: true, message: "Article saved." };
-    } catch (error) {
-      if (isDuplicateKeyError(error)) return duplicateSlug;
-      throw error;
-    }
-  });
-}
-
-export async function setArticleStatus(
-  id: string,
-  status: "draft" | "published" | "archived",
-): Promise<ActionResult> {
-  return withAdmin(async () => {
-    const updated = await Article.findByIdAndUpdate(
-      id,
-      { $set: { status } },
-      { returnDocument: "after" },
-    );
-    if (!updated) return { ok: false, error: "That article no longer exists." };
-    refreshArticle(updated.slug);
-    return { ok: true, message: status === "published" ? "Published." : `Moved to ${status}.` };
-  });
-}
-
-export async function deleteArticle(id: string): Promise<ActionResult> {
-  return withAdmin(async () => {
-    const deleted = await Article.findByIdAndDelete(id);
-    if (!deleted) return { ok: false, error: "That article no longer exists." };
-    await deleteImageByUrl(deleted.coverImage);
-    await deleteArticlePdf(deleted.pdfKey);
-    refreshArticle(deleted.slug);
-    return { ok: true, message: "Article deleted." };
   });
 }
 

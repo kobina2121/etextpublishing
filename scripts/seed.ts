@@ -15,9 +15,9 @@
 import mongoose from "mongoose";
 
 import { connectToDatabase, disconnectFromDatabase } from "@/lib/db";
-import { articles, authors, categories, publications, services } from "@/lib/fixtures";
+import { authors, categories, publications, services } from "@/lib/fixtures";
 import { siteConfig } from "@/lib/site-config";
-import { Article, Author, Category, Publication, Service, SiteSettings, User } from "@/models";
+import { Author, Category, Publication, Service, SiteSettings, User } from "@/models";
 
 const reset = process.argv.includes("--reset");
 
@@ -42,7 +42,7 @@ async function seedAdmin() {
 }
 
 async function seedContent() {
-  // Categories first: publications and articles reference them by slug.
+  // Categories first: publications reference them by slug.
   const categoryIds = new Map<string, mongoose.Types.ObjectId>();
   for (const category of categories) {
     const doc = await Category.findOneAndUpdate(
@@ -103,31 +103,6 @@ async function seedContent() {
   }
   console.log(
     `  publications    ${publications.length} (${publications.filter((p) => p.status === "published").length} published)`,
-  );
-
-  for (const article of articles) {
-    const category = categoryIds.get(article.categoryId);
-    if (!category) throw new Error(`Article "${article.slug}" references a missing category.`);
-    await Article.findOneAndUpdate(
-      { slug: article.slug },
-      {
-        $set: {
-          title: article.title,
-          excerpt: article.excerpt,
-          body: article.body,
-          authorName: article.authorName,
-          category,
-          tags: article.tags,
-          publishedAt: article.publishedAt,
-          status: article.status,
-          featured: article.featured,
-        },
-      },
-      { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
-    );
-  }
-  console.log(
-    `  articles        ${articles.length} (${articles.filter((a) => a.status === "published").length} published)`,
   );
 
   for (const service of services) {
@@ -191,7 +166,6 @@ async function main() {
       Category,
       Author,
       Publication,
-      Article,
       Service,
       SiteSettings,
     ];
@@ -212,7 +186,6 @@ async function main() {
     Category,
     Author,
     Publication,
-    Article,
     Service,
     SiteSettings,
   ];

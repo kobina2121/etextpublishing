@@ -1,15 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { signInAsAdmin } from "./support/admin-session";
-import { articleBySlug, deleteArticle, storedFileExists } from "./support/db";
 
 /**
- * Articles: saving from the dashboard with tags, and an attached PDF readers
- * can open or download.
+ * Articles (stored as journal entries): the dropdown, the admin journey, free
+ * reading, links, and the redirects from the old /journals and /news addresses.
  *
- * Serial: each step works on the article the first one made. Published only
- * for the moment it takes to read it back; deleted at the end, and by the
- * sweep if a run stops.
+ * Serial: each step works on the entry the first one made, and the last step
+ * deletes it, which is what keeps the shared database clean.
  */
 test.describe.configure({ mode: "serial" });
 
@@ -27,43 +25,33 @@ const openEditor = async (page: Page) => {
   await expect(page.getByLabel("Title")).toHaveValue(title);
 };
 
-const save = async (page: Page) => {
-  await page.getByRole("button", { name: "Save changes" }).click();
-  await expect(page).toHaveURL(/\/admin\/articles$/);
-};
+test("Publications opens a dropdown with Books and Articles", async ({ page }) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+  const nav = page.getByRole("navigation", { name: "Main" });
+  await nav.getByRole("button", { name: "Publications" }).click();
 
-test.afterAll(async () => {
-  await deleteArticle(slug);
+  // One kind of article, so no separate Journals or News item.
+  const menu = page.getByRole("menu");
+  await expect(menu.getByRole("menuitem")).toHaveCount(2);
+  await expect(menu.getByRole("menuitem", { name: /Books/ })).toBeVisible();
+  await menu.getByRole("menuitem", { name: /Articles/ }).click();
+  await expect(page).toHaveURL(/\/articles$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Articles");
 });
 
-test("an admin creates an article with tags, then edits it", async ({ page, context }) => {
+test("an admin publishes an article with its PDF", async ({ page, context }) => {
   await signInAsAdmin(context);
   await page.goto("/admin/articles/new", { waitUntil: "networkidle" });
 
   await page.getByLabel("Title").fill(title);
   await page.getByLabel("Slug").fill(slug);
-  await page.getByLabel("Excerpt").fill("An end-to-end test article, saved as a draft.");
+  await page.getByLabel("Authors").fill("E2E Author One, E2E Author Two");
   await page
-    .getByLabel("Body")
-    .fill("Created by the test suite to check that articles save with tags and a PDF.");
-  await page.getByLabel("Category").click();
-  await page.getByRole("option").first().click();
-  await page.getByLabel("Tags").fill("Catalogue, article");
-
-  await page.getByRole("button", { name: "Create article" }).click();
-  await expect(page).toHaveURL(/\/admin\/articles$/);
-  expect((await articleBySlug(slug))?.tags).toEqual(["catalogue", "article"]);
-
-  await openEditor(page);
-  await expect(page.getByLabel("Tags")).toHaveValue("catalogue, article");
-  await page.getByLabel("Tags").fill("catalogue, article, research");
-  await save(page);
-  expect((await articleBySlug(slug))?.tags).toEqual(["catalogue", "article", "research"]);
-});
-
-test("an admin attaches a PDF and publishes", async ({ page, context }) => {
-  await signInAsAdmin(context);
-  await openEditor(page);
+    .getByLabel("Abstract")
+    .fill(
+      "An end-to-end test entry, created to check articles can be read for free, then deleted.",
+    );
+  await page.getByLabel("Keywords (optional)").fill("testing, literacy");
 
   await page.getByLabel("Article PDF").setInputFiles({
     name: "e2e-article.pdf",
@@ -72,28 +60,34 @@ test("an admin attaches a PDF and publishes", async ({ page, context }) => {
   });
   await expect(page.getByText("e2e-article.pdf")).toBeVisible();
 
-  await page.getByLabel("Status").click();
-  await page.getByRole("option", { name: "Published" }).click();
-  await save(page);
-  expect((await articleBySlug(slug))?.pdfKey).toBeTruthy();
+  await page.getByRole("switch", { name: "Published" }).click();
+  await page.getByRole("button", { name: "Create article" }).click();
+  await expect(page).toHaveURL(/\/admin\/articles$/);
+  await expect(page.getByRole("link", { name: title, exact: true })).toBeVisible();
 });
 
-test("readers can open or download the PDF", async ({ page, request }) => {
-  await page.goto(`/news/${slug}`);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
-  await expect(page.getByRole("link", { name: "Read PDF" })).toHaveAttribute(
+test("anyone can read it for free, online or as a download", async ({ page, request }) => {
+  await page.goto("/articles");
+  await expect(page.getByRole("link", { name: title })).toBeVisible();
+  await page.getByRole("link", { name: title }).click();
+
+  await expect(page).toHaveURL(new RegExp(`/articles/${slug}$`));
+  await expect(page.getByText("E2E Author One, E2E Author Two")).toBeVisible();
+  await expect(page.getByText("Free to read").first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Read online" })).toHaveAttribute(
     "href",
-    `/news/${slug}/pdf`,
+    `/articles/${slug}/pdf`,
   );
 
-  const read = await request.get(`/news/${slug}/pdf`);
-  expect(read.status()).toBe(200);
-  expect(read.headers()["content-type"]).toBe("application/pdf");
-  expect(read.headers()["content-disposition"]).toMatch(/^inline/);
-  expect((await read.body()).subarray(0, 5).toString()).toBe("%PDF-");
+  // No session needed: the request fixture has none.
+  const online = await request.get(`/articles/${slug}/pdf`);
+  expect(online.status()).toBe(200);
+  expect(online.headers()["content-type"]).toBe("application/pdf");
+  expect(online.headers()["content-disposition"]).toMatch(/^inline/);
+  expect((await online.body()).subarray(0, 5).toString()).toBe("%PDF-");
 
-  const download = await request.get(`/news/${slug}/pdf?download=1`);
-  expect(download.headers()["content-disposition"]).toMatch(/^attachment/);
+  const saved = await request.get(`/articles/${slug}/pdf?download=1`);
+  expect(saved.headers()["content-disposition"]).toMatch(/^attachment/);
 });
 
 test("an admin adds a link, shown under the article", async ({ page, context }) => {
@@ -106,34 +100,61 @@ test("an admin adds a link, shown under the article", async ({ page, context }) 
   await expect(page.getByText(/Link 1: Start the address with https/)).toBeVisible();
 
   await page.getByPlaceholder("https://…").fill("https://example.org/e2e-reading");
-  await save(page);
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page).toHaveURL(/\/admin\/articles$/);
 
-  await page.goto(`/news/${slug}`);
-  const links = page.getByRole("region", { name: "Links" });
-  const link = links.getByRole("link", { name: /E2E Further reading/ });
+  await page.goto(`/articles/${slug}`);
+  const link = page
+    .getByRole("region", { name: "Links" })
+    .getByRole("link", { name: /E2E Further reading/ });
   await expect(link).toHaveAttribute("href", "https://example.org/e2e-reading");
   await expect(link).toHaveAttribute("target", "_blank");
 });
 
-test("a draft's PDF is not public", async ({ page, context, request }) => {
-  await signInAsAdmin(context);
-  await openEditor(page);
-  await page.getByLabel("Status").click();
-  await page.getByRole("option", { name: "Draft" }).click();
-  await save(page);
-
-  expect((await request.get(`/news/${slug}/pdf`)).status()).toBe(404);
+test("the home page lists the latest articles", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Latest Articles" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "All articles" })).toHaveAttribute(
+    "href",
+    "/articles",
+  );
 });
 
-test("removing the PDF deletes the file", async ({ page, context }) => {
-  const before = (await articleBySlug(slug))?.pdfKey;
-  expect(before).toBeTruthy();
+test("old addresses redirect to the articles", async ({ page, request }) => {
+  const moved: [string, string][] = [
+    ["/journals", "/articles"],
+    [`/journals/${slug}`, `/articles/${slug}`],
+    [`/journals/${slug}/pdf`, `/articles/${slug}/pdf`],
+    ["/news", "/articles"],
+    ["/news/some-old-post", "/articles"],
+  ];
+  for (const [from, to] of moved) {
+    const response = await request.get(from, { maxRedirects: 0 });
+    expect(response.status(), from).toBe(308);
+    expect(response.headers().location, from).toBe(to);
+  }
+  await page.goto(`/journals/${slug}`);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
+});
 
+test("unpublishing hides the entry and its PDF", async ({ page, context, request }) => {
   await signInAsAdmin(context);
   await openEditor(page);
-  await page.getByRole("button", { name: "Remove PDF" }).click();
-  await save(page);
+  await page.getByRole("switch", { name: "Published" }).click();
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page).toHaveURL(/\/admin\/articles$/);
 
-  expect((await articleBySlug(slug))?.pdfKey).toBeUndefined();
-  if (before?.startsWith("db:")) expect(await storedFileExists("articlefiles", before)).toBe(false);
+  expect((await request.get(`/articles/${slug}/pdf`)).status()).toBe(404);
+  await page.goto(`/articles/${slug}`);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Page not found");
+});
+
+test("the test article is deleted", async ({ page, context }) => {
+  await signInAsAdmin(context);
+  await page.goto("/admin/articles", { waitUntil: "networkidle" });
+  const row = page.getByRole("row").filter({ hasText: title });
+  await row.getByRole("button", { name: "Delete" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Delete" }).click();
+  await expect(page.getByText("Article deleted.")).toBeVisible();
+  await expect(page.getByRole("row").filter({ hasText: title })).toHaveCount(0);
 });

@@ -169,26 +169,6 @@ export type EditionDoc = {
   stockQuantity: number;
 };
 
-export type ArticleDoc = WithTimestamps & {
-  _id: Types.ObjectId;
-  title: string;
-  slug: string;
-  excerpt: string;
-  body: string;
-  coverImage?: string;
-  authorName: string;
-  category: Types.ObjectId;
-  tags: string[];
-  publishedAt: Date;
-  status: PublicationStatusValue;
-  featured: boolean;
-  links: { label: string; href: string }[];
-  /** An optional PDF readers can open or download: `blob:` or `db:` key. */
-  pdfKey?: string;
-  pdfName?: string;
-  pdfSize?: number;
-};
-
 export type ServiceDoc = WithTimestamps & {
   _id: Types.ObjectId;
   title: string;
@@ -316,6 +296,8 @@ export type JournalDoc = WithTimestamps & {
   pdfKey?: string;
   pdfName?: string;
   pdfSize?: number;
+  /** Further reading shown under the article. */
+  links?: { label: string; href: string }[];
   status: "draft" | "published";
 };
 
@@ -330,9 +312,6 @@ export type JournalFileDoc = WithTimestamps & {
 
 /** A softcopy (PDF or EPUB) kept in MongoDB, when Vercel Blob is not connected. */
 export type SoftcopyFileDoc = JournalFileDoc;
-
-/** An article's PDF kept in MongoDB, when Vercel Blob is not connected. */
-export type ArticleFileDoc = JournalFileDoc;
 
 /**
  * The About page's words, edited from /admin/about.

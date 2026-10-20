@@ -3,18 +3,8 @@ import "server-only";
 import { Types, type PipelineStage } from "mongoose";
 
 import { connectToDatabase } from "@/lib/db";
-import {
-  Article,
-  Author,
-  Category,
-  Order,
-  Publication,
-  Service,
-  SiteSettings,
-  User,
-} from "@/models";
+import { Author, Category, Order, Publication, Service, SiteSettings, User } from "@/models";
 import type {
-  ArticleDoc,
   AuthorDoc,
   CategoryDoc,
   EditionDoc,
@@ -24,7 +14,6 @@ import type {
   SiteSettingsDoc,
 } from "@/models/types";
 import type {
-  ArticleWithRelations,
   Author as AuthorType,
   Category as CategoryType,
   Edition,
@@ -112,29 +101,6 @@ function toPublication(doc: JoinedPublication): PublicationWithRelations {
     currency: (doc.currency ?? "GHS").toUpperCase(),
     author: toAuthor(doc.author),
     category: toCategory(doc.category),
-    ...(doc.coverImage ? { coverImage: doc.coverImage } : {}),
-  };
-}
-
-type JoinedArticle = Lean<Omit<ArticleDoc, "category">> & { category: Lean<CategoryDoc> };
-
-function toArticle(doc: JoinedArticle): ArticleWithRelations {
-  return {
-    id: id(doc._id),
-    title: doc.title,
-    slug: doc.slug,
-    excerpt: doc.excerpt,
-    body: doc.body,
-    authorName: doc.authorName,
-    categoryId: id(doc.category._id),
-    tags: [...doc.tags],
-    publishedAt: new Date(doc.publishedAt),
-    status: doc.status,
-    featured: doc.featured,
-    category: toCategory(doc.category),
-    links: (doc.links ?? []).map(({ label, href }) => ({ label, href })),
-    hasPdf: Boolean(doc.pdfKey),
-    ...(doc.pdfKey && doc.pdfSize ? { pdfSize: doc.pdfSize } : {}),
     ...(doc.coverImage ? { coverImage: doc.coverImage } : {}),
   };
 }
@@ -395,106 +361,6 @@ export async function getPublicationsByAuthor(
 export async function getAuthorSlugs(): Promise<string[]> {
   await connectToDatabase();
   const docs = await Author.find({}, { slug: 1 }).lean<{ slug: string }[]>();
-  return docs.map((doc) => doc.slug);
-}
-
-// --- Articles ---------------------------------------------------------------
-
-export async function listArticles(
-  filters: { q?: string; category?: string; page?: number; pageSize?: number } = {},
-): Promise<Paginated<ArticleWithRelations>> {
-  const { q, category, page = 1, pageSize = 6 } = filters;
-  await connectToDatabase();
-
-  const stages: PipelineStage[] = [
-    { $match: { status: "published" } },
-    {
-      $lookup: {
-        from: Category.collection.name,
-        localField: "category",
-        foreignField: "_id",
-        as: "category",
-      },
-    },
-    { $unwind: "$category" },
-  ];
-
-  const postJoin: Record<string, unknown> = {};
-  if (category) postJoin["category.slug"] = category;
-  if (q?.trim()) {
-    const rx = { $regex: escapeRegex(q.trim()), $options: "i" };
-    postJoin.$or = [{ title: rx }, { excerpt: rx }, { tags: rx }];
-  }
-  if (Object.keys(postJoin).length > 0) stages.push({ $match: postJoin });
-
-  const [result] = await Article.aggregate<{
-    items: JoinedArticle[];
-    meta: { total: number }[];
-  }>([
-    ...stages,
-    {
-      $facet: {
-        items: [
-          { $sort: { publishedAt: -1 } },
-          { $skip: Math.max(0, (Math.max(1, page) - 1) * pageSize) },
-          { $limit: pageSize },
-        ],
-        meta: [{ $count: "total" }],
-      },
-    },
-  ]);
-
-  const total = result?.meta[0]?.total ?? 0;
-  const pageCount = Math.max(1, Math.ceil(total / pageSize));
-
-  return {
-    items: (result?.items ?? []).map(toArticle),
-    total,
-    page: Math.min(Math.max(1, page), pageCount),
-    pageCount,
-    pageSize,
-  };
-}
-
-export async function getLatestArticles(limit = 3): Promise<ArticleWithRelations[]> {
-  const { items } = await listArticles({ pageSize: limit });
-  return items;
-}
-
-export async function getArticleBySlug(slug: string): Promise<ArticleWithRelations | null> {
-  await connectToDatabase();
-  const docs = await Article.aggregate<JoinedArticle>([
-    { $match: { status: "published", slug } },
-    {
-      $lookup: {
-        from: Category.collection.name,
-        localField: "category",
-        foreignField: "_id",
-        as: "category",
-      },
-    },
-    { $unwind: "$category" },
-    { $limit: 1 },
-  ]);
-  const doc = docs[0];
-  return doc ? toArticle(doc) : null;
-}
-
-/** A published article's PDF, for /news/[slug]/pdf. Drafts' files stay private. */
-export async function getPublishedArticlePdf(
-  slug: string,
-): Promise<{ key: string; fileName: string } | null> {
-  await connectToDatabase();
-  const doc = await Article.findOne({ slug, status: "published" })
-    .select("pdfKey pdfName slug")
-    .lean<Pick<ArticleDoc, "pdfKey" | "pdfName" | "slug"> | null>();
-  if (!doc?.pdfKey) return null;
-  return { key: doc.pdfKey, fileName: doc.pdfName || `${doc.slug}.pdf` };
-}
-
-export async function getArticleSlugs(): Promise<string[]> {
-  await connectToDatabase();
-  const docs = await Article.find({ status: "published" }, { slug: 1 }).lean<{ slug: string }[]>();
   return docs.map((doc) => doc.slug);
 }
 

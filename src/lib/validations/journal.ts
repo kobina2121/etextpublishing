@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { linkListSchema } from "@/lib/validations/content";
 import { imageRefSchema, slugSchema } from "@/lib/validations/publication";
 
 /**
@@ -27,41 +28,38 @@ export const storageKeySchema = z
   .default("");
 
 /**
- * A journal entry as edited at /admin/journals.
+ * A journal entry as edited at /admin/articles.
  *
  * Authors and keywords are typed as comma-separated text and stored as lists.
- * A draft may be saved without its PDF; publishing needs one, since the whole
- * point of a journal entry is that it can be read.
+ * The PDF is optional: an article may instead link to where it was published
+ * (see `links`).
  */
-export const journalSchema = z
-  .object({
-    title: z.string().trim().min(2, "Give the entry a title.").max(250),
-    slug: slugSchema,
-    authors: z
-      .string()
-      .trim()
-      .min(2, "Name at least one author.")
-      .max(600)
-      .refine((value) => splitList(value).length > 0, "Name at least one author."),
-    volume: z.string().trim().max(20).optional().or(z.literal("")),
-    issue: z.string().trim().max(20).optional().or(z.literal("")),
-    publishedAt: z.coerce.date({ message: "Choose a publication date." }),
-    abstract: z
-      .string()
-      .trim()
-      .min(30, "Write an abstract of at least a couple of sentences.")
-      .max(6000),
-    keywords: z.string().trim().max(400).optional().or(z.literal("")),
-    coverImage: imageRefSchema,
-    pdfKey: storageKeySchema,
-    pdfName: z.string().trim().max(200).optional().or(z.literal("")),
-    pdfSize: z.coerce.number().int().min(0).optional().default(0),
-    status: z.enum(["draft", "published"]).default("draft"),
-  })
-  .refine((value) => value.status !== "published" || Boolean(value.pdfKey), {
-    message: "Upload the PDF before publishing, or save as a draft.",
-    path: ["pdfKey"],
-  });
+export const journalSchema = z.object({
+  title: z.string().trim().min(2, "Give the entry a title.").max(250),
+  slug: slugSchema,
+  authors: z
+    .string()
+    .trim()
+    .min(2, "Name at least one author.")
+    .max(600)
+    .refine((value) => splitList(value).length > 0, "Name at least one author."),
+  volume: z.string().trim().max(20).optional().or(z.literal("")),
+  issue: z.string().trim().max(20).optional().or(z.literal("")),
+  publishedAt: z.coerce.date({ message: "Choose a publication date." }),
+  abstract: z
+    .string()
+    .trim()
+    .min(30, "Write an abstract of at least a couple of sentences.")
+    .max(6000),
+  keywords: z.string().trim().max(400).optional().or(z.literal("")),
+  coverImage: imageRefSchema,
+  pdfKey: storageKeySchema,
+  pdfName: z.string().trim().max(200).optional().or(z.literal("")),
+  pdfSize: z.coerce.number().int().min(0).optional().default(0),
+  /** Further reading shown under the article: label and http(s) address. */
+  links: linkListSchema,
+  status: z.enum(["draft", "published"]).default("draft"),
+});
 
 export type JournalInput = z.input<typeof journalSchema>;
 export type JournalValues = z.output<typeof journalSchema>;

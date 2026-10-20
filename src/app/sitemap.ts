@@ -11,7 +11,7 @@ import { getSitemapEntries, type SitemapEntry } from "@/server/sitemap";
  * crawl. If the database is unreachable the static pages are still emitted
  * rather than failing the whole route.
  *
- * Rebuilt at most hourly. It was built once per deploy, so a title or journal
+ * Rebuilt at most hourly. It was built once per deploy, so a title or article
  * published from the dashboard did not reach it until the next deploy.
  */
 export const revalidate = 3600;
@@ -21,16 +21,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: absoluteUrl("/"), changeFrequency: "weekly", priority: 1 },
     { url: absoluteUrl("/about"), changeFrequency: "monthly", priority: 0.6 },
     { url: absoluteUrl("/publications"), changeFrequency: "weekly", priority: 0.9 },
-    { url: absoluteUrl("/journals"), changeFrequency: "weekly", priority: 0.8 },
+    { url: absoluteUrl("/articles"), changeFrequency: "weekly", priority: 0.8 },
     { url: absoluteUrl("/authors"), changeFrequency: "monthly", priority: 0.7 },
     { url: absoluteUrl("/services"), changeFrequency: "monthly", priority: 0.8 },
-    { url: absoluteUrl("/news"), changeFrequency: "weekly", priority: 0.7 },
     { url: absoluteUrl("/contact"), changeFrequency: "yearly", priority: 0.5 },
     { url: absoluteUrl("/submit"), changeFrequency: "yearly", priority: 0.6 },
   ];
 
   try {
-    const { publications, authors, articles, journals } = await getSitemapEntries();
+    const { publications, authors, articles } = await getSitemapEntries();
     const entries = (
       list: SitemapEntry[],
       base: string,
@@ -47,9 +46,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     return [
       ...staticPages,
       ...entries(publications, "/publications", "monthly", 0.8),
-      ...entries(journals, "/journals", "yearly", 0.7),
+      ...entries(articles, "/articles", "yearly", 0.7),
       ...entries(authors, "/authors", "monthly", 0.6),
-      ...entries(articles, "/news", "yearly", 0.5),
     ];
   } catch {
     return staticPages;

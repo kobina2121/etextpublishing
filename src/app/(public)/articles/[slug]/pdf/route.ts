@@ -1,19 +1,19 @@
-import { openArticlePdf } from "@/lib/storage/article-files";
-import { getPublishedArticlePdf } from "@/server/queries";
+import { openJournalPdf } from "@/lib/storage/journal-files";
+import { getPublishedJournalPdf } from "@/server/journals";
 
 /**
- * An article's PDF, free to read.
+ * A journal's full text, free to read.
  *
  * Opens in the browser's own PDF viewer; `?download=1` saves it instead.
- * Published articles only, so a draft's PDF is not reachable by guessing its
+ * Published entries only, so a draft's PDF is not reachable by guessing its
  * slug. Not cached for long: an admin may replace the file.
  */
-export async function GET(request: Request, { params }: RouteContext<"/news/[slug]/pdf">) {
+export async function GET(request: Request, { params }: RouteContext<"/articles/[slug]/pdf">) {
   const { slug } = await params;
-  const entry = await getPublishedArticlePdf(slug);
+  const entry = await getPublishedJournalPdf(slug);
   if (!entry) return new Response("Not found", { status: 404 });
 
-  const file = await openArticlePdf(entry.key);
+  const file = await openJournalPdf(entry.key);
   if (!file) return new Response("Not found", { status: 404 });
 
   const download = new URL(request.url).searchParams.get("download") === "1";

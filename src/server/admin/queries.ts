@@ -5,10 +5,10 @@ import { toMajorUnits } from "@/lib/money";
 import type { Currency } from "@/lib/validations/publication";
 import type { PublicationDoc } from "@/models/types";
 import {
-  Article,
   Author,
   Category,
   ContactMessage,
+  Journal,
   ManuscriptSubmission,
   Order,
   Publication,
@@ -58,9 +58,10 @@ export async function getDashboardCounts(): Promise<DashboardCounts> {
     Publication.countDocuments({ status: "draft" }),
     Author.countDocuments(),
     Category.countDocuments(),
-    Article.countDocuments(),
-    Article.countDocuments({ status: "published" }),
-    Article.countDocuments({ status: "draft" }),
+    // Articles are journal entries.
+    Journal.countDocuments(),
+    Journal.countDocuments({ status: "published" }),
+    Journal.countDocuments({ status: "draft" }),
     Service.countDocuments(),
     ManuscriptSubmission.countDocuments(),
     ManuscriptSubmission.countDocuments({ status: "new" }),
@@ -271,7 +272,7 @@ export async function getPublicationForEdit(id: string): Promise<PublicationForm
 
 export type Option = { value: string; label: string };
 
-/** Select options for the publication and article forms. */
+/** Select options for the publication form. */
 export async function getFormOptions(): Promise<{ authors: Option[]; categories: Option[] }> {
   await connectToDatabase();
   const [authors, categories] = await Promise.all([
@@ -362,23 +363,18 @@ export type AdminCategoryRow = {
   slug: string;
   description: string;
   publicationCount: number;
-  articleCount: number;
 };
 
 export async function listCategoriesAdmin(): Promise<AdminCategoryRow[]> {
   await connectToDatabase();
-  const [docs, pubCounts, artCounts] = await Promise.all([
+  const [docs, pubCounts] = await Promise.all([
     Category.find().sort({ name: 1 }).lean(),
     Publication.aggregate<{ _id: unknown; n: number }>([
-      { $group: { _id: "$category", n: { $sum: 1 } } },
-    ]),
-    Article.aggregate<{ _id: unknown; n: number }>([
       { $group: { _id: "$category", n: { $sum: 1 } } },
     ]),
   ]);
 
   const pubBy = new Map(pubCounts.map((c) => [String(c._id), c.n]));
-  const artBy = new Map(artCounts.map((c) => [String(c._id), c.n]));
 
   return docs.map((doc) => ({
     id: doc._id.toString(),
@@ -386,7 +382,6 @@ export async function listCategoriesAdmin(): Promise<AdminCategoryRow[]> {
     slug: doc.slug,
     description: doc.description ?? "",
     publicationCount: pubBy.get(doc._id.toString()) ?? 0,
-    articleCount: artBy.get(doc._id.toString()) ?? 0,
   }));
 }
 
@@ -401,93 +396,6 @@ export async function getCategoryForEdit(
     name: doc.name,
     slug: doc.slug,
     description: doc.description ?? "",
-  };
-}
-
-// --- Articles ---------------------------------------------------------------
-
-export type AdminArticleRow = {
-  id: string;
-  title: string;
-  slug: string;
-  categoryName: string;
-  authorName: string;
-  status: string;
-  featured: boolean;
-  publishedAt: Date;
-};
-
-export async function listArticlesAdmin(
-  filters: { q?: string; status?: string } = {},
-): Promise<AdminArticleRow[]> {
-  await connectToDatabase();
-  const match: Record<string, unknown> = {};
-  if (filters.status) match.status = filters.status;
-
-  const docs = await Article.find(match)
-    .sort({ publishedAt: -1 })
-    .populate<{ category: { name: string } }>("category", "name")
-    .lean();
-
-  const term = filters.q?.trim().toLowerCase();
-  return docs
-    .map((doc) => ({
-      id: doc._id.toString(),
-      title: doc.title,
-      slug: doc.slug,
-      categoryName: doc.category?.name ?? "—",
-      authorName: doc.authorName,
-      status: doc.status,
-      featured: doc.featured,
-      publishedAt: new Date(doc.publishedAt),
-    }))
-    .filter((row) =>
-      term
-        ? [row.title, row.slug, row.authorName].some((v) => v.toLowerCase().includes(term))
-        : true,
-    );
-}
-
-export type ArticleFormValues = {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string;
-  body: string;
-  coverImage: string;
-  authorName: string;
-  category: string;
-  tags: string;
-  publishedAt: string;
-  status: string;
-  featured: boolean;
-  links: { label: string; href: string }[];
-  pdfKey: string;
-  pdfName: string;
-  pdfSize: number;
-};
-
-export async function getArticleForEdit(id: string): Promise<ArticleFormValues | null> {
-  await connectToDatabase();
-  const doc = await Article.findById(id).lean();
-  if (!doc) return null;
-  return {
-    id: doc._id.toString(),
-    title: doc.title,
-    slug: doc.slug,
-    excerpt: doc.excerpt,
-    body: doc.body,
-    coverImage: doc.coverImage ?? "",
-    authorName: doc.authorName,
-    category: doc.category.toString(),
-    tags: (doc.tags ?? []).join(", "),
-    publishedAt: new Date(doc.publishedAt).toISOString().slice(0, 10),
-    status: doc.status,
-    featured: doc.featured,
-    links: (doc.links ?? []).map(({ label, href }) => ({ label, href })),
-    pdfKey: doc.pdfKey ?? "",
-    pdfName: doc.pdfName ?? "",
-    pdfSize: doc.pdfSize ?? 0,
   };
 }
 

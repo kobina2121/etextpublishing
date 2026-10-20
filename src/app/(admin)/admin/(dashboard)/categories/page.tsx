@@ -26,7 +26,7 @@ export default async function AdminCategoriesPage() {
     <div className="mx-auto w-full max-w-4xl">
       <AdminPageHeader
         title="Categories"
-        description="Used to group publications and articles."
+        description="Used to group publications."
         actions={
           <Button asChild>
             <Link href="/admin/categories/new">
@@ -67,7 +67,7 @@ export default async function AdminCategoriesPage() {
                     <p className="mt-0.5 font-mono text-xs text-muted-foreground">{row.slug}</p>
                   </TableCell>
                   <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">
-                    {row.publicationCount} publications · {row.articleCount} articles
+                    {row.publicationCount} publications
                   </TableCell>
                   <TableCell className="text-right">
                     <CategoryRowActions id={row.id} name={row.name} />

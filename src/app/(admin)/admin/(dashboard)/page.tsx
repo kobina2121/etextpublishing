@@ -44,7 +44,7 @@ export default async function AdminDashboardPage() {
     {
       label: "Articles",
       href: "/admin/articles",
-      icon: "Newspaper",
+      icon: "Library",
       value: counts.articles.total,
       detail: `${counts.articles.published} published · ${counts.articles.draft} draft`,
     },

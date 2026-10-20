@@ -120,13 +120,14 @@ describe("journals for Google Scholar", () => {
     coverImage: "",
     hasPdf: true,
     pdfSize: 2048,
+    links: [],
   };
 
   it("gives Scholar every author, the date, and the free PDF", () => {
     const meta = scholarMeta(journal, "etext Publishing Network");
     expect(meta.citation_author).toEqual(["Ama Mensah", "Kofi Boateng"]);
     expect(meta.citation_publication_date).toBe("2026/05/01");
-    expect(meta.citation_pdf_url).toBe("https://www.example.org/journals/reading-habits/pdf");
+    expect(meta.citation_pdf_url).toBe("https://www.example.org/articles/reading-habits/pdf");
     expect(meta).toMatchObject({ citation_volume: "3", citation_issue: "2" });
   });
 

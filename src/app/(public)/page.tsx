@@ -20,10 +20,10 @@ import { Button } from "@/components/ui/button";
 import {
   getFeaturedAuthors,
   getFeaturedPublications,
-  getLatestArticles,
   listPublications,
   listServices,
 } from "@/server/queries";
+import { listJournals } from "@/server/journals";
 
 /**
  * Enough titles for the carousel to have somewhere to go. At three per view on
@@ -68,7 +68,7 @@ export default async function HomePage() {
     getFeaturedPublications(CAROUSEL_MIN * 2),
     listPublications({ pageSize: CAROUSEL_MIN * 2 }),
     getFeaturedAuthors(3),
-    getLatestArticles(2),
+    listJournals({ limit: 2 }),
     listServices(),
     getSiteMeta(),
   ]);
@@ -176,26 +176,34 @@ export default async function HomePage() {
         </Container>
       </Section>
 
-      <Section size="lg">
-        <Container>
-          <SectionHeading title="Latest news" subtitle="From the editorial desk" />
-          <div className="mt-14 space-y-8">
-            {articles.map((article) => (
-              <ArticleCard key={article.id} article={article} />
-            ))}
-          </div>
-          <div className="mt-12 text-center">
-            <Button
-              asChild
-              size="xl"
-              variant="outline"
-              className="font-semibold tracking-[0.1em] uppercase"
-            >
-              <Link href="/news">All news</Link>
-            </Button>
-          </div>
-        </Container>
-      </Section>
+      {/* Hidden until there is something to show. */}
+      {articles.length > 0 ? (
+        <Section size="lg">
+          <Container>
+            <SectionHeading
+              title="Latest articles"
+              subtitle="Research from our network, free to read"
+            />
+            <ul className="mt-14 divide-y divide-border border-y border-border">
+              {articles.map((article) => (
+                <li key={article.id} className="py-8">
+                  <ArticleCard article={article} />
+                </li>
+              ))}
+            </ul>
+            <div className="mt-12 text-center">
+              <Button
+                asChild
+                size="xl"
+                variant="outline"
+                className="font-semibold tracking-[0.1em] uppercase"
+              >
+                <Link href="/articles">All articles</Link>
+              </Button>
+            </div>
+          </Container>
+        </Section>
+      ) : null}
 
       <Section size="lg" className="bg-brand-dark text-white">
         <Container>
