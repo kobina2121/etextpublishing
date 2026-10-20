@@ -55,7 +55,7 @@ export default async function JournalPage({ params }: PageProps<"/journals/[slug
       <JsonLd
         data={breadcrumbJsonLd([
           { name: "Home", path: "/" },
-          { name: "Journals", path: "/journals" },
+          { name: "Articles", path: "/journals" },
           { name: journal.title, path: `/journals/${journal.slug}` },
         ])}
       />
@@ -65,7 +65,7 @@ export default async function JournalPage({ params }: PageProps<"/journals/[slug
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeftIcon className="size-4" aria-hidden />
-          All journals
+          All articles
         </Link>
 
         <p className="mt-8 text-xs font-semibold tracking-[0.12em] text-muted-foreground uppercase">

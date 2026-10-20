@@ -15,8 +15,8 @@ import { listJournals, volumeIssue } from "@/server/journals";
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildMetadata({
-    title: "Journals",
-    description: "Academic journal papers from our network, free for anyone to read.",
+    title: "Articles",
+    description: "Academic articles and papers from our network, free for anyone to read.",
     path: "/journals",
   });
 }
@@ -30,7 +30,7 @@ export default async function JournalsPage({ searchParams }: PageProps<"/journal
   return (
     <>
       <PageHero
-        title="Journals"
+        title="Articles"
         description="Research from our network, free for anyone to read — no account, no payment."
       />
 
